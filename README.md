@@ -1,12 +1,12 @@
-# TxtViewer - Retro MS-DOS Style Text Viewer for macOS
+# Harryfan reader - Retro MS-DOS Style Text Viewer from Fidonet era
 
-A nostalgic text viewer for macOS that emulates the classic MS-DOS aesthetic with blue background, white text, and support for CP866 encoding (perfect for Russian text files).
+A nostalgic text viewer for macOS that emulates the classic MS-DOS aesthetic with blue background, white text, and support for CP866 encoding (perfect for Cyrillic text files).
 
 ## Features
 
-- **Retro MS-DOS Aesthetic**: Blue background with white text, reminiscent of classic DOS applications
-- **CP866 Encoding Support**: Native support for Russian text files encoded in CP866 with correct pseudographics mapping and proper line ending handling
-- **MS-DOS Fonts**: Uses the VDU 8x16 pixel font for authentic retro appearance
+- **Retro MS-DOS Aesthetic**: Blue background with white text, reminiscent of classic DOS applications (credits to Peter Norton, USA)
+- **CP866 Encoding Support**: Native support for Cyrillic text files encoded in CP866 with correct pseudographics mapping and proper line ending handling
+- **MS-DOS Fonts**: Uses the VDU 8x16 pixel font for authentic retro appearance (credits to Oleg V. Baranovskiy, Kyiv, Ukraine)
 - **Navigation**: PageUp/PageDown, GotoStart/GotoEnd, line-by-line navigation
 - **Search**: Forward and backward text search with case-insensitive matching
 - **Bookmarks**: Save and manage bookmarks for quick navigation
@@ -64,7 +64,7 @@ swift run
 
 1. Launch TxtViewer
 2. Click "Open File" or use Cmd+O to select a text file
-3. The application will automatically detect CP866 encoding for Russian text
+3. The application will automatically detect CP866 encoding for Cyrillic text
 4. Use the bottom menu bar or keyboard shortcuts for navigation
 5. Access settings via the menu bar or Cmd+, to customize the appearance
 6. Use "9Wrap" button or settings to toggle word wrap functionality
@@ -72,8 +72,8 @@ swift run
 ## File Support
 
 - **Text Files**: All plain text files (.txt, etc.)
-- **Encoding**: CP866 (primary), UTF-8 (fallback)
-- **Languages**: Optimized for Russian text, supports all languages
+- **Encoding**: CP866 (Cyrillic, MS-DOS)
+- **Languages**: Optimized for Cyrillic text, supports all languages
 - **CP866 Support**: Full CP866 code page support with correct character mapping based on [Wikipedia CP866 specification](https://en.wikipedia.org/wiki/Code_page_866) and real file analysis
   - Cyrillic characters (А-Я, а-я) with proper positioning according to official CP866 standard
   - Special characters (Ё, ё, Є, є, Ї, ї, Ў, ў, І, і, Ґ, ґ, Ђ, ђ, Ѓ, ѓ)
@@ -99,6 +99,8 @@ swift run
 ## Inspired By
 
 This application is inspired by classic MS-DOS text viewers and the [Giant Log Viewer](https://github.com/sunny-chung/giant-log-viewer) project, bringing the nostalgic feel of retro computing to modern macOS.
+
+Also, would like to say thanks to Igor Zagumennov (AKA Harry Fan 2:463/2.5) and Vladimir Leeman (2:463/2)
 
 ## License
 
