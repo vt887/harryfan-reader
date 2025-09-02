@@ -1,12 +1,12 @@
 import SwiftUI
 
 @main
-struct TxtViewerApp: App {
+struct HarryfanReaderApp: App {
     @StateObject private var fontManager = FontManager()
     @StateObject private var bookmarkManager = BookmarkManager()
     
     init() {
-        print("TxtViewer app initializing...")
+        print("HarryfanReader app initializing...")
     }
     
     var body: some Scene {
@@ -16,14 +16,11 @@ struct TxtViewerApp: App {
                 .environmentObject(bookmarkManager)
                 .frame(minWidth: 600, minHeight: 480)
                 .onAppear {
-                    print("ContentView appeared")
-                    // Bring window to front and make it visible
                     DispatchQueue.main.async {
                         NSApplication.shared.activate(ignoringOtherApps: true)
                         if let window = NSApplication.shared.windows.first {
                             window.makeKeyAndOrderFront(nil)
                             window.level = .floating
-                            print("Window should be visible now")
                         }
                     }
                 }

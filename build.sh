@@ -1,13 +1,13 @@
 #!/bin/bash
 
-echo "Building TxtViewer..."
+echo "Building HarryfanReader..."
 
 # Build the application
 swift build
 
 if [ $? -eq 0 ]; then
     echo "Build successful!"
-    echo "Running TxtViewer..."
+    echo "Running HarryfanReader..."
     swift run
 else
     echo "Build failed!"

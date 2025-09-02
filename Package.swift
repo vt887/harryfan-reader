@@ -2,22 +2,22 @@
 import PackageDescription
 
 let package = Package(
-    name: "TxtViewer",
+    name: "HarryfanReader",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .executable(
-            name: "TxtViewer",
-            targets: ["TxtViewer"]
+            name: "HarryfanReader",
+            targets: ["HarryfanReader"]
         )
     ],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "TxtViewer",
+            name: "HarryfanReader",
             dependencies: [],
-            path: "TxtViewer",
+            path: "harryfan-reader",
             resources: [
                 .process("vdu.8x16.raw"),
                 .process("Assets.xcassets"),

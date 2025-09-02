@@ -1,3 +1,10 @@
+//
+//  SettingsView.swift
+//  harryfan-reader
+//
+//  Created by Vad Tymoshyk on 9/1/25.
+//
+
 import SwiftUI
 
 struct SettingsView: View {
@@ -139,9 +146,9 @@ struct SettingsView: View {
                 
                 Section("About") {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("TxtViewer")
+                        Text("Harryfan Reader")
                             .font(.headline)
-                        Text("A retro-style text viewer for macOS")
+                        Text("A retro-style text viewer for MacOS")
                             .font(.caption)
                         Text("Supports CP866 encoding and MS-DOS fonts")
                             .font(.caption)

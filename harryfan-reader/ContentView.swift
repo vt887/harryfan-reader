@@ -101,18 +101,22 @@ struct ContentView: View {
                     // Show help
                 }
                 .buttonStyle(RetroMenuButtonStyle())
-                
-                Button("2Open") {
-                    showingFilePicker = true
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-                
-                Button("3Close") {
-                    document.closeFile()
+
+                Button("2Wrap") {
+                    document.wordWrap.toggle()
+                    if !document.fileName.isEmpty {
+                        document.reloadWithNewSettings()
+                    }
                 }
                 .buttonStyle(RetroMenuButtonStyle())
                 .disabled(document.fileName.isEmpty)
+
                 
+                Button("3Open") {
+                    showingFilePicker = true
+                }
+                .buttonStyle(RetroMenuButtonStyle())
+
                 Button("4Search") {
                     showingSearch = true
                 }
@@ -123,12 +127,12 @@ struct ContentView: View {
                 }
                 .buttonStyle(RetroMenuButtonStyle())
                 
-                Button("6Bookmarks") {
+                Button("6Bookm") {
                     showingBookmarks = true
                 }
                 .buttonStyle(RetroMenuButtonStyle())
                 
-                Button("7Home") {
+                Button("7Start") {
                     document.gotoStart()
                 }
                 .buttonStyle(RetroMenuButtonStyle())
@@ -137,24 +141,13 @@ struct ContentView: View {
                     document.gotoEnd()
                 }
                 .buttonStyle(RetroMenuButtonStyle())
-                
-                Button("9Wrap") {
-                    document.wordWrap.toggle()
-                    if !document.fileName.isEmpty {
-                        document.reloadWithNewSettings()
-                    }
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-                .disabled(document.fileName.isEmpty)
-                
-                Button("0Settings") {
+
+                Button("9Menu") {
                     showingSettings = true
                 }
                 .buttonStyle(RetroMenuButtonStyle())
                 
-                Spacer()
-                
-                Button("QQuit") {
+                Button("10Quit") {
                     NSApplication.shared.terminate(nil)
                 }
                 .buttonStyle(RetroMenuButtonStyle())

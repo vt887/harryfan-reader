@@ -1,3 +1,10 @@
+//
+//  FontManager.swift
+//  harryfan-reader
+//
+//  Created by Vad Tymoshyk on 9/1/25.
+//
+
 import SwiftUI
 import Foundation
 
@@ -24,7 +31,7 @@ class FontManager: ObservableObject {
         // Try multiple possible locations for the font file
         let possiblePaths = [
             "vdu.8x16.raw",
-            "TxtViewer/vdu.8x16.raw",
+            "HarryfanReader/vdu.8x16.raw",
             "Resources/vdu.8x16.raw"
         ]
         

@@ -104,7 +104,7 @@ Also, would like to say thanks to Igor Zagumennov (AKA Harry Fan 2:463/2.5) and 
 
 ## License
 
-This project is open source and available under the MIT License.
+This project is open source and available under the GNU GPL License.
 
 ## Contributing
 

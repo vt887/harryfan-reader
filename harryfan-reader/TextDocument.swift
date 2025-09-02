@@ -1,3 +1,10 @@
+//
+//  TextDocument.swift
+//  harryfan-reader
+//
+//  Created by Vad Tymoshyk on 9/1/25.
+//
+
 import SwiftUI
 import Foundation
 
