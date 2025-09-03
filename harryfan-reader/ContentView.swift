@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var showingFilePicker = false
     @State private var showingSearch = false
     @State private var showingBookmarks = false
+    @State private var lastSearchTerm: String = ""
     @State private var showingSettings = false
     @State private var showingGotoDialog = false
     @State private var gotoLineNumber = ""
@@ -24,38 +25,65 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Title bar
-            HStack {
-                Text(document.fileName.isEmpty ? "TxtViewer" : document.fileName)
+            // Title bar (inverted: white background, blue letters)
+            HStack(alignment: .center) {
+                Text(document.fileName.isEmpty ? "HarryFanReader" : document.fileName)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(textColor)
+                    .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
                 
                 Spacer()
                 
-                // Status info
+                // Up/Down buttons and percent
                 if !document.fileName.isEmpty {
+                    // Percent at top-right, based on center line index
+                    let percent = document.totalLines > 0 ? Int((Double(document.currentLine + 1) / Double(document.totalLines)) * 100.0) : 0
+                    Text("\(percent)%")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
+                        .padding(.trailing, 8)
+                    
+                    Button(action: { document.currentLine = max(0, document.currentLine - 1) }) {
+                        Image(systemName: "chevron.up")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
+                    .help("Scroll Up")
+                    
+                    Button(action: { document.currentLine = min(max(0, document.totalLines - 1), document.currentLine + 1) }) {
+                        Image(systemName: "chevron.down")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
+                    .help("Scroll Down")
+                    
+                    Divider()
+                        .frame(height: 14)
+                        .background(Color(red: 0, green: 0, blue: 0.5).opacity(0.5))
+                        .padding(.horizontal, 4)
+                    
+                    // Status info (center line number)
                     Text("Line \(document.currentLine + 1) of \(document.totalLines)")
                         .font(.system(size: 12))
-                        .foregroundColor(textColor)
+                        .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
                     
                     Text("CP866")
                         .font(.system(size: 12))
-                        .foregroundColor(highlightColor)
+                        .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
                 }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(backgroundColor)
+            .background(Color.white)
             
             // Main content area
             if document.fileName.isEmpty {
                 // Welcome screen
                 VStack(spacing: 20) {
-                    Text("TXT VIEWER")
+                    Text("HarryFan Reader")
                         .font(.system(size: 24, weight: .bold))
                         .foregroundColor(highlightColor)
                     
-                    Text("Retro-style text viewer for CP866 encoded files")
+                    Text("Retro MS-DOS Style Text Viewer from Fidonet era")
                         .font(.system(size: 14))
                         .foregroundColor(textColor)
                     
@@ -70,29 +98,11 @@ struct ContentView: View {
                     print("Welcome screen appeared")
                 }
             } else {
-                // Text content
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 0) {
-                            ForEach(Array(document.content.enumerated()), id: \.offset) { index, line in
-                                Text(line.isEmpty ? " " : line)
-                                    .font(.system(size: fontManager.fontSize, weight: .regular, design: .monospaced))
-                                    .foregroundColor(textColor)
-                                    .background(index == document.currentLine ? highlightColor.opacity(0.3) : Color.clear)
-                                    .id(index)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 2)
-                            }
-                        }
-                    }
-                    .onChange(of: document.currentLine) { _, newLine in
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            proxy.scrollTo(newLine, anchor: .center)
-                        }
-                    }
-                }
-                .background(backgroundColor)
+                // Text content rendered in 80x24 using vdu.8x16.raw
+                MSDOSScreenView(document: document)
+                    .environmentObject(fontManager)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .background(backgroundColor)
             }
             
             // Bottom menu bar (MS-DOS style)
@@ -172,7 +182,7 @@ struct ContentView: View {
             }
         }
         .sheet(isPresented: $showingSearch) {
-            SearchView(isPresented: $showingSearch, document: document)
+            SearchView(isPresented: $showingSearch, document: document, lastSearchTerm: $lastSearchTerm)
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
@@ -180,6 +190,11 @@ struct ContentView: View {
                 .environmentObject(document)
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingBookmarks) {
+            BookmarksView(isPresented: $showingBookmarks, document: document)
+                .environmentObject(bookmarkManager)
+                .frame(width: 400, height: 300)
         }
         .alert("Go to Line", isPresented: $showingGotoDialog) {
             TextField("Line number", text: $gotoLineNumber)
@@ -197,8 +212,45 @@ struct ContentView: View {
         } message: {
             Text("Enter line number to go to:")
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
             // Handle window focus
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openSearchCommand)) { _ in
+            if document.fileName.isEmpty { return }
+            showingSearch = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .findNextCommand)) { _ in
+            guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
+            if let idx = document.search(lastSearchTerm, direction: .forward) {
+                document.gotoLine(idx + 1)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .findPreviousCommand)) { _ in
+            guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
+            if let idx = document.search(lastSearchTerm, direction: .backward) {
+                document.gotoLine(idx + 1)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in
+            guard !document.fileName.isEmpty else { return }
+            let desc = document.getCurrentLine()
+            bookmarkManager.addBookmark(fileName: document.fileName, line: document.currentLine, description: desc)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .nextBookmarkCommand)) { _ in
+            guard !document.fileName.isEmpty else { return }
+            if let bm = bookmarkManager.nextBookmark(after: document.currentLine, in: document.fileName) {
+                document.gotoLine(bm.line + 1)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .previousBookmarkCommand)) { _ in
+            guard !document.fileName.isEmpty else { return }
+            if let bm = bookmarkManager.previousBookmark(before: document.currentLine, in: document.fileName) {
+                document.gotoLine(bm.line + 1)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showBookmarksCommand)) { _ in
+            guard !document.fileName.isEmpty else { return }
+            showingBookmarks = true
         }
     }
     

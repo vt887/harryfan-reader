@@ -10,6 +10,7 @@ import SwiftUI
 struct SearchView: View {
     @Binding var isPresented: Bool
     @ObservedObject var document: TextDocument
+    @Binding var lastSearchTerm: String
     @State private var searchTerm: String = ""
     @State private var searchDirection: SearchDirection = .forward
     @State private var lastSearchResult: Int?
@@ -75,6 +76,7 @@ struct SearchView: View {
             // Focus the search field
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 // Focus logic would go here
+                self.searchTerm = self.lastSearchTerm
             }
         }
     }
@@ -84,6 +86,7 @@ struct SearchView: View {
         
         if let result = document.search(searchTerm, direction: searchDirection) {
             lastSearchResult = result
+            lastSearchTerm = searchTerm
             document.gotoLine(result + 1)
         } else {
             lastSearchResult = nil

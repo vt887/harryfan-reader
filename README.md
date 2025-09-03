@@ -1,4 +1,4 @@
-# Harryfan reader - Retro MS-DOS Style Text Viewer from Fidonet era
+# HarryFan Reader - Retro MS-DOS Style Text Viewer from Fidonet era
 
 A nostalgic text viewer for macOS that emulates the classic MS-DOS aesthetic with blue background, white text, and support for CP866 encoding (perfect for Cyrillic text files).
 
@@ -56,13 +56,13 @@ swift run
 
 ### Option 2: Using Xcode
 1. Clone or download this repository
-2. Open `TxtViewer.xcodeproj` in Xcode
+2. Open `harryfan-reader.xcodeproj` in Xcode
 3. Select your target device (macOS)
 4. Build and run the project (Cmd+R)
 
 ## Usage
 
-1. Launch TxtViewer
+1. Launch HarryFanViewer
 2. Click "Open File" or use Cmd+O to select a text file
 3. The application will automatically detect CP866 encoding for Cyrillic text
 4. Use the bottom menu bar or keyboard shortcuts for navigation
