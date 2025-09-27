@@ -2,7 +2,7 @@
 //  BookmarksView.swift
 //  harryfan-reader
 //
-//  Created by Junie (AI) on 9/2/25.
+//  Created by Vad Tymoshyk on 9/2/25.
 //
 
 import SwiftUI

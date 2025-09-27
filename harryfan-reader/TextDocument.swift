@@ -21,10 +21,10 @@ class TextDocument: ObservableObject {
     
     private var originalData: Data?
     
-    public var quitMessage: String { MSDOSMessages.quitMessage }
+    public var quitMessage: String { Messages.quitMessage }
     
     func loadWelcomeText() {
-        content = splitLines(MSDOSMessages.welcomeMessage)
+        content = splitLines(Messages.welcomeMessage)
         totalLines = content.count
         currentLine = 0
         fileName = ""

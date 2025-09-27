@@ -18,10 +18,15 @@ let package = Package(
             name: "HarryfanReader",
             dependencies: [],
             path: "harryfan-reader",
+            exclude: [
+            "HarryFanReader.entitlements",
+            "Info.plist"
+            ],
             resources: [
                 .process("vdu.8x16.raw"),
                 .process("Assets.xcassets"),
-                .process("Preview Content/Preview Assets.xcassets")
+                .process("Preview Content/Preview Assets.xcassets"),
+                .process("Info.plist")
             ]
         )
     ]

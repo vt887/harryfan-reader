@@ -27,11 +27,11 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Title bar (inverted: white background, blue letters)
+            // Title bar
             HStack(alignment: .center) {
                 Text(document.fileName.isEmpty ? "HarryFanReader" : document.fileName)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(MSDOSColors.topMenuFontColor)
+                    .foregroundColor(Colors.topMenuFontColor)
 
                 Spacer()
 
@@ -41,53 +41,53 @@ struct ContentView: View {
                     let percent = document.totalLines > 0 ? Int((Double(document.currentLine + 1) / Double(document.totalLines)) * 100.0) : 0
                     Text("\(percent)%")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(MSDOSColors.foregroundColor)
+                        .foregroundColor(Colors.foregroundColor)
                         .padding(.trailing, 8)
                     
                     Button(action: { document.currentLine = max(0, document.currentLine - 1) }) {
                         Image(systemName: "chevron.up")
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(MSDOSColors.foregroundColor)
+                    .foregroundColor(Colors.foregroundColor)
                     .help("Scroll Up")
                     
                     Button(action: { document.currentLine = min(max(0, document.totalLines - 1), document.currentLine + 1) }) {
                         Image(systemName: "chevron.down")
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(MSDOSColors.foregroundColor)
+                    .foregroundColor(Colors.foregroundColor)
                     .help("Scroll Down")
                     
                     Divider()
                         .frame(height: 14)
-                        .background(MSDOSColors.foregroundColor)
+                        .background(Colors.foregroundColor)
                         .padding(.horizontal, 4)
                     
                     // Status info (center line number)
                     Text("Line \(document.currentLine + 1) of \(document.totalLines)")
                         .font(.system(size: 12))
-                        .foregroundColor(MSDOSColors.foregroundColor)
+                        .foregroundColor(Colors.foregroundColor)
                     
                     Text("CP866")
                         .font(.system(size: 12))
-                        .foregroundColor(MSDOSColors.foregroundColor)
+                        .foregroundColor(Colors.foregroundColor)
                 }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(MSDOSColors.foregroundColor)
+            .background(Colors.foregroundColor)
             
             // Main content area
             if document.shouldShowQuitMessage {
-                MSDOSScreenView(document: document, contentToDisplay: MSDOSMessages.quitMessage)
+                    ScreenView(document: document, contentToDisplay: Messages.quitMessage)
                     .environmentObject(fontManager)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .background(MSDOSColors.foregroundColor)
+                    .background(Colors.foregroundColor)
             } else {
-                MSDOSScreenView(document: document)
+                ScreenView(document: document)
                     .environmentObject(fontManager)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .background(MSDOSColors.foregroundColor)
+                    .background(Colors.foregroundColor)
                     .onAppear {
                         if document.fileName.isEmpty {
                             document.loadWelcomeText()
@@ -96,13 +96,10 @@ struct ContentView: View {
                     }
             }
             
-            // Bottom menu bar (MS-DOS style)
-            MSDOSScreenView(document: document, contentToDisplay: document.getMenuBarText())
-                .environmentObject(fontManager)
-                .frame(maxWidth: .infinity, maxHeight: 16, alignment: .center)
-                .background(MSDOSColors.textColor)
+            // Bottom menu bar
+            BottomMenuBar(document: document)
         }
-        .background(MSDOSColors.foregroundColor)
+        .background(Colors.foregroundColor)
         .fileImporter(
             isPresented: $showingFilePicker,
             allowedContentTypes: [UTType.plainText],
