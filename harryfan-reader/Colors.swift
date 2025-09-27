@@ -16,8 +16,8 @@ enum Colors {
 
     // Menu/status bar accents
     static let leftScrollLane = Color(red: 0.333, green: 1.0, blue: 0.333) // Bright green
-    static let topMenu = Color(red: 0.667, green: 0.667, blue: 0.667) // Light gray
-    static let topMenuFontColor = Color(red: 0.667, green: 0.667, blue: 0.667) // Light gray
+    static let titleBar = Color(red: 0.667, green: 0.667, blue: 0.667) // Light gray
+    static let titleBarFontColor = Color(red: 0.667, green: 0.667, blue: 0.667) // Light gray
     static let bottomMenu = Color(red: 0.333, green: 1.0, blue: 1.0) // Bright cyan
     static let bottomMenuFontColor = Color(red: 0.333, green: 1.0, blue: 1.0) // Bright cyan
 }

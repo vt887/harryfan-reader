@@ -56,9 +56,7 @@ class FontManager: ObservableObject {
         }
 
         guard let url = fontURL else {
-            print("Failed to find font file, using built-in font")
-            // Create a built-in font as fallback
-            createBuiltinFont()
+            print("Failed to find font file.")
             return
         }
 
@@ -67,74 +65,10 @@ class FontManager: ObservableObject {
             parseFontData()
             print("Font loaded successfully from: \(url.path)")
         } catch {
-            print("Failed to load font: \(error), using built-in font")
-            createBuiltinFont()
+            print("Failed to load font: \(error)")
         }
     }
 
-    private func createFallbackFont() {
-        // Create a simple 8x16 bitmap font for fallback
-        let charWidth = 8
-        let charHeight = 16
-        let numChars = 256
-
-        for charIndex in 0 ..< numChars {
-            var charBitmap: [Bool] = []
-
-            // Create a simple pattern for each character
-            for row in 0 ..< charHeight {
-                for col in 0 ..< charWidth {
-                    // Simple pattern: first and last rows, first and last columns
-                    let isSet = row == 0 || row == charHeight - 1 || col == 0 || col == charWidth - 1
-                    charBitmap.append(isSet)
-                }
-            }
-
-            fontCache[UInt8(charIndex)] = charBitmap
-        }
-
-        print("Fallback font created successfully")
-    }
-
-    private func createBuiltinFont() {
-        // Create a basic 8x16 font with common characters
-        let charWidth = 8
-        let charHeight = 16
-        let numChars = 256
-
-        // Define some basic character patterns
-        let patterns: [UInt8: [UInt8]] = [
-            0x20: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], // Space
-            0x41: [0x00, 0x18, 0x24, 0x42, 0x42, 0x7E, 0x42, 0x42, 0x42, 0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], // A
-            0x42: [0x00, 0x7C, 0x42, 0x42, 0x42, 0x7C, 0x42, 0x42, 0x42, 0x7C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], // B
-            // Add more characters as needed
-        ]
-
-        for charIndex in 0 ..< numChars {
-            if let pattern = patterns[UInt8(charIndex)] {
-                var charBitmap: [Bool] = []
-                for row in pattern {
-                    for bit in 0 ..< charWidth {
-                        let isSet = (row & (1 << (7 - bit))) != 0
-                        charBitmap.append(isSet)
-                    }
-                }
-                fontCache[UInt8(charIndex)] = charBitmap
-            } else {
-                // Create a simple fallback pattern
-                var charBitmap: [Bool] = []
-                for row in 0 ..< charHeight {
-                    for col in 0 ..< charWidth {
-                        let isSet = row == 0 || row == charHeight - 1 || col == 0 || col == charWidth - 1
-                        charBitmap.append(isSet)
-                    }
-                }
-                fontCache[UInt8(charIndex)] = charBitmap
-            }
-        }
-
-        print("Built-in font created successfully")
-    }
 
     private func parseFontData() {
         guard let data = fontData else { return }
@@ -157,6 +91,9 @@ class FontManager: ObservableObject {
                         let isSet = (byte & (1 << (7 - bit))) != 0
                         charBitmap.append(isSet)
                     }
+                } else {
+                    // If data is truncated, fill with empty lines
+                    charBitmap.append(contentsOf: Array(repeating: false, count: charWidth))
                 }
             }
 
@@ -166,12 +103,29 @@ class FontManager: ObservableObject {
 
     func getCharacterBitmap(for char: Character) -> [Bool]? {
         guard let scalar = char.unicodeScalars.first else {
-            return fontCache[0x20] // Return space character
+            return fontCache[0x20] // Return space character if no scalar
         }
 
-        // CP866 encoding mapping for Russian characters
         let cp866Value = convertToCP866(scalar)
-        return fontCache[cp866Value]
+        let bitmap = fontCache[cp866Value]
+
+        if bitmap == nil {
+            // Fallback: create a simple square for unknown characters if not already in cache
+            if fontCache[0x3F] == nil { // 0x3F is '?'
+                var fallbackBitmap: [Bool] = []
+                let charHeight = 16 // Assuming these are still 16x8
+                let charWidth = 8
+                for row in 0 ..< charHeight {
+                    for col in 0 ..< charWidth {
+                        let isSet = row == 0 || row == charHeight - 1 || col == 0 || col == charWidth - 1
+                        fallbackBitmap.append(isSet)
+                    }
+                }
+                fontCache[0x3F] = fallbackBitmap
+            }
+            return fontCache[0x3F]
+        }
+        return bitmap
     }
 
     private static let cp866UnicodePoints: [UInt32] = [
