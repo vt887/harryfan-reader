@@ -27,20 +27,23 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Title bar
+            // Title bar (Line 1)
             TitleBar(document: document)
 
-            // Main content area
+            // Empty line 2
+            ScreenView(document: document, contentToDisplay: " ", displayRows: 1, rowOffset: 1)
+                .environmentObject(fontManager)
+                .frame(height: CGFloat(1) * CGFloat(ScreenView.charH))
+
+            // Main content area (Lines 3-9) - 7 rows
             if document.shouldShowQuitMessage {
-                ScreenView(document: document, contentToDisplay: Messages.quitMessage)
+                ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: 7, rowOffset: 2)
                     .environmentObject(fontManager)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .background(Colors.foregroundColor)
+                    .frame(height: CGFloat(7) * CGFloat(ScreenView.charH))
             } else {
-                ScreenView(document: document)
+                ScreenView(document: document, displayRows: 7, rowOffset: 2)
                     .environmentObject(fontManager)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .background(Colors.foregroundColor)
+                    .frame(height: CGFloat(7) * CGFloat(ScreenView.charH))
                     .onAppear {
                         if document.fileName.isEmpty {
                             document.loadWelcomeText()
@@ -49,15 +52,26 @@ struct ContentView: View {
                     }
             }
 
-            // Bottom menu bar
-            BottomMenuBar(document: document)
+            // Empty lines 10-23 (14 rows)
+            ScreenView(document: document,
+                       contentToDisplay: String(repeating: "\n",
+                                                count: 14),
+                       displayRows: 14,
+                       rowOffset: 9)
+                .environmentObject(fontManager)
+                .frame(height: CGFloat(14) * CGFloat(ScreenView.charH))
+
+            // Bottom menu bar (Line 24)
+            MenuBar(document: document)
         }
+        .frame(width: CGFloat(ScreenView.cols * ScreenView.charW),
+               height: CGFloat(ScreenView.totalScreenRows) * CGFloat(ScreenView.charH))
         .background(Colors.foregroundColor)
         .fileImporter(
             isPresented: $showingFilePicker,
             allowedContentTypes: [UTType.plainText],
             allowsMultipleSelection: false,
-        ) { result in
+            ) { result in
             switch result {
             case let .success(urls):
                 if let url = urls.first {
@@ -124,14 +138,14 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .nextBookmarkCommand)) { _ in
             guard !document.fileName.isEmpty else { return }
-            if let bm = bookmarkManager.nextBookmark(after: document.currentLine, in: document.fileName) {
-                document.gotoLine(bm.line + 1)
+            if let bookmark = bookmarkManager.nextBookmark(after: document.currentLine, in: document.fileName) {
+                document.gotoLine(bookmark.line + 1)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .previousBookmarkCommand)) { _ in
             guard !document.fileName.isEmpty else { return }
-            if let bm = bookmarkManager.previousBookmark(before: document.currentLine, in: document.fileName) {
-                document.gotoLine(bm.line + 1)
+            if let bookmark = bookmarkManager.previousBookmark(before: document.currentLine, in: document.fileName) {
+                document.gotoLine(bookmark.line + 1)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .showBookmarksCommand)) { _ in
@@ -153,11 +167,11 @@ struct RetroButtonStyle: ButtonStyle {
             .background(
                 RoundedRectangle(cornerRadius: 4)
                     .fill(configuration.isPressed ? Color.gray : Color(red: 0, green: 0, blue: 0.7)),
-            )
+                )
             .overlay(
                 RoundedRectangle(cornerRadius: 4)
                     .stroke(Color.white, lineWidth: 1),
-            )
+                )
     }
 }
 
@@ -171,7 +185,7 @@ struct RetroMenuButtonStyle: ButtonStyle {
             .background(
                 RoundedRectangle(cornerRadius: 2)
                     .fill(configuration.isPressed ? Color.gray : Color.clear),
-            )
+                )
     }
 }
 

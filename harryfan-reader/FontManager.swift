@@ -34,17 +34,10 @@ class FontManager: ObservableObject {
 
         // Prefer SwiftPM resource bundle if available
         #if SWIFT_PACKAGE
-            if let url = Bundle.module.url(forResource: "vdu.8x16", withExtension: "raw") {
-                fontURL = url
-            }
-        #endif
-
-        // Fallback to main bundle
-        if fontURL == nil {
-            if let url = Bundle.main.url(forResource: "vdu.8x16", withExtension: "raw") {
-                fontURL = url
-            }
+        if let url = Bundle.module.url(forResource: "vdu.8x16", withExtension: "raw") {
+            fontURL = url
         }
+        #endif
 
         // If not found in bundle, try to find it in the current directory
         if fontURL == nil {
@@ -68,7 +61,6 @@ class FontManager: ObservableObject {
             print("Failed to load font: \(error)")
         }
     }
-
 
     private func parseFontData() {
         guard let data = fontData else { return }
@@ -160,7 +152,7 @@ class FontManager: ObservableObject {
         0x0440, 0x0441, 0x0442, 0x0443, 0x0444, 0x0445, 0x0446, 0x0447,
         0x0448, 0x0449, 0x044A, 0x044B, 0x044C, 0x044D, 0x044E, 0x044F,
         0x0401, 0x0451, 0x0404, 0x0454, 0x0407, 0x0457, 0x040E, 0x045E,
-        0x00B0, 0x2219, 0x00B7, 0x221A, 0x2116, 0x00A4, 0x25A0, 0x00A0,
+        0x00B0, 0x2219, 0x00B7, 0x221A, 0x2116, 0x00A4, 0x25A0, 0x00A0
     ]
 
     private static let unicodeToCP866: [UInt32: UInt8] = {

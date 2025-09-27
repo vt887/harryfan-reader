@@ -1,5 +1,9 @@
 #!/bin/bash
 
+echo "Formatting the code..."
+swiftformat . --swift-version 6.2
+
+
 echo "Building HarryFanReader..."
 
 # Build the application

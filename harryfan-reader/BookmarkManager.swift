@@ -48,16 +48,16 @@ class BookmarkManager: ObservableObject {
 
     func nextBookmark(after line: Int, in fileName: String) -> Bookmark? {
         let fileBookmarks = getBookmarks(for: fileName).sorted { $0.line < $1.line }
-        for bm in fileBookmarks {
-            if bm.line > line { return bm }
+        for bookmark in fileBookmarks where bookmark.line > line {
+            return bookmark
         }
         return fileBookmarks.first
     }
 
     func previousBookmark(before line: Int, in fileName: String) -> Bookmark? {
         let fileBookmarks = getBookmarks(for: fileName).sorted { $0.line < $1.line }
-        for bm in fileBookmarks.reversed() {
-            if bm.line < line { return bm }
+        for bookmark in fileBookmarks.reversed() where bookmark.line < line {
+            return bookmark
         }
         return fileBookmarks.last
     }
@@ -70,8 +70,7 @@ class BookmarkManager: ObservableObject {
 
     private func loadBookmarks() {
         if let data = UserDefaults.standard.data(forKey: "TxtViewerBookmarks"),
-           let loadedBookmarks = try? JSONDecoder().decode([Bookmark].self, from: data)
-        {
+           let loadedBookmarks = try? JSONDecoder().decode([Bookmark].self, from: data) {
             bookmarks = loadedBookmarks
         }
     }

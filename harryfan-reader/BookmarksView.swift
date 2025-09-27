@@ -22,22 +22,22 @@ struct BookmarksView: View {
                     .buttonStyle(.plain)
             }
             List {
-                ForEach(bookmarkManager.getBookmarks(for: document.fileName)) { bm in
+                ForEach(bookmarkManager.getBookmarks(for: document.fileName)) { bookmark in
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("Line \(bm.line + 1)")
+                            Text("Line \(bookmark.line + 1)")
                                 .font(.body)
-                            Text(bm.description)
+                            Text(bookmark.description)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
                         Button("Go") {
-                            document.gotoLine(bm.line + 1)
+                            document.gotoLine(bookmark.line + 1)
                             isPresented = false
                         }
                         Button(role: .destructive) {
-                            bookmarkManager.removeBookmark(bm)
+                            bookmarkManager.removeBookmark(bookmark)
                         } label: {
                             Text("Delete")
                         }
@@ -47,7 +47,9 @@ struct BookmarksView: View {
             HStack {
                 Button("Add Current Line") {
                     let desc = document.getCurrentLine()
-                    bookmarkManager.addBookmark(fileName: document.fileName, line: document.currentLine, description: desc)
+                    bookmarkManager.addBookmark(fileName: document.fileName,
+                                                line: document.currentLine,
+                                                description: desc)
                 }
                 Spacer()
             }

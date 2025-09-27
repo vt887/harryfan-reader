@@ -12,12 +12,16 @@ struct ScreenView: View {
     @EnvironmentObject var fontManager: FontManager
 
     var contentToDisplay: String? // New optional parameter
+    var displayRows: Int // New parameter for number of rows to display
+    var rowOffset: Int = 0 // New parameter for line number offset
+    var backgroundColor: Color = Colors.foregroundColor // New parameter
+    var fontColor: Color = Colors.textColor // New parameter
 
     // 80x24 text mode with 8x16 font
-    private let cols = 80
-    private let rows = 24
-    private let charW = 8
-    private let charH = 16
+    static let cols = 80
+    static let charW = 8
+    static let charH = 16
+    static let totalScreenRows = 24 // Total rows on the physical screen
 
     // Colors: MS-DOS like
     private let bgColor = Colors.foregroundColor
@@ -26,7 +30,7 @@ struct ScreenView: View {
     var body: some View {
         Canvas { context, size in
             // Fill background
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(bgColor))
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
 
             let linesToRender: [String]
             if let customContent = contentToDisplay {
@@ -34,72 +38,80 @@ struct ScreenView: View {
             } else {
                 guard document.totalLines > 0 else { return }
                 // Compute visible window so that document.currentLine is centered
-                let half = rows / 2
-                let maxStart = max(0, document.totalLines - rows)
+                let half = displayRows / 2
+                let maxStart = max(0, document.totalLines - displayRows)
                 let startLine = max(0, min(maxStart, document.currentLine - half))
-                linesToRender = Array(document.content[startLine ..< min(document.content.count, startLine + rows)])
+                linesToRender = Array(document.content[startLine ..< min(document.content.count,
+                                                                         startLine + displayRows)])
             }
 
             // Precompute cell size to fit exactly 640x384; if canvas is larger, center the content
-            let idealSize = CGSize(width: CGFloat(cols * charW), height: CGFloat(rows * charH))
+            let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW),
+                                   height: CGFloat(displayRows * ScreenView.charH))
             let offsetX = (size.width - idealSize.width) / 2.0
-            let offsetY = (size.height - idealSize.height) / 2.0
 
             // Draw characters
-            for row in 0 ..< rows {
+            for row in 0 ..< displayRows {
                 // Draw line number
-                let lineNumber = String(format: "%2d", row + 1)
+                let lineNumber = String(format: "%2d", row + rowOffset + 1)
                 var currentColumn = 0
-                for ch in lineNumber {
-                    drawChar(ch, at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY), customFgColor: Colors.leftScrollLane)
+                for character in lineNumber {
+                    drawChar(character,
+                             at: (currentColumn, row),
+                             in: context, origin: CGPoint(x: offsetX, y: 0),
+                             customFgColor: Colors.scrollLaneColor)
                     currentColumn += 1
                 }
-                // Draw a space after the line number
-                drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY), customFgColor: Colors.leftScrollLane)
-                currentColumn += 1 // Increment column for the space
 
                 if row < linesToRender.count {
                     let line = linesToRender[row]
                     // Loop columns up to 80
 
-                    for ch in line {
-                        if currentColumn >= cols { break }
-                        drawChar(ch, at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
+                    for character in line {
+                        if currentColumn >= ScreenView.cols { break }
+                        drawChar(character, at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: 0))
                         currentColumn += 1
                     }
                     // Fill the rest with spaces
-                    while currentColumn < cols {
-                        drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
+                    while currentColumn < ScreenView.cols {
+                        drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: 0))
                         currentColumn += 1
                     }
                 } else {
                     // Empty line - fill the rest with spaces
-                    while currentColumn < cols {
-                        drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
+                    while currentColumn < ScreenView.cols {
+                        drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: 0))
                         currentColumn += 1
                     }
                 }
             }
         }
-        .frame(minWidth: CGFloat(cols * charW), minHeight: CGFloat(rows * charH))
         .accessibilityHidden(true) // no cursor or focus ring
     }
 
-    private func drawChar(_ c: Character, at pos: (Int, Int), in context: GraphicsContext, origin: CGPoint, customFgColor: Color? = nil) {
-        guard let bitmap = fontManager.getCharacterBitmap(for: c), bitmap.count == (charW * charH) else { return }
+    private func drawChar(_ character: Character,
+                          at pos: (Int, Int),
+                          in context: GraphicsContext,
+                          origin: CGPoint,
+                          customFgColor: Color? = nil) {
+        guard let bitmap = fontManager.getCharacterBitmap(for: character),
+              bitmap.count == (ScreenView.charW * ScreenView.charH) else { return }
 
-        let (col, row) = pos
-        let baseX = origin.x + CGFloat(col * charW)
-        let baseY = origin.y + CGFloat(row * charH)
+        let (column, row) = pos
+        let baseX = origin.x + CGFloat(column * ScreenView.charW)
+        let baseY = origin.y + CGFloat(row * ScreenView.charH)
 
         // Determine foreground color to use
-        let currentFgColor = customFgColor ?? fgColor
+        let currentFgColor = customFgColor ?? fontColor
 
         // Draw as per-pixel rectangles without antialiasing
-        for y in 0 ..< charH {
-            for x in 0 ..< charW {
-                if bitmap[y * charW + x] {
-                    let rect = CGRect(x: baseX + CGFloat(x), y: baseY + CGFloat(y), width: 1, height: 1)
+        for rowIndex in 0 ..< ScreenView.charH {
+            for columnIndex in 0 ..< ScreenView.charW {
+                if bitmap[rowIndex * ScreenView.charW + columnIndex] {
+                    let rect = CGRect(x: baseX + CGFloat(columnIndex),
+                                      y: baseY + CGFloat(rowIndex),
+                                      width: 1,
+                                      height: 1)
                     context.fill(Path(rect), with: .color(currentFgColor))
                 }
             }
