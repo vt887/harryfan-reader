@@ -93,7 +93,8 @@ struct ScreenView: View {
                           at pos: (Int, Int),
                           in context: GraphicsContext,
                           origin: CGPoint,
-                          customFgColor: Color? = nil) {
+                          customFgColor: Color? = nil)
+    {
         guard let bitmap = fontManager.getCharacterBitmap(for: character),
               bitmap.count == (ScreenView.charW * ScreenView.charH) else { return }
 

@@ -4,13 +4,13 @@ import PackageDescription
 let package = Package(
     name: "HarryfanReader",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
     ],
     products: [
         .executable(
             name: "HarryfanReader",
             targets: ["HarryfanReader"],
-            )
+            ),
     ],
     dependencies: [],
     targets: [
@@ -20,13 +20,13 @@ let package = Package(
             path: "harryfan-reader",
             exclude: [
                 "HarryFanReader.entitlements",
-                "Info.plist"
+                "Info.plist",
             ],
             resources: [
                 .process("Fonts/vdu.8x16.raw"),
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
-            ]
-        )
+            ],
+            ),
     ],
     )

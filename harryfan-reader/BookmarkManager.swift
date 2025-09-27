@@ -70,7 +70,8 @@ class BookmarkManager: ObservableObject {
 
     private func loadBookmarks() {
         if let data = UserDefaults.standard.data(forKey: "TxtViewerBookmarks"),
-           let loadedBookmarks = try? JSONDecoder().decode([Bookmark].self, from: data) {
+           let loadedBookmarks = try? JSONDecoder().decode([Bookmark].self, from: data)
+        {
             bookmarks = loadedBookmarks
         }
     }

@@ -73,8 +73,8 @@ class TextDocument: ObservableObject {
 
     func getMenuBarText() -> String {
         let menuItems = [
-            "1Help", "2Wrap", "3Open", "4Search", "5Goto",
-            "6Bookm", "7Start", "8End", "9Menu", "10Quit"
+            " 1Help", " 2Wrap  ", " 3Open  ", " 4Search ", " 5Goto  ",
+            " 6Bookm  ", " 7Start  ", " 8End   ", " 9Menu  ", "10Quit  ",
         ]
         let menuBarString = menuItems.map { $0.padding(toLength: 7,
                                                        withPad: " ",
@@ -117,7 +117,7 @@ class TextDocument: ObservableObject {
             0x0440, 0x0441, 0x0442, 0x0443, 0x0444, 0x0445, 0x0446, 0x0447,
             0x0448, 0x0449, 0x044A, 0x044B, 0x044C, 0x044D, 0x044E, 0x044F,
             0x0401, 0x0451, 0x0404, 0x0454, 0x0407, 0x0457, 0x040E, 0x045E,
-            0x00B0, 0x2219, 0x00B7, 0x221A, 0x2116, 0x00A4, 0x25A0, 0x00A0
+            0x00B0, 0x2219, 0x00B7, 0x221A, 0x2116, 0x00A4, 0x25A0, 0x00A0,
         ]
 
         var result = String.UnicodeScalarView()
