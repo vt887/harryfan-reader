@@ -1,8 +1,17 @@
+//
+//  MSDOSScreenView.swift
+//  harryfan-reader
+//
+//  Created by Vad Tymoshyk on 9/1/25.
+//
+
 import SwiftUI
 
 struct MSDOSScreenView: View {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
+    
+    var contentToDisplay: String? = nil // New optional parameter
 
     // 80x24 text mode with 8x16 font
     private let cols = 80
@@ -11,21 +20,26 @@ struct MSDOSScreenView: View {
     private let charH = 16
 
     // Colors: MS-DOS like
-    private let bgColor = Color(red: 0, green: 0, blue: 0.5)
-    private let fgColor = Color.white
+    private let bgColor = MSDOSColors.foregroundColor
+    private let fgColor = MSDOSColors.textColor
 
     var body: some View {
         Canvas { context, size in
             // Fill background
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(bgColor))
 
-            guard document.totalLines > 0 else { return }
-
-            // Compute visible window so that document.currentLine is centered
-            let half = rows / 2
-            let maxStart = max(0, document.totalLines - rows)
-            let startLine = max(0, min(maxStart, document.currentLine - half))
-
+            let linesToRender: [String]
+            if let customContent = contentToDisplay {
+                linesToRender = customContent.components(separatedBy: "\n")
+            } else {
+                guard document.totalLines > 0 else { return }
+                // Compute visible window so that document.currentLine is centered
+                let half = rows / 2
+                let maxStart = max(0, document.totalLines - rows)
+                let startLine = max(0, min(maxStart, document.currentLine - half))
+                linesToRender = Array(document.content[startLine..<min(document.content.count, startLine + rows)])
+            }
+            
             // Precompute cell size to fit exactly 640x384; if canvas is larger, center the content
             let idealSize = CGSize(width: CGFloat(cols * charW), height: CGFloat(rows * charH))
             let offsetX = (size.width - idealSize.width) / 2.0
@@ -33,25 +47,36 @@ struct MSDOSScreenView: View {
 
             // Draw characters
             for row in 0..<rows {
-                let lineIndex = startLine + row
-                if lineIndex >= 0 && lineIndex < document.content.count {
-                    let line = document.content[lineIndex]
+                // Draw line number
+                let lineNumber = String(format: "%2d", row + 1)
+                var currentColumn = 0
+                for ch in lineNumber {
+                    drawChar(ch, at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY), customFgColor: MSDOSColors.leftScrollLane)
+                    currentColumn += 1
+                }
+                // Draw a space after the line number
+                drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY), customFgColor: MSDOSColors.leftScrollLane)
+                currentColumn += 1 // Increment column for the space
+
+                if row < linesToRender.count {
+                    let line = linesToRender[row]
                     // Loop columns up to 80
-                    var column = 0
+                    
                     for ch in line {
-                        if column >= cols { break }
-                        drawChar(ch, at: (column, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
-                        column += 1
+                        if currentColumn >= cols { break }
+                        drawChar(ch, at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
+                        currentColumn += 1
                     }
                     // Fill the rest with spaces
-                    while column < cols {
-                        drawChar(" ", at: (column, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
-                        column += 1
+                    while currentColumn < cols {
+                        drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
+                        currentColumn += 1
                     }
                 } else {
-                    // Empty line
-                    for col in 0..<cols {
-                        drawChar(" ", at: (col, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
+                    // Empty line - fill the rest with spaces
+                    while currentColumn < cols {
+                        drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: offsetY))
+                        currentColumn += 1
                     }
                 }
             }
@@ -60,19 +85,22 @@ struct MSDOSScreenView: View {
         .accessibilityHidden(true) // no cursor or focus ring
     }
 
-    private func drawChar(_ c: Character, at pos: (Int, Int), in context: GraphicsContext, origin: CGPoint) {
+    private func drawChar(_ c: Character, at pos: (Int, Int), in context: GraphicsContext, origin: CGPoint, customFgColor: Color? = nil) {
         guard let bitmap = fontManager.getCharacterBitmap(for: c), bitmap.count == (charW * charH) else { return }
 
         let (col, row) = pos
         let baseX = origin.x + CGFloat(col * charW)
         let baseY = origin.y + CGFloat(row * charH)
 
+        // Determine foreground color to use
+        let currentFgColor = customFgColor ?? fgColor
+
         // Draw as per-pixel rectangles without antialiasing
         for y in 0..<charH {
             for x in 0..<charW {
                 if bitmap[y * charW + x] {
                     let rect = CGRect(x: baseX + CGFloat(x), y: baseY + CGFloat(y), width: 1, height: 1)
-                    context.fill(Path(rect), with: .color(fgColor))
+                    context.fill(Path(rect), with: .color(currentFgColor))
                 }
             }
         }

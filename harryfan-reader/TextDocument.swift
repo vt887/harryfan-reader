@@ -17,8 +17,19 @@ class TextDocument: ObservableObject {
     @Published var removeEmptyLines: Bool = true
     @Published var wordWrap: Bool = true
     @Published var wrapWidth: Int = 80
+    @Published var shouldShowQuitMessage: Bool = false
     
     private var originalData: Data?
+    
+    public var quitMessage: String { MSDOSMessages.quitMessage }
+    
+    func loadWelcomeText() {
+        content = splitLines(MSDOSMessages.welcomeMessage)
+        totalLines = content.count
+        currentLine = 0
+        fileName = ""
+        encoding = "ASCII"
+    }
     
     func openFile(at url: URL) {
         do {
@@ -36,6 +47,37 @@ class TextDocument: ObservableObject {
         } catch {
             print("Error opening file: \(error)")
         }
+    }
+    
+    func getTitleBarText() -> String {
+        let appName = "HarryFan Reader"
+        
+        if fileName.isEmpty {
+            return appName.padding(toLength: 80, withPad: " ", startingAt: 0)
+        } else {
+            let percent = totalLines > 0 ? Int((Double(currentLine + 1) / Double(totalLines)) * 100.0) : 0
+            let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)% \(encoding)"
+            
+            let availableWidth = 80 - appName.count - statusText.count - 3 // 3 for " - " delimiters
+            
+            var displayFileName = fileName
+            if fileName.count > availableWidth {
+                displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
+            }
+            
+            let title = "\(appName) - \(displayFileName)"
+            let rightPaddedTitle = title.padding(toLength: 80 - statusText.count, withPad: " ", startingAt: 0)
+            return "\(rightPaddedTitle)\(statusText)"
+        }
+    }
+    
+    func getMenuBarText() -> String {
+        let menuItems = [
+            "1Help", "2Wrap", "3Open", "4Search", "5Goto",
+            "6Bookm", "7Start", "8End", "9Menu", "10Quit"
+        ]
+        let menuBarString = menuItems.map { $0.padding(toLength: 7, withPad: " ", startingAt: 0) }.joined(separator: "")
+        return menuBarString.padding(toLength: 80, withPad: " ", startingAt: 0)
     }
     
     private func decodeCP866(from data: Data) -> String {
@@ -251,7 +293,7 @@ class TextDocument: ObservableObject {
     // Get visible lines for display
     func getVisibleLines() -> [String] {
         let startLine = max(0, currentLine)
-        let endLine = min(content.count, startLine + 50) // Show 50 lines
+        let endLine = min(content.count, startLine + 24) // Show 24 lines as default
         return Array(content[startLine..<endLine])
     }
 }

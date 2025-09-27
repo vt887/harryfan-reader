@@ -1,3 +1,10 @@
+//
+//  ContentView.swift
+//  harryfan-reader
+//
+//  Created by Vad Tymoshyk on 9/1/25.
+//
+
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -13,12 +20,7 @@ struct ContentView: View {
     @State private var showingSettings = false
     @State private var showingGotoDialog = false
     @State private var gotoLineNumber = ""
-    
-    // MS-DOS style colors
-    private let backgroundColor = Color(red: 0, green: 0, blue: 0.5) // Dark blue
-    private let textColor = Color.white
-    private let highlightColor = Color(red: 0, green: 1, blue: 1) // Cyan
-    
+
     init() {
         print("ContentView initializing...")
     }
@@ -29,144 +31,78 @@ struct ContentView: View {
             HStack(alignment: .center) {
                 Text(document.fileName.isEmpty ? "HarryFanReader" : document.fileName)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
-                
+                    .foregroundColor(MSDOSColors.topMenuFontColor)
+
                 Spacer()
-                
+
                 // Up/Down buttons and percent
                 if !document.fileName.isEmpty {
                     // Percent at top-right, based on center line index
                     let percent = document.totalLines > 0 ? Int((Double(document.currentLine + 1) / Double(document.totalLines)) * 100.0) : 0
                     Text("\(percent)%")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
+                        .foregroundColor(MSDOSColors.foregroundColor)
                         .padding(.trailing, 8)
                     
                     Button(action: { document.currentLine = max(0, document.currentLine - 1) }) {
                         Image(systemName: "chevron.up")
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
+                    .foregroundColor(MSDOSColors.foregroundColor)
                     .help("Scroll Up")
                     
                     Button(action: { document.currentLine = min(max(0, document.totalLines - 1), document.currentLine + 1) }) {
                         Image(systemName: "chevron.down")
                     }
                     .buttonStyle(.plain)
-                    .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
+                    .foregroundColor(MSDOSColors.foregroundColor)
                     .help("Scroll Down")
                     
                     Divider()
                         .frame(height: 14)
-                        .background(Color(red: 0, green: 0, blue: 0.5).opacity(0.5))
+                        .background(MSDOSColors.foregroundColor)
                         .padding(.horizontal, 4)
                     
                     // Status info (center line number)
                     Text("Line \(document.currentLine + 1) of \(document.totalLines)")
                         .font(.system(size: 12))
-                        .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
+                        .foregroundColor(MSDOSColors.foregroundColor)
                     
                     Text("CP866")
                         .font(.system(size: 12))
-                        .foregroundColor(Color(red: 0, green: 0, blue: 0.5))
+                        .foregroundColor(MSDOSColors.foregroundColor)
                 }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(Color.white)
+            .background(MSDOSColors.foregroundColor)
             
             // Main content area
-            if document.fileName.isEmpty {
-                // Welcome screen
-                VStack(spacing: 20) {
-                    Text("HarryFan Reader")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(highlightColor)
-                    
-                    Text("Retro MS-DOS Style Text Viewer from Fidonet era")
-                        .font(.system(size: 14))
-                        .foregroundColor(textColor)
-                    
-                    Button("Open File") {
-                        showingFilePicker = true
-                    }
-                    .buttonStyle(RetroButtonStyle())
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(backgroundColor)
-                .onAppear {
-                    print("Welcome screen appeared")
-                }
+            if document.shouldShowQuitMessage {
+                MSDOSScreenView(document: document, contentToDisplay: MSDOSMessages.quitMessage)
+                    .environmentObject(fontManager)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .background(MSDOSColors.foregroundColor)
             } else {
-                // Text content rendered in 80x24 using vdu.8x16.raw
                 MSDOSScreenView(document: document)
                     .environmentObject(fontManager)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                    .background(backgroundColor)
+                    .background(MSDOSColors.foregroundColor)
+                    .onAppear {
+                        if document.fileName.isEmpty {
+                            document.loadWelcomeText()
+                        }
+                        print("Main content area appeared")
+                    }
             }
             
             // Bottom menu bar (MS-DOS style)
-            HStack(spacing: 20) {
-                Button("1Help") {
-                    // Show help
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-
-                Button("2Wrap") {
-                    document.wordWrap.toggle()
-                    if !document.fileName.isEmpty {
-                        document.reloadWithNewSettings()
-                    }
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-                .disabled(document.fileName.isEmpty)
-
-                
-                Button("3Open") {
-                    showingFilePicker = true
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-
-                Button("4Search") {
-                    showingSearch = true
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-                
-                Button("5Goto") {
-                    showingGotoDialog = true
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-                
-                Button("6Bookm") {
-                    showingBookmarks = true
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-                
-                Button("7Start") {
-                    document.gotoStart()
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-                
-                Button("8End") {
-                    document.gotoEnd()
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-
-                Button("9Menu") {
-                    showingSettings = true
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-                
-                Button("10Quit") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .buttonStyle(RetroMenuButtonStyle())
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(backgroundColor)
+            MSDOSScreenView(document: document, contentToDisplay: document.getMenuBarText())
+                .environmentObject(fontManager)
+                .frame(maxWidth: .infinity, maxHeight: 16, alignment: .center)
+                .background(MSDOSColors.textColor)
         }
-        .background(backgroundColor)
+        .background(MSDOSColors.foregroundColor)
         .fileImporter(
             isPresented: $showingFilePicker,
             allowedContentTypes: [UTType.plainText],
@@ -278,7 +214,7 @@ struct RetroButtonStyle: ButtonStyle {
 struct RetroMenuButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundColor(.white)
+            .foregroundColor(.black)
             .font(.system(size: 12, weight: .bold))
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
