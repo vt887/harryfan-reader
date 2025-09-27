@@ -5,8 +5,8 @@
 //  Created by Vad Tymoshyk on 9/1/25.
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 extension Notification.Name {
     static let openFileCommand = Notification.Name("AppCommand.openFile")
@@ -20,18 +20,18 @@ extension Notification.Name {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    func applicationDidFinishLaunching(_: Notification) {
         // Ensure the app has a regular activation policy so the Menu Bar is visible
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
         // Close the app when the last window (red button) is closed
-        return true
+        true
     }
 
-    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+    func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
         let alert = NSAlert()
         alert.messageText = "Quit HarryFanReader?"
         alert.informativeText = "Are you sure you want to quit?"

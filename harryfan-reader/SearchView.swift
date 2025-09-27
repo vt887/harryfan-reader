@@ -14,7 +14,7 @@ struct SearchView: View {
     @State private var searchTerm: String = ""
     @State private var searchDirection: SearchDirection = .forward
     @State private var lastSearchResult: Int?
-    
+
     var body: some View {
         VStack(spacing: 16) {
             HStack {
@@ -27,14 +27,14 @@ struct SearchView: View {
                 .buttonStyle(.plain)
                 .font(.title2)
             }
-            
+
             HStack {
                 TextField("Search term", text: $searchTerm)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit {
                         performSearch()
                     }
-                
+
                 Picker("Direction", selection: $searchDirection) {
                     Text("Forward").tag(SearchDirection.forward)
                     Text("Backward").tag(SearchDirection.backward)
@@ -42,28 +42,28 @@ struct SearchView: View {
                 .pickerStyle(.segmented)
                 .frame(width: 120)
             }
-            
+
             HStack {
                 Button("Find") {
                     performSearch()
                 }
                 .keyboardShortcut(.return)
-                
+
                 Button("Find Next") {
                     searchDirection = .forward
                     performSearch()
                 }
                 .keyboardShortcut("n", modifiers: .command)
-                
+
                 Button("Find Previous") {
                     searchDirection = .backward
                     performSearch()
                 }
                 .keyboardShortcut("p", modifiers: .command)
-                
+
                 Spacer()
             }
-            
+
             if let result = lastSearchResult {
                 Text("Found at line \(result + 1)")
                     .font(.caption)
@@ -76,14 +76,14 @@ struct SearchView: View {
             // Focus the search field
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 // Focus logic would go here
-                self.searchTerm = self.lastSearchTerm
+                searchTerm = lastSearchTerm
             }
         }
     }
-    
+
     private func performSearch() {
         guard !searchTerm.isEmpty else { return }
-        
+
         if let result = document.search(searchTerm, direction: searchDirection) {
             lastSearchResult = result
             lastSearchTerm = searchTerm
@@ -93,5 +93,3 @@ struct SearchView: View {
         }
     }
 }
-
-

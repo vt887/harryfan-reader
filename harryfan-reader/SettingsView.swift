@@ -11,7 +11,7 @@ struct SettingsView: View {
     @EnvironmentObject var fontManager: FontManager
     @EnvironmentObject var document: TextDocument
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var selectedFont: FontManager.MSDOSFont = .vdu8x16
     @State private var fontSize: Double = 16.0
     @State private var removeEmptyLines: Bool = true
@@ -22,7 +22,7 @@ struct SettingsView: View {
     @State private var originalRemoveEmptyLines: Bool = true
     @State private var originalWordWrap: Bool = true
     @State private var originalWrapWidth: Double = 80.0
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // macOS-style title bar with window controls
@@ -34,66 +34,66 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
                             dismiss()
                         }
-                        .onHover { isHovered in
+                        .onHover { _ in
                             // Hover effect would go here
                         }
-                    
+
                     Circle()
                         .fill(Color.yellow)
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
                             // Minimize functionality
                         }
-                        .onHover { isHovered in
+                        .onHover { _ in
                             // Hover effect would go here
                         }
-                    
+
                     Circle()
                         .fill(Color.green)
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
                             // Maximize functionality
                         }
-                        .onHover { isHovered in
+                        .onHover { _ in
                             // Hover effect would go here
                         }
                 }
                 .padding(.leading, 12)
-                
+
                 Spacer()
-                
+
                 Text("Settings")
                     .font(.headline)
                     .foregroundColor(.primary)
-                
+
                 Spacer()
-                
+
                 // Invisible spacer to center the title
                 HStack(spacing: 8) {
                     Circle()
                         .fill(Color.clear)
                         .frame(width: 12, height: 12)
-                    
+
                     Circle()
                         .fill(Color.clear)
                         .frame(width: 12, height: 12)
-                    
+
                     Circle()
                         .fill(Color.clear)
                         .frame(width: 12, height: 12)
@@ -106,9 +106,9 @@ struct SettingsView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
-                alignment: .bottom
+                alignment: .bottom,
             )
-            
+
             // Settings content
             Form {
                 Section("Font Settings") {
@@ -117,33 +117,33 @@ struct SettingsView: View {
                             Text(font.displayName).tag(font)
                         }
                     }
-                    
+
                     HStack {
                         Text("Font Size")
-                        Slider(value: $fontSize, in: 8...32, step: 1)
+                        Slider(value: $fontSize, in: 8 ... 32, step: 1)
                         Text("\(Int(fontSize))")
                             .frame(width: 30)
                     }
                 }
-                
+
                 Section("Text Processing") {
                     Toggle("Remove excessive empty lines", isOn: $removeEmptyLines)
                         .help("Automatically remove multiple consecutive empty lines")
-                    
+
                     Toggle("Word wrap", isOn: $wordWrap)
                         .help("Automatically wrap long lines to fit the display width")
-                    
+
                     if wordWrap {
                         HStack {
                             Text("Wrap width")
-                            Slider(value: $wrapWidth, in: 40...200, step: 1)
+                            Slider(value: $wrapWidth, in: 40 ... 200, step: 1)
                             Text("\(Int(wrapWidth))")
                                 .frame(width: 40)
                         }
                         .help("Maximum number of characters per line")
                     }
                 }
-                
+
                 Section("About") {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Harryfan Reader")
@@ -158,11 +158,11 @@ struct SettingsView: View {
                 }
             }
             .formStyle(.grouped)
-            
+
             // Bottom button bar
             HStack {
                 Spacer()
-                
+
                 Button("Cancel") {
                     // Restore original values
                     selectedFont = originalFont
@@ -173,7 +173,7 @@ struct SettingsView: View {
                     dismiss()
                 }
                 .keyboardShortcut(.escape)
-                
+
                 Button("Submit") {
                     // Apply changes
                     fontManager.currentFont = selectedFont
@@ -181,12 +181,12 @@ struct SettingsView: View {
                     document.removeEmptyLines = removeEmptyLines
                     document.wordWrap = wordWrap
                     document.wrapWidth = Int(wrapWidth)
-                    
+
                     // Reload file with new settings if a file is open
                     if !document.fileName.isEmpty {
                         document.reloadWithNewSettings()
                     }
-                    
+
                     dismiss()
                 }
                 .keyboardShortcut(.return)
@@ -198,7 +198,7 @@ struct SettingsView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
-                alignment: .top
+                alignment: .top,
             )
         }
         .frame(width: 450, height: 400)
@@ -210,7 +210,7 @@ struct SettingsView: View {
             originalRemoveEmptyLines = document.removeEmptyLines
             originalWordWrap = document.wordWrap
             originalWrapWidth = Double(document.wrapWidth)
-            
+
             // Set current values
             selectedFont = fontManager.currentFont
             fontSize = fontManager.fontSize

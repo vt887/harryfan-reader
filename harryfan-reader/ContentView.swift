@@ -12,7 +12,7 @@ struct ContentView: View {
     @StateObject private var document = TextDocument()
     @EnvironmentObject var fontManager: FontManager
     @EnvironmentObject var bookmarkManager: BookmarkManager
-    
+
     @State private var showingFilePicker = false
     @State private var showingSearch = false
     @State private var showingBookmarks = false
@@ -24,7 +24,7 @@ struct ContentView: View {
     init() {
         print("ContentView initializing...")
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Title bar
@@ -43,31 +43,31 @@ struct ContentView: View {
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(Colors.foregroundColor)
                         .padding(.trailing, 8)
-                    
+
                     Button(action: { document.currentLine = max(0, document.currentLine - 1) }) {
                         Image(systemName: "chevron.up")
                     }
                     .buttonStyle(.plain)
                     .foregroundColor(Colors.foregroundColor)
                     .help("Scroll Up")
-                    
+
                     Button(action: { document.currentLine = min(max(0, document.totalLines - 1), document.currentLine + 1) }) {
                         Image(systemName: "chevron.down")
                     }
                     .buttonStyle(.plain)
                     .foregroundColor(Colors.foregroundColor)
                     .help("Scroll Down")
-                    
+
                     Divider()
                         .frame(height: 14)
                         .background(Colors.foregroundColor)
                         .padding(.horizontal, 4)
-                    
+
                     // Status info (center line number)
                     Text("Line \(document.currentLine + 1) of \(document.totalLines)")
                         .font(.system(size: 12))
                         .foregroundColor(Colors.foregroundColor)
-                    
+
                     Text("CP866")
                         .font(.system(size: 12))
                         .foregroundColor(Colors.foregroundColor)
@@ -76,10 +76,10 @@ struct ContentView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(Colors.foregroundColor)
-            
+
             // Main content area
             if document.shouldShowQuitMessage {
-                    ScreenView(document: document, contentToDisplay: Messages.quitMessage)
+                ScreenView(document: document, contentToDisplay: Messages.quitMessage)
                     .environmentObject(fontManager)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                     .background(Colors.foregroundColor)
@@ -95,7 +95,7 @@ struct ContentView: View {
                         print("Main content area appeared")
                     }
             }
-            
+
             // Bottom menu bar
             BottomMenuBar(document: document)
         }
@@ -103,14 +103,14 @@ struct ContentView: View {
         .fileImporter(
             isPresented: $showingFilePicker,
             allowedContentTypes: [UTType.plainText],
-            allowsMultipleSelection: false
+            allowsMultipleSelection: false,
         ) { result in
             switch result {
-            case .success(let urls):
+            case let .success(urls):
                 if let url = urls.first {
                     document.openFile(at: url)
                 }
-            case .failure(let error):
+            case let .failure(error):
                 print("Error selecting file: \(error)")
             }
         }
@@ -131,14 +131,14 @@ struct ContentView: View {
         }
         .alert("Go to Line", isPresented: $showingGotoDialog) {
             TextField("Line number", text: $gotoLineNumber)
-            
+
             Button("Go") {
                 if let lineNumber = Int(gotoLineNumber) {
                     document.gotoLine(lineNumber - 1)
                 }
                 gotoLineNumber = ""
             }
-            
+
             Button("Cancel", role: .cancel) {
                 gotoLineNumber = ""
             }
@@ -186,7 +186,7 @@ struct ContentView: View {
             showingBookmarks = true
         }
     }
-    
+
     // Keyboard handling will be implemented with proper key event monitoring
     // For now, we'll use menu items and buttons for navigation
 }
@@ -199,11 +199,11 @@ struct RetroButtonStyle: ButtonStyle {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(configuration.isPressed ? Color.gray : Color(red: 0, green: 0, blue: 0.7))
+                    .fill(configuration.isPressed ? Color.gray : Color(red: 0, green: 0, blue: 0.7)),
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.white, lineWidth: 1)
+                    .stroke(Color.white, lineWidth: 1),
             )
     }
 }
@@ -217,7 +217,7 @@ struct RetroMenuButtonStyle: ButtonStyle {
             .padding(.vertical, 2)
             .background(
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(configuration.isPressed ? Color.gray : Color.clear)
+                    .fill(configuration.isPressed ? Color.gray : Color.clear),
             )
     }
 }
