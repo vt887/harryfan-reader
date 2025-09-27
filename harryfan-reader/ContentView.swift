@@ -64,13 +64,14 @@ struct ContentView: View {
             // Bottom menu bar (Line 24)
             MenuBar(document: document)
         }
-        .frame(width: CGFloat(ScreenView.cols * ScreenView.charW), height: CGFloat(document.numScreenRows) * CGFloat(ScreenView.charH))
+        .frame(width: CGFloat(ScreenView.cols * ScreenView.charW),
+               height: CGFloat(document.numScreenRows) * CGFloat(ScreenView.charH))
         .background(Colors.foregroundColor)
         .fileImporter(
             isPresented: $showingFilePicker,
             allowedContentTypes: [UTType.plainText],
             allowsMultipleSelection: false,
-            ) { result in
+        ) { result in
             switch result {
             case let .success(urls):
                 if let url = urls.first {
@@ -166,11 +167,11 @@ struct RetroButtonStyle: ButtonStyle {
             .background(
                 RoundedRectangle(cornerRadius: 4)
                     .fill(configuration.isPressed ? Color.gray : Color(red: 0, green: 0, blue: 0.7)),
-                )
+            )
             .overlay(
                 RoundedRectangle(cornerRadius: 4)
                     .stroke(Color.white, lineWidth: 1),
-                )
+            )
     }
 }
 
@@ -184,7 +185,7 @@ struct RetroMenuButtonStyle: ButtonStyle {
             .background(
                 RoundedRectangle(cornerRadius: 2)
                     .fill(configuration.isPressed ? Color.gray : Color.clear),
-                )
+            )
     }
 }
 

@@ -33,15 +33,18 @@ class FontManager: ObservableObject {
     private func scanForFonts() {
         let fm = FileManager.default
         #if SWIFT_PACKAGE
-        guard let fontsURL = Bundle.module.resourceURL?.appendingPathComponent("Fonts") else { return }
+            guard let fontsURL = Bundle.module.resourceURL?.appendingPathComponent("Fonts") else { return }
         #else
-        guard let bundleURL = Bundle.main.resourceURL else { return }
-        let fontsURL = bundleURL.appendingPathComponent("Fonts")
+            guard let bundleURL = Bundle.main.resourceURL else { return }
+            let fontsURL = bundleURL.appendingPathComponent("Fonts")
         #endif
 
         do {
-            let fileURLs = try fm.contentsOfDirectory(at: fontsURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
-            self.availableFonts = fileURLs.filter { $0.pathExtension == "raw" }.map { $0.deletingPathExtension().lastPathComponent }
+            let fileURLs = try fm.contentsOfDirectory(at: fontsURL,
+                                                      includingPropertiesForKeys: nil,
+                                                      options: .skipsHiddenFiles)
+            availableFonts = fileURLs.filter { $0.pathExtension == "raw" }
+                .map { $0.deletingPathExtension().lastPathComponent }
         } catch {
             print("Failed to scan for fonts: \(error)")
         }

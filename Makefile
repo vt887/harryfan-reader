@@ -5,7 +5,6 @@
 
 lint:
 	swiftformat . --swift-version 6.2 -verbose
-	swiftlint --fix --format --progress
 
 build:
 	swift build

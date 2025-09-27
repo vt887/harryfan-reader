@@ -10,7 +10,7 @@ let package = Package(
         .executable(
             name: "HarryfanReader",
             targets: ["HarryfanReader"],
-            ),
+        ),
     ],
     dependencies: [],
     targets: [
@@ -20,13 +20,13 @@ let package = Package(
             path: "harryfan-reader",
             exclude: [
                 "HarryFanReader.entitlements",
-                "Info.plist"
+                "Info.plist",
             ],
             resources: [
                 .copy("Fonts"),
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
-            ]
-        )
-    ]
+            ],
+        ),
+    ],
 )

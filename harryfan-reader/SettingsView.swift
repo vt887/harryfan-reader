@@ -35,7 +35,7 @@ struct SettingsView: View {
                         .overlay(
                             Circle()
                                 .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
-                            )
+                        )
                         .scaleEffect(1.0)
                         .onTapGesture {
                             dismiss()
@@ -50,7 +50,7 @@ struct SettingsView: View {
                         .overlay(
                             Circle()
                                 .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
-                            )
+                        )
                         .scaleEffect(1.0)
                         .onTapGesture {
                             // Minimize functionality
@@ -65,7 +65,7 @@ struct SettingsView: View {
                         .overlay(
                             Circle()
                                 .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
-                            )
+                        )
                         .scaleEffect(1.0)
                         .onTapGesture {
                             // Maximize functionality
@@ -107,7 +107,7 @@ struct SettingsView: View {
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
                 alignment: .bottom,
-                )
+            )
 
             // Settings content
             Form {
@@ -199,7 +199,7 @@ struct SettingsView: View {
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
                 alignment: .top,
-                )
+            )
         }
         .frame(width: 450, height: 400)
         .background(Color(NSColor.windowBackgroundColor))
