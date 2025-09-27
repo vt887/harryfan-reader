@@ -60,11 +60,12 @@ struct HarryFanReaderApp: App {
         .defaultSize(width: 800, height: 600)
         .defaultPosition(.center)
         .commands {
-            CommandMenu("File") {
+            CommandGroup(replacing: .newItem) {
                 Button("Open") {
                     NotificationCenter.default.post(name: .openFileCommand, object: nil)
                 }
-                Divider()
+            }
+            CommandGroup(replacing: .appTermination) {
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
                 }
