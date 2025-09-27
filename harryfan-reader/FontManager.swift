@@ -12,6 +12,7 @@ import SwiftUI
 class FontManager: ObservableObject {
     @Published var currentFont: MSDOSFont = .vdu8x16
     @Published var fontSize: CGFloat = 16.0
+    @Published var availableFonts: [String] = [] // New published property
 
     enum MSDOSFont: String, CaseIterable {
         case vdu8x16 = "VDU 8x16"
@@ -25,7 +26,25 @@ class FontManager: ObservableObject {
     private var fontCache: [UInt8: [Bool]] = [:]
 
     init() {
+        scanForFonts()
         loadFont()
+    }
+
+    private func scanForFonts() {
+        let fm = FileManager.default
+        #if SWIFT_PACKAGE
+        guard let fontsURL = Bundle.module.resourceURL?.appendingPathComponent("Fonts") else { return }
+        #else
+        guard let bundleURL = Bundle.main.resourceURL else { return }
+        let fontsURL = bundleURL.appendingPathComponent("Fonts")
+        #endif
+
+        do {
+            let fileURLs = try fm.contentsOfDirectory(at: fontsURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)
+            self.availableFonts = fileURLs.filter { $0.pathExtension == "raw" }.map { $0.deletingPathExtension().lastPathComponent }
+        } catch {
+            print("Failed to scan for fonts: \(error)")
+        }
     }
 
     private func loadFont() {
@@ -34,15 +53,22 @@ class FontManager: ObservableObject {
 
         // Prefer SwiftPM resource bundle if available
         #if SWIFT_PACKAGE
-        if let url = Bundle.module.url(forResource: "vdu.8x16", withExtension: "raw") {
-            fontURL = url
-        }
+            if let url = Bundle.module.url(forResource: "vdu.8x16", withExtension: "raw", subdirectory: "Fonts") {
+                fontURL = url
+            }
         #endif
+
+        // Fallback to main bundle
+        if fontURL == nil {
+            if let url = Bundle.main.url(forResource: "vdu.8x16", withExtension: "raw", subdirectory: "Fonts") {
+                fontURL = url
+            }
+        }
 
         // If not found in bundle, try to find it in the current directory
         if fontURL == nil {
             let currentDir = FileManager.default.currentDirectoryPath
-            let fullPath = "\(currentDir)/vdu.8x16.raw"
+            let fullPath = "\(currentDir)/Fonts/vdu.8x16.raw"
             if FileManager.default.fileExists(atPath: fullPath) {
                 fontURL = URL(fileURLWithPath: fullPath)
             }

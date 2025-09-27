@@ -20,13 +20,13 @@ let package = Package(
             path: "harryfan-reader",
             exclude: [
                 "HarryFanReader.entitlements",
-                "Info.plist",
+                "Info.plist"
             ],
             resources: [
-                .process("Fonts/vdu.8x16.raw"),
+                .copy("Fonts"),
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
-            ],
-            ),
-    ],
-    )
+            ]
+        )
+    ]
+)

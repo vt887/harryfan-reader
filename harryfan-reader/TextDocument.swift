@@ -18,6 +18,7 @@ class TextDocument: ObservableObject {
     @Published var wordWrap: Bool = true
     @Published var wrapWidth: Int = 80
     @Published var shouldShowQuitMessage: Bool = false
+    @Published var numScreenRows: Int = 24 // New published property
 
     private var originalData: Data?
 

@@ -12,7 +12,7 @@ struct TitleBar: View {
 
     var body: some View {
         ScreenView(document: document,
-                   contentToDisplay: document.fileName.isEmpty ? "HarryFan Reader" : document.fileName,
+                   contentToDisplay: document.fileName.isEmpty ? "HarryFanReader" : document.fileName,
                    displayRows: 1,
                    rowOffset: 0,
                    backgroundColor: Colors.titleBarColor,

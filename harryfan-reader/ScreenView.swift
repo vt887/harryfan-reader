@@ -21,7 +21,6 @@ struct ScreenView: View {
     static let cols = 80
     static let charW = 8
     static let charH = 16
-    static let totalScreenRows = 24 // Total rows on the physical screen
 
     // Colors: MS-DOS like
     private let bgColor = Colors.foregroundColor
@@ -41,13 +40,11 @@ struct ScreenView: View {
                 let half = displayRows / 2
                 let maxStart = max(0, document.totalLines - displayRows)
                 let startLine = max(0, min(maxStart, document.currentLine - half))
-                linesToRender = Array(document.content[startLine ..< min(document.content.count,
-                                                                         startLine + displayRows)])
+                linesToRender = Array(document.content[startLine ..< min(document.content.count, startLine + displayRows)])
             }
 
             // Precompute cell size to fit exactly 640x384; if canvas is larger, center the content
-            let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW),
-                                   height: CGFloat(displayRows * ScreenView.charH))
+            let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW), height: CGFloat(displayRows * ScreenView.charH))
             let offsetX = (size.width - idealSize.width) / 2.0
 
             // Draw characters

@@ -15,8 +15,8 @@ struct MenuBar: View {
         ScreenView(document: document,
                    contentToDisplay: document.getMenuBarText(),
                    displayRows: 1,
-                   rowOffset: ScreenView.totalScreenRows - 1,
-                   backgroundColor: Colors.black,
+                   rowOffset: document.numScreenRows - 1,
+                   backgroundColor: Colors.menuBarColor,
                    fontColor: Colors.menuBarFontColor)
     }
 }
