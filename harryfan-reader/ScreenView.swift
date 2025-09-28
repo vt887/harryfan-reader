@@ -7,25 +7,37 @@
 
 import SwiftUI
 
+// View for rendering the main text screen in the app
 struct ScreenView: View {
+    // Observed document model for the screen
     @ObservedObject var document: TextDocument
+    // Font manager environment object
     @EnvironmentObject var fontManager: FontManager
 
+    // Optional custom content to display
     var contentToDisplay: String?
+    // Number of rows to display
     var displayRows: Int
+    // Row offset for line numbering
     var rowOffset: Int = 0
+    // Background color for the screen
     var backgroundColor: Color = Colors.theme.background
+    // Font color for the screen
     var fontColor: Color = Colors.theme.foreground
 
-    // 80x24 text mode with 8x16 font
+    // Number of columns in the screen (from AppSettings)
     static let cols = AppSettings.cols
+    // Character width in pixels (from AppSettings)
     static let charW = AppSettings.charW
+    // Character height in pixels (from AppSettings)
     static let charH = AppSettings.charH
 
-    // Colors: MS-DOS like
+    // MS-DOS-like background color
     private let bgColor = Colors.theme.background
+    // MS-DOS-like foreground color
     private let fgColor = Colors.theme.foreground
 
+    // Main view body rendering the text screen
     var body: some View {
         Canvas { context, size in
             // Fill background
@@ -86,6 +98,7 @@ struct ScreenView: View {
         .accessibilityHidden(true) // no cursor or focus ring
     }
 
+    // Draws a single character at the given position
     private func drawChar(_ character: Character,
                           at pos: (Int, Int),
                           in context: GraphicsContext,

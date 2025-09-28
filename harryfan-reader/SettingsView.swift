@@ -7,22 +7,37 @@
 
 import SwiftUI
 
+// View for displaying and managing application settings
 struct SettingsView: View {
+    // Font manager environment object
     @EnvironmentObject var fontManager: FontManager
+    // Document environment object
     @EnvironmentObject var document: TextDocument
+    // Dismiss environment value for closing the view
     @Environment(\.dismiss) private var dismiss
 
+    // Currently selected font
     @State private var selectedFont: FontManager.MSDOSFont = .vdu8x16
+    // Current font size
     @State private var fontSize: Double = 16.0
+    // Remove excessive empty lines toggle
     @State private var removeEmptyLines: Bool = true
+    // Word wrap toggle
     @State private var wordWrap: Bool = true
+    // Wrap width value
     @State private var wrapWidth: Double = 80.0
+    // Original font for cancel functionality
     @State private var originalFont: FontManager.MSDOSFont = .vdu8x16
+    // Original font size for cancel functionality
     @State private var originalFontSize: Double = 16.0
+    // Original remove empty lines value for cancel functionality
     @State private var originalRemoveEmptyLines: Bool = true
+    // Original word wrap value for cancel functionality
     @State private var originalWordWrap: Bool = true
+    // Original wrap width value for cancel functionality
     @State private var originalWrapWidth: Double = 80.0
 
+    // Main view body rendering the settings UI
     var body: some View {
         VStack(spacing: 0) {
             // macOS-style title bar with window controls
@@ -163,6 +178,7 @@ struct SettingsView: View {
             HStack {
                 Spacer()
 
+                // Cancel button restores original values and dismisses
                 Button("Cancel") {
                     // Restore original values
                     selectedFont = originalFont
@@ -174,6 +190,7 @@ struct SettingsView: View {
                 }
                 .keyboardShortcut(.escape)
 
+                // Submit button applies changes and dismisses
                 Button("Submit") {
                     // Apply changes
                     fontManager.currentFont = selectedFont
@@ -203,6 +220,7 @@ struct SettingsView: View {
         }
         .frame(width: 450, height: 400)
         .background(Color(NSColor.windowBackgroundColor))
+        // onAppear stores original values for cancel functionality and sets current values
         .onAppear {
             // Store original values for cancel functionality
             originalFont = fontManager.currentFont
@@ -221,6 +239,7 @@ struct SettingsView: View {
     }
 }
 
+// Preview for SettingsView
 #Preview {
     SettingsView()
         .environmentObject(FontManager())

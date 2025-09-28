@@ -8,6 +8,14 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+// Main content view for the app
+extension Notification.Name {
+    static let scrollUpCommand = Notification.Name("scrollUpCommand")
+    static let scrollDownCommand = Notification.Name("scrollDownCommand")
+    static let pageUpCommand = Notification.Name("pageUpCommand")
+    static let pageDownCommand = Notification.Name("pageDownCommand")
+}
+
 struct ContentView: View {
     @StateObject private var document = TextDocument()
     @EnvironmentObject var fontManager: FontManager
@@ -26,77 +34,88 @@ struct ContentView: View {
     }
 
     var body: some View {
+        mainLayout
+            .frame(
+                width: CGFloat(AppSettings.cols * AppSettings.charW),
+                height: CGFloat(document.rows) * CGFloat(AppSettings.charH),
+            )
+            .background(Colors.theme.background)
+            .fileImporter(isPresented: $showingFilePicker,
+                          allowedContentTypes: [.plainText],
+                          allowsMultipleSelection: false,
+                          onCompletion: handleFileImport)
+            .sheet(isPresented: $showingSearch) {
+                SearchView(isPresented: $showingSearch,
+                           document: document,
+                           lastSearchTerm: $lastSearchTerm)
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
+                    .environmentObject(fontManager)
+                    .environmentObject(document)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingBookmarks) {
+                BookmarksView(isPresented: $showingBookmarks,
+                              document: document)
+                    .environmentObject(bookmarkManager)
+                    .frame(width: 400, height: 300)
+            }
+            .alert("Go to Line", isPresented: $showingGotoDialog) {
+                gotoLineDialog
+            } message: {
+                Text("Enter line number to go to:")
+            }
+            .applyNotifications(document: document,
+                                showingSearch: $showingSearch,
+                                showingBookmarks: $showingBookmarks,
+                                lastSearchTerm: $lastSearchTerm)
+    }
+
+    // Main layout
+
+    private var mainLayout: some View {
         VStack(spacing: 0) {
-            // Title bar (Line 1)
             TitleBar(document: document)
 
-            // Empty line 2
-            ScreenView(document: document, contentToDisplay: " ", displayRows: 1, rowOffset: 1)
-                .environmentObject(fontManager)
-                .frame(height: CGFloat(1) * CGFloat(ScreenView.charH))
-
-            // Main content area (Lines 3-9) - 7 rows
-            if document.shouldShowQuitMessage {
-                ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: 7, rowOffset: 2)
-                    .environmentObject(fontManager)
-                    .frame(height: CGFloat(7) * CGFloat(ScreenView.charH))
-            } else {
-                ScreenView(document: document, displayRows: 7, rowOffset: 2)
-                    .environmentObject(fontManager)
-                    .frame(height: CGFloat(7) * CGFloat(ScreenView.charH))
-                    .onAppear {
-                        if document.fileName.isEmpty {
-                            document.loadWelcomeText()
-                        }
-                        print("Main content area appeared")
-                    }
-            }
-
-            // Empty lines 10-23 (14 rows)
             ScreenView(document: document,
-                       contentToDisplay: String(repeating: "\n",
-                                                count: 14),
+                       contentToDisplay: " ",
+                       displayRows: 1,
+                       rowOffset: 1)
+                .environmentObject(fontManager)
+                .frame(height: CGFloat(1) * CGFloat(AppSettings.charH))
+
+            MainContentScreenView(document: document)
+
+            ScreenView(document: document,
+                       contentToDisplay: String(repeating: "\n", count: 14),
                        displayRows: 14,
                        rowOffset: 9)
                 .environmentObject(fontManager)
-                .frame(height: CGFloat(14) * CGFloat(ScreenView.charH))
+                .frame(height: CGFloat(14) * CGFloat(AppSettings.charH))
 
-            // Bottom menu bar (Line 24)
             MenuBar(document: document)
         }
-        .frame(width: CGFloat(ScreenView.cols * ScreenView.charW),
-               height: CGFloat(document.rows) * CGFloat(ScreenView.charH))
-        .background(Colors.theme.background)
-        .fileImporter(
-            isPresented: $showingFilePicker,
-            allowedContentTypes: [UTType.plainText],
-            allowsMultipleSelection: false,
-        ) { result in
-            switch result {
-            case let .success(urls):
-                if let url = urls.first {
-                    document.openFile(at: url)
-                }
-            case let .failure(error):
-                print("Error selecting file: \(error)")
+    }
+
+    // File Import Handler
+
+    private func handleFileImport(_ result: Result<[URL], Error>) {
+        switch result {
+        case let .success(urls):
+            if let url = urls.first {
+                document.openFile(at: url)
             }
+        case let .failure(error):
+            print("Error selecting file: \(error)")
         }
-        .sheet(isPresented: $showingSearch) {
-            SearchView(isPresented: $showingSearch, document: document, lastSearchTerm: $lastSearchTerm)
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
-                .environmentObject(fontManager)
-                .environmentObject(document)
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showingBookmarks) {
-            BookmarksView(isPresented: $showingBookmarks, document: document)
-                .environmentObject(bookmarkManager)
-                .frame(width: 400, height: 300)
-        }
-        .alert("Go to Line", isPresented: $showingGotoDialog) {
+    }
+
+    // Go To Line Dialog
+
+    private var gotoLineDialog: some View {
+        Group {
             TextField("Line number", text: $gotoLineNumber)
 
             Button("Go") {
@@ -109,55 +128,108 @@ struct ContentView: View {
             Button("Cancel", role: .cancel) {
                 gotoLineNumber = ""
             }
-        } message: {
-            Text("Enter line number to go to:")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
-            // Handle window focus
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .openSearchCommand)) { _ in
-            if document.fileName.isEmpty { return }
-            showingSearch = true
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .findNextCommand)) { _ in
-            guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
-            if let idx = document.search(lastSearchTerm, direction: .forward) {
-                document.gotoLine(idx + 1)
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .findPreviousCommand)) { _ in
-            guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
-            if let idx = document.search(lastSearchTerm, direction: .backward) {
-                document.gotoLine(idx + 1)
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in
-            guard !document.fileName.isEmpty else { return }
-            let desc = document.getCurrentLine()
-            bookmarkManager.addBookmark(fileName: document.fileName, line: document.currentLine, description: desc)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .nextBookmarkCommand)) { _ in
-            guard !document.fileName.isEmpty else { return }
-            if let bookmark = bookmarkManager.nextBookmark(after: document.currentLine, in: document.fileName) {
-                document.gotoLine(bookmark.line + 1)
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .previousBookmarkCommand)) { _ in
-            guard !document.fileName.isEmpty else { return }
-            if let bookmark = bookmarkManager.previousBookmark(before: document.currentLine, in: document.fileName) {
-                document.gotoLine(bookmark.line + 1)
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .showBookmarksCommand)) { _ in
-            guard !document.fileName.isEmpty else { return }
-            showingBookmarks = true
         }
     }
-
-    // Keyboard handling will be implemented with proper key event monitoring
-    // For now, we'll use menu items and buttons for navigation
 }
 
+// Main content area view, displays either quit message or main content
+private struct MainContentScreenView: View {
+    @ObservedObject var document: TextDocument
+    @EnvironmentObject var fontManager: FontManager
+
+    var body: some View {
+        if document.shouldShowQuitMessage {
+            ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: 7, rowOffset: 2)
+                .environmentObject(fontManager)
+                .frame(height: CGFloat(7) * CGFloat(ScreenView.charH))
+        } else {
+            ScreenView(document: document, displayRows: 7, rowOffset: 2)
+                .environmentObject(fontManager)
+                .frame(height: CGFloat(7) * CGFloat(ScreenView.charH))
+                .onAppear {
+                    if document.fileName.isEmpty {
+                        document.loadWelcomeText()
+                    }
+                    print("Main content area appeared")
+                }
+        }
+    }
+}
+
+// ViewModifier for handling notifications and commands
+private struct NotificationsModifier: ViewModifier {
+    @ObservedObject var document: TextDocument
+    @EnvironmentObject var fontManager: FontManager
+    @EnvironmentObject var bookmarkManager: BookmarkManager
+    @Binding var showingSearch: Bool
+    @Binding var showingBookmarks: Bool
+    @Binding var lastSearchTerm: String
+
+    func body(content: Content) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+                // Handle window focus
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openSearchCommand)) { _ in
+                if document.fileName.isEmpty { return }
+                showingSearch = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .findNextCommand)) { _ in
+                guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
+                if let idx = document.search(lastSearchTerm, direction: .forward) {
+                    document.gotoLine(idx + 1)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .findPreviousCommand)) { _ in
+                guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
+                if let idx = document.search(lastSearchTerm, direction: .backward) {
+                    document.gotoLine(idx + 1)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in
+                guard !document.fileName.isEmpty else { return }
+                let desc = document.getCurrentLine()
+                bookmarkManager.addBookmark(fileName: document.fileName, line: document.currentLine, description: desc)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .nextBookmarkCommand)) { _ in
+                guard !document.fileName.isEmpty else { return }
+                if let bookmark = bookmarkManager.nextBookmark(after: document.currentLine, in: document.fileName) {
+                    document.gotoLine(bookmark.line + 1)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .previousBookmarkCommand)) { _ in
+                guard !document.fileName.isEmpty else { return }
+                if let bookmark = bookmarkManager.previousBookmark(before: document.currentLine, in: document.fileName) {
+                    document.gotoLine(bookmark.line + 1)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .showBookmarksCommand)) { _ in
+                guard !document.fileName.isEmpty else { return }
+                showingBookmarks = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .scrollUpCommand)) { _ in
+                document.gotoStart() // Use gotoStart for scroll up
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .scrollDownCommand)) { _ in
+                document.gotoEnd() // Use gotoEnd for scroll down
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pageUpCommand)) { _ in
+                document.pageUp() // Use pageUp with default page size
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pageDownCommand)) { _ in
+                document.pageDown() // Use pageDown with default page size
+            }
+    }
+}
+
+// Extension for applying notification modifier to views
+private extension View {
+    func applyNotifications(document: TextDocument, showingSearch: Binding<Bool>, showingBookmarks: Binding<Bool>, lastSearchTerm: Binding<String>) -> some View {
+        modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, lastSearchTerm: lastSearchTerm))
+    }
+}
+
+// Button style for retro-themed buttons
 struct RetroButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -175,6 +247,7 @@ struct RetroButtonStyle: ButtonStyle {
     }
 }
 
+// Button style for retro-themed menu buttons
 struct RetroMenuButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

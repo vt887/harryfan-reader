@@ -1,7 +1,7 @@
 # Makefile for Swift project building, linting, and running tasks
 #!/bin/bash -xe
 
-.PHONY: lint build run pre-commit
+.PHONY: lint style build run pre-commit
 
 lint:
 	swiftformat . --swift-version 6.2 -verbose

@@ -8,6 +8,7 @@
 import AppKit
 import SwiftUI
 
+// Extension for custom notification names
 extension Notification.Name {
     static let openFileCommand = Notification.Name("AppCommand.openFile")
     static let openSearchCommand = Notification.Name("AppCommand.openSearch")
@@ -19,6 +20,7 @@ extension Notification.Name {
     static let showBookmarksCommand = Notification.Name("AppCommand.showBookmarks")
 }
 
+// Application delegate for macOS app lifecycle
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_: Notification) {
         // Ensure the app has a regular activation policy so the Menu Bar is visible
@@ -43,6 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
+// Main app entry point and scene configuration
 @main
 struct HarryFanReaderApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -101,6 +104,24 @@ struct HarryFanReaderApp: App {
                 Button("Show Bookmarks") {
                     NotificationCenter.default.post(name: .showBookmarksCommand, object: nil)
                 }
+            }
+            CommandMenu("Navigate") {
+                Button("Scroll Up Line") {
+                    NotificationCenter.default.post(name: .scrollUpCommand, object: nil)
+                }
+                .keyboardShortcut(.upArrow, modifiers: [])
+                Button("Scroll Down Line") {
+                    NotificationCenter.default.post(name: .scrollDownCommand, object: nil)
+                }
+                .keyboardShortcut(.downArrow, modifiers: [])
+                Button("Scroll Up Page") {
+                    NotificationCenter.default.post(name: .pageUpCommand, object: nil)
+                }
+                .keyboardShortcut(.upArrow, modifiers: .control)
+                Button("Scroll Down Page") {
+                    NotificationCenter.default.post(name: .pageDownCommand, object: nil)
+                }
+                .keyboardShortcut(.downArrow, modifiers: .control)
             }
         }
 

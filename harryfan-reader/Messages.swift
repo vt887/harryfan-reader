@@ -11,10 +11,9 @@ enum Messages {
     static let welcomeMessage = """
     ╔══════════════════════════════════════════════════╗
     ║                                                  ║
-    ║                HarryFan Reader 1.0               ║
-    ║           Retro MS-DOS Style Text Viewer         ║
-    ║      https://github.com/vt887/harryfan-reader    ║
-    ║           Licensed under GNU GPL, 2025           ║
+    ║                 HarryFan Reader                  ║
+    ║                                                  ║
+    ║          Retro MS-DOS Style Text Viewer          ║
     ║                                                  ║
     ╚══════════════════════════════════════════════════╝
     """
@@ -48,8 +47,8 @@ enum Messages {
     static let quitMessage = """
     ╔══════════════════════════════════════════════════╗
     ║                                                  ║
-    ║         Thank you for using HarryFan Reader!     ║
-    ║            Exiting application - Y/N?            ║
+    ║        Thank you for using HarryFan Reader!      ║
+    ║           Exiting application - Y/N?             ║
     ║                                                  ║
     ╚══════════════════════════════════════════════════╝
     """

@@ -7,9 +7,12 @@
 
 import SwiftUI
 
+// View for displaying the title bar in the app
 struct TitleBar: View {
+    // Observed document model for the title bar
     @ObservedObject var document: TextDocument
 
+    // Main view body rendering the title bar
     var body: some View {
         ScreenView(document: document,
                    contentToDisplay: document.getTitleBarText(),

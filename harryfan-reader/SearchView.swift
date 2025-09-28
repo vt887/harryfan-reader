@@ -7,14 +7,22 @@
 
 import SwiftUI
 
+// View for searching text in the document
 struct SearchView: View {
+    // Binding to control presentation of the search view
     @Binding var isPresented: Bool
+    // Observed document model for searching
     @ObservedObject var document: TextDocument
+    // Binding for last search term
     @Binding var lastSearchTerm: String
+    // State for current search term
     @State private var searchTerm: String = ""
+    // State for search direction
     @State private var searchDirection: SearchDirection = .forward
+    // State for last search result line
     @State private var lastSearchResult: Int?
 
+    // Main view body rendering the search UI
     var body: some View {
         VStack(spacing: 16) {
             HStack {
@@ -81,6 +89,7 @@ struct SearchView: View {
         }
     }
 
+    // Performs the search operation and updates result
     private func performSearch() {
         guard !searchTerm.isEmpty else { return }
 

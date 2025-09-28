@@ -7,12 +7,14 @@
 
 import SwiftUI
 
+// Enum for supported app appearance themes
 enum AppAppearance: String, CaseIterable {
     case light
     case dark
     case blue
 }
 
+// Enum for global application settings
 enum AppSettings {
     static let appName: String = "HarryFan Reader"
     static let homeDir: String = "~/.harryfan"

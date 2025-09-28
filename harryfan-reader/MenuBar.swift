@@ -7,10 +7,14 @@
 
 import SwiftUI
 
+// View for displaying the menu bar in the app
 struct MenuBar: View {
+    // Observed document model for the menu bar
     @ObservedObject var document: TextDocument
+    // Font manager environment object
     @EnvironmentObject var fontManager: FontManager
 
+    // Main view body rendering the menu bar
     var body: some View {
         ScreenView(document: document,
                    contentToDisplay: document.getMenuBarText(),
