@@ -6,7 +6,7 @@ A nostalgic text viewer for macOS that emulates the classic MS-DOS aesthetic wit
 
 - **Retro MS-DOS Aesthetic**: Blue background with white text, reminiscent of classic DOS applications (credits to Peter Norton, USA)
 - **CP866 Encoding Support**: Native support for Cyrillic text files encoded in CP866 with correct pseudographics mapping and proper line ending handling
-- **MS-DOS Fonts**: Uses the VDU 8x16 pixel font for authentic retro appearance (credits to Oleg V. Baranovskiy, Kyiv, Ukraine)
+- **MS-DOS Fonts**: Uses by default the VDU 8x16 pixel font for authentic retro appearance (credits to Oleg V. Baranovskiy, Kyiv, Ukraine)
 - **Navigation**: PageUp/PageDown, GotoStart/GotoEnd, line-by-line navigation
 - **Search**: Forward and backward text search with case-insensitive matching
 - **Bookmarks**: Save and manage bookmarks for quick navigation
@@ -18,22 +18,22 @@ A nostalgic text viewer for macOS that emulates the classic MS-DOS aesthetic wit
 - **Page Up/Down**: Navigate through pages
 - **Home/End**: Go to start/end of file
 - **Cmd+S**: Open search dialog
-- **Cmd+G**: Go to specific line
+- **Cmd+G**: Go to the specific line
 - **Cmd+B**: Show bookmarks
 - **Cmd+,**: Open settings (with Cancel/Submit buttons)
 
 ## Menu Options
 
-- **1Help**: Show help information
-- **2Wrap**: Toggle word wrap on/off
-- **3Open**: Open a text file
-- **4Search**: Open search dialog
-- **5Goto**: Go to specific line
-- **6Tags**: Show tags
-- **7Start**: Go to start of file
-- **8End**: Go to end of file
-- **9Menu**: Open settings
-- **0Quit**: Exit application
+- **Help**: Show help information
+- **Wrap**: Toggle word wrap on/off
+- **Open**: Open a text file
+- **Search**: Open search dialog
+- **Goto**: Go to specific line
+- **Bookm**: Show bookmarks
+- **Start**: Go to start of file
+- **End**: Go to end of file
+- **Menu**: Open settings
+- **Quit**: Exit application
 
 ## Requirements
 
@@ -67,7 +67,7 @@ swift run
 3. The application will automatically detect CP866 encoding for Cyrillic text
 4. Use the bottom menu bar or keyboard shortcuts for navigation
 5. Access settings via the menu bar or Cmd+, to customize the appearance
-6. Use "9Wrap" button or settings to toggle word wrap functionality
+6. Use "Wrap" button or settings to toggle word wrap functionality
 
 ## File Support
 
@@ -91,8 +91,8 @@ swift run
 ## Technical Details
 
 - Built with SwiftUI for macOS
-- Uses the VDU 8x16 PSF font format
-- Implements CP866 character encoding mapping
+- Uses loadable [PSF fonts](https://en.wikipedia.org/wiki/PC_Screen_Font) for authentic MS-DOS appearance
+- Custom text rendering engine to handle CP866 and pseudographics
 - Memory-efficient text loading for large files
 - Native macOS integration with proper window management
 
