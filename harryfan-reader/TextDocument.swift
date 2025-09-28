@@ -15,10 +15,10 @@ class TextDocument: ObservableObject {
     @Published var encoding: String = "Unknown"
     @Published var fileName: String = ""
     @Published var removeEmptyLines: Bool = true
-    @Published var wordWrap: Bool = true
-    @Published var wrapWidth: Int = 80
-    @Published var shouldShowQuitMessage: Bool = false
-    @Published var numScreenRows: Int = 24 // New published property
+    @Published var wordWrap: Bool = AppSettings.wordWrap
+    @Published var wrapWidth: Int = AppSettings.wrapWidth
+    @Published var shouldShowQuitMessage: Bool = AppSettings.shouldShowQuitMessage
+    @Published var rows: Int = AppSettings.rows
 
     private var originalData: Data?
 

@@ -8,14 +8,14 @@ let package = Package(
     ],
     products: [
         .executable(
-            name: "HarryfanReader",
-            targets: ["HarryfanReader"],
+            name: "HarryFan Reader",
+            targets: ["HarryFan Reader"],
         ),
     ],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "HarryfanReader",
+            name: "HarryFan Reader",
             dependencies: [],
             path: "harryfan-reader",
             exclude: [

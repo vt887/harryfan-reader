@@ -62,7 +62,7 @@ swift run
 
 ## Usage
 
-1. Launch HarryFanViewer
+1. Launch HarryFan Reader
 2. Click "Open File" or use Cmd+O to select a text file
 3. The application will automatically detect CP866 encoding for Cyrillic text
 4. Use the bottom menu bar or keyboard shortcuts for navigation

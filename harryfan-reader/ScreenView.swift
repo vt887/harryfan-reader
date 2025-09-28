@@ -11,20 +11,20 @@ struct ScreenView: View {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
 
-    var contentToDisplay: String? // New optional parameter
-    var displayRows: Int // New parameter for number of rows to display
-    var rowOffset: Int = 0 // New parameter for line number offset
-    var backgroundColor: Color = Colors.foregroundColor // New parameter
-    var fontColor: Color = Colors.textColor // New parameter
+    var contentToDisplay: String?
+    var displayRows: Int
+    var rowOffset: Int = 0
+    var backgroundColor: Color = Colors.theme.background
+    var fontColor: Color = Colors.theme.foreground
 
     // 80x24 text mode with 8x16 font
-    static let cols = 80
-    static let charW = 8
-    static let charH = 16
+    static let cols = AppSettings.cols
+    static let charW = AppSettings.charW
+    static let charH = AppSettings.charH
 
     // Colors: MS-DOS like
-    private let bgColor = Colors.foregroundColor
-    private let fgColor = Colors.textColor
+    private let bgColor = Colors.theme.background
+    private let fgColor = Colors.theme.foreground
 
     var body: some View {
         Canvas { context, size in

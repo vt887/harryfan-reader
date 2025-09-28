@@ -2,21 +2,62 @@
 //  Colors.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by Vad Tymoshyk on 9/27/25.
 //
 
 import SwiftUI
 
 enum Colors {
-    // Backgrounds
-    static let foregroundColor = Color(red: 0.0, green: 0.0, blue: 0.667) // Sky blue
-    static let black = Color(red: 0.0, green: 0.0, blue: 0.0) // Black
-    static let titleBarColor = Color(red: 0.667, green: 0.667, blue: 0.667) // Light gray
     static let scrollLaneColor = Color(red: 0.333, green: 1.0, blue: 0.333) // Bright green
-    static let menuBarColor = Color(red: 0.333, green: 1.0, blue: 1.0) // Bright cyan
+    static let bookmarkColor = Color(red: 0.8, green: 0.2, blue: 0.2)
 
-    // Text
-    static let textColor = Color(red: 0.333, green: 1.0, blue: 1.0) // Light cyan
-    static let titleBarFontColor = Color(red: 0.667, green: 0.667, blue: 0.667) // Light gray
-    static let menuBarFontColor = Color(red: 0.333, green: 1.0, blue: 1.0) // Bright cyan
+    // Define colors based on AppTheme
+    static var theme: AppTheme {
+        AppTheme.theme(for: AppSettings.appearance)
+    }
+}
+
+struct AppTheme {
+    let background: Color
+    let foreground: Color
+    let titleBarBackground: Color
+    let titleBarForeground: Color
+    let menuBarBackground: Color
+    let menuBarForeground: Color
+    let bottomMenuForeground: Color
+
+    static func theme(for appearance: AppAppearance) -> AppTheme {
+        switch appearance {
+        case .light:
+            AppTheme(
+                background: .white,
+                foreground: .black,
+                titleBarBackground: Color(red: 0.8, green: 0.8, blue: 0.8),
+                titleBarForeground: .black,
+                menuBarBackground: Color(red: 0.9, green: 0.9, blue: 0.9),
+                menuBarForeground: .black,
+                bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2),
+            )
+        case .dark:
+            AppTheme(
+                background: .black,
+                foreground: .white,
+                titleBarBackground: Color(red: 0.2, green: 0.2, blue: 0.2),
+                titleBarForeground: .white,
+                menuBarBackground: Color(red: 0.1, green: 0.1, blue: 0.1),
+                menuBarForeground: .white,
+                bottomMenuForeground: Color(red: 0.8, green: 0.8, blue: 0.8),
+            )
+        case .blue:
+            AppTheme(
+                background: Color(red: 0.0, green: 0.0, blue: 0.667), // Sky blue
+                foreground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
+                titleBarBackground: Color(red: 0.667, green: 0.667, blue: 0.667), // Light gray
+                titleBarForeground: .black,
+                menuBarBackground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
+                menuBarForeground: .black,
+                bottomMenuForeground: Color(red: 0.9, green: 0.9, blue: 0.9),
+            )
+        }
+    }
 }

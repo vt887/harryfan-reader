@@ -2,7 +2,7 @@
 //  TitleBar.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by Vad Tymoshyk on 9/26/25.
 //
 
 import SwiftUI
@@ -12,10 +12,10 @@ struct TitleBar: View {
 
     var body: some View {
         ScreenView(document: document,
-                   contentToDisplay: document.fileName.isEmpty ? "HarryFanReader" : document.fileName,
+                   contentToDisplay: document.getTitleBarText(),
                    displayRows: 1,
                    rowOffset: 0,
-                   backgroundColor: Colors.titleBarColor,
-                   fontColor: Colors.black)
+                   backgroundColor: Colors.theme.titleBarBackground,
+                   fontColor: Colors.theme.titleBarForeground)
     }
 }

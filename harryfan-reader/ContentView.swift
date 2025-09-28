@@ -65,8 +65,8 @@ struct ContentView: View {
             MenuBar(document: document)
         }
         .frame(width: CGFloat(ScreenView.cols * ScreenView.charW),
-               height: CGFloat(document.numScreenRows) * CGFloat(ScreenView.charH))
-        .background(Colors.foregroundColor)
+               height: CGFloat(document.rows) * CGFloat(ScreenView.charH))
+        .background(Colors.theme.background)
         .fileImporter(
             isPresented: $showingFilePicker,
             allowedContentTypes: [UTType.plainText],

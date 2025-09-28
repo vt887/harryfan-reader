@@ -146,13 +146,13 @@ struct SettingsView: View {
 
                 Section("About") {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Harryfan Reader")
+                        Text("HarryFan Reader")
                             .font(.headline)
-                        Text("A retro-style text viewer for MacOS")
+                        Text("A retro-style text viewer")
                             .font(.caption)
                         Text("Supports CP866 encoding and MS-DOS fonts")
                             .font(.caption)
-                        Text("Version 1.0")
+                        Text("Version \(ReleaseInfo.version).\(ReleaseInfo.build)")
                             .font(.caption)
                     }
                 }

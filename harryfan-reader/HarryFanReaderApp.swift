@@ -55,6 +55,7 @@ struct HarryFanReaderApp: App {
                 .environmentObject(fontManager)
                 .environmentObject(bookmarkManager)
                 .frame(minWidth: 600, minHeight: 480)
+                .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings
         }
         .windowStyle(.titleBar)
         .defaultSize(width: 800, height: 600)

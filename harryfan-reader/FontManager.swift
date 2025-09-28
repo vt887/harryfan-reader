@@ -10,12 +10,12 @@ import Foundation
 import SwiftUI
 
 class FontManager: ObservableObject {
-    @Published var currentFont: MSDOSFont = .vdu8x16
+    @Published var currentFont: MSDOSFont = .init(rawValue: AppSettings.fontFileName) ?? .vdu8x16
     @Published var fontSize: CGFloat = 16.0
-    @Published var availableFonts: [String] = [] // New published property
+    @Published var availableFonts: [String] = []
 
     enum MSDOSFont: String, CaseIterable {
-        case vdu8x16 = "VDU 8x16"
+        case vdu8x16 = "vdu.8x16"
 
         var displayName: String {
             rawValue
@@ -32,53 +32,32 @@ class FontManager: ObservableObject {
 
     private func scanForFonts() {
         let fm = FileManager.default
-        #if SWIFT_PACKAGE
-            guard let fontsURL = Bundle.module.resourceURL?.appendingPathComponent("Fonts") else { return }
-        #else
-            guard let bundleURL = Bundle.main.resourceURL else { return }
-            let fontsURL = bundleURL.appendingPathComponent("Fonts")
-        #endif
-
-        do {
-            let fileURLs = try fm.contentsOfDirectory(at: fontsURL,
-                                                      includingPropertiesForKeys: nil,
-                                                      options: .skipsHiddenFiles)
-            availableFonts = fileURLs.filter { $0.pathExtension == "raw" }
+        let homeDir = fm.homeDirectoryForCurrentUser
+        let userFontsURL = homeDir.appendingPathComponent("harryfan/fonts")
+        var foundFonts: [String] = []
+        if let fontFiles = try? fm.contentsOfDirectory(at: userFontsURL, includingPropertiesForKeys: nil, options: .skipsHiddenFiles) {
+            foundFonts = fontFiles.filter { $0.pathExtension == "raw" }
                 .map { $0.deletingPathExtension().lastPathComponent }
-        } catch {
-            print("Failed to scan for fonts: \(error)")
         }
+        if foundFonts.isEmpty {
+            // Fallback to default font
+            foundFonts = ["vdu.8x16"]
+        }
+        availableFonts = foundFonts
     }
 
     private func loadFont() {
-        // Locate the font file packaged as a resource
-        var fontURL: URL?
+        var fontURL: URL? = findFontURL(for: AppSettings.fontFileName)
+        var effectiveFontFileName = AppSettings.fontFileName
 
-        // Prefer SwiftPM resource bundle if available
-        #if SWIFT_PACKAGE
-            if let url = Bundle.module.url(forResource: "vdu.8x16", withExtension: "raw", subdirectory: "Fonts") {
-                fontURL = url
-            }
-        #endif
-
-        // Fallback to main bundle
         if fontURL == nil {
-            if let url = Bundle.main.url(forResource: "vdu.8x16", withExtension: "raw", subdirectory: "Fonts") {
-                fontURL = url
-            }
-        }
-
-        // If not found in bundle, try to find it in the current directory
-        if fontURL == nil {
-            let currentDir = FileManager.default.currentDirectoryPath
-            let fullPath = "\(currentDir)/Fonts/vdu.8x16.raw"
-            if FileManager.default.fileExists(atPath: fullPath) {
-                fontURL = URL(fileURLWithPath: fullPath)
-            }
+            print("\(AppSettings.fontFileName).raw not found. Attempting to load default font: vdu.8x16.raw")
+            fontURL = findFontURL(for: MSDOSFont.vdu8x16.rawValue)
+            effectiveFontFileName = MSDOSFont.vdu8x16.rawValue
         }
 
         guard let url = fontURL else {
-            print("Failed to find font file.")
+            print("Failed to find any font file.")
             return
         }
 
@@ -86,9 +65,64 @@ class FontManager: ObservableObject {
             fontData = try Data(contentsOf: url)
             parseFontData()
             print("Font loaded successfully from: \(url.path)")
+            if currentFont.rawValue != effectiveFontFileName {
+                // Update currentFont if it defaulted to vdu.8x16
+                if let newFont = MSDOSFont(rawValue: effectiveFontFileName) {
+                    currentFont = newFont
+                }
+            }
         } catch {
             print("Failed to load font: \(error)")
         }
+    }
+
+    private func findFontURL(for fontName: String) -> URL? {
+        let fm = FileManager.default
+        // 1. Check ~/harryfan/fonts
+        let homeDir = fm.homeDirectoryForCurrentUser
+        let userFontsURL = homeDir.appendingPathComponent("harryfan/fonts/")
+        let userFontPath = userFontsURL.appendingPathComponent("\(fontName).raw").path
+        if fm.fileExists(atPath: userFontPath) {
+            return URL(fileURLWithPath: userFontPath)
+        }
+        // 2. Check SwiftPM bundle
+        #if SWIFT_PACKAGE
+        if let url = Bundle.module.url(forResource: fontName, withExtension: "raw", subdirectory: "Fonts") {
+            return url
+        }
+        #endif
+        // 3. Check main bundle
+        if let url = Bundle.main.url(forResource: fontName, withExtension: "raw", subdirectory: "Fonts") {
+            return url
+        }
+        // 4. Check current directory
+        let currentDir = fm.currentDirectoryPath
+        let localFontPath = "\(currentDir)/Fonts/\(fontName).raw"
+        if fm.fileExists(atPath: localFontPath) {
+            return URL(fileURLWithPath: localFontPath)
+        }
+        // 5. Fallback to default font in ~/harryfan/fonts
+        let defaultUserFontPath = userFontsURL.appendingPathComponent("vdu.8x16.raw").path
+        if fm.fileExists(atPath: defaultUserFontPath) {
+            return URL(fileURLWithPath: defaultUserFontPath)
+        }
+        // 6. Fallback to default font in SwiftPM bundle
+        #if SWIFT_PACKAGE
+        if let url = Bundle.module.url(forResource: "vdu.8x16", withExtension: "raw", subdirectory: "Fonts") {
+            return url
+        }
+        #endif
+        // 7. Fallback to default font in main bundle
+        if let url = Bundle.main.url(forResource: "vdu.8x16", withExtension: "raw", subdirectory: "Fonts") {
+            return url
+        }
+        // 8. Fallback to default font in current directory
+        let localDefaultFontPath = "\(currentDir)/Fonts/vdu.8x16.raw"
+        if fm.fileExists(atPath: localDefaultFontPath) {
+            return URL(fileURLWithPath: localDefaultFontPath)
+        }
+        // Not found
+        return nil
     }
 
     private func parseFontData() {
