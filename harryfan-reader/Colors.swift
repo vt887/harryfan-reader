@@ -32,11 +32,12 @@ struct AppTheme {
             AppTheme(
                 background: .white,
                 foreground: .black,
-                titleBarBackground: Color(red: 0.8, green: 0.8, blue: 0.8),
+                titleBarBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
                 titleBarForeground: .black,
-                menuBarBackground: Color(red: 0.9, green: 0.9, blue: 0.9),
+                menuBarBackground: Color(red: 0.9, green: 0.9, blue: 0.9), // Very light gray
                 menuBarForeground: .black,
-                bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2),
+                bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
+                helpManuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
             )
         case .dark:
             AppTheme(
