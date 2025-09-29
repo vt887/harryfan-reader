@@ -4,7 +4,7 @@
 .PHONY: lint style build run test pre-commit
 
 lint:
-	swiftformat . --swift-version 6.2 -verbose
+	swiftformat . --swift-version 5.9 -verbose
 
 style:
 	swiftlint --fix --format

@@ -49,7 +49,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -64,7 +64,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -79,7 +79,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -121,7 +121,7 @@ struct SettingsView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
-                alignment: .bottom,
+                alignment: .bottom
             )
 
             // Settings content
@@ -215,7 +215,7 @@ struct SettingsView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
-                alignment: .top,
+                alignment: .top
             )
         }
         .frame(width: 450, height: 400)

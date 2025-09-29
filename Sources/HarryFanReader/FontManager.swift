@@ -57,7 +57,7 @@ final class FontManager: ObservableObject {
         if let fontFiles = try? fm.contentsOfDirectory(
             at: userFontsURL,
             includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles,
+            options: .skipsHiddenFiles
         ) {
             let rawFonts = fontFiles
                 .filter { $0.pathExtension == "raw" }

@@ -31,7 +31,7 @@ struct ContentView: View {
         mainLayout
             .frame(
                 width: CGFloat(AppSettings.cols * AppSettings.charW),
-                height: CGFloat(25) * CGFloat(AppSettings.charH),
+                height: CGFloat(25) * CGFloat(AppSettings.charH)
             )
             .background(Colors.theme.background)
             .fileImporter(isPresented: $showingFilePicker,
@@ -247,11 +247,11 @@ struct RetroButtonStyle: ButtonStyle {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(configuration.isPressed ? Color.gray : Color(red: 0, green: 0, blue: 0.7)),
+                    .fill(configuration.isPressed ? Color.gray : Color(red: 0, green: 0, blue: 0.7))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.white, lineWidth: 1),
+                    .stroke(Color.white, lineWidth: 1)
             )
     }
 }
@@ -266,7 +266,7 @@ struct RetroMenuButtonStyle: ButtonStyle {
             .padding(.vertical, 2)
             .background(
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(configuration.isPressed ? Color.gray : Color.clear),
+                    .fill(configuration.isPressed ? Color.gray : Color.clear)
             )
     }
 }
