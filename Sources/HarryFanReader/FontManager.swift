@@ -77,20 +77,20 @@ final class FontManager: ObservableObject {
         var fontURL = findFontURL(for: effectiveFont)
 
         if fontURL == nil {
-            print("\(effectiveFont).raw not found. Falling back to default: \(AppSettings.defaultFontFileName).raw")
+            DebugLogger.logWarning("\(effectiveFont).raw not found. Falling back to default: \(AppSettings.defaultFontFileName).raw")
             effectiveFont = AppSettings.defaultFontFileName
             fontURL = findFontURL(for: effectiveFont)
         }
 
         guard let url = fontURL else {
-            print("Failed to find any font file.")
+            DebugLogger.logError("Failed to find any font file.")
             return
         }
 
         do {
             fontData = try Data(contentsOf: url)
             parseFontData()
-            print("Font loaded from: \(url.path)")
+            DebugLogger.log("Font loaded from: \(url.path)")
 
             if currentFont.rawValue != effectiveFont,
                let newFont = MSDOSFont(rawValue: effectiveFont)
@@ -98,7 +98,7 @@ final class FontManager: ObservableObject {
                 currentFont = newFont
             }
         } catch {
-            print("Failed to load font: \(error)")
+            DebugLogger.logError("Failed to load font: \(error)")
         }
     }
 

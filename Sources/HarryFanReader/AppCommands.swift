@@ -1,8 +1,8 @@
 //
-//  HarryFanReaderApp.swift
+//  AppCommands.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by Vad Tymoshyk on 9/29/25.
 //
 
 import AppKit
@@ -18,55 +18,28 @@ extension Notification.Name {
     static let nextBookmarkCommand = Notification.Name("AppCommand.nextBookmark")
     static let previousBookmarkCommand = Notification.Name("AppCommand.previousBookmark")
     static let showBookmarksCommand = Notification.Name("AppCommand.showBookmarks")
+    static let scrollUpCommand = Notification.Name("scrollUpCommand")
+    static let scrollDownCommand = Notification.Name("scrollDownCommand")
+    static let pageUpCommand = Notification.Name("pageUpCommand")
+    static let pageDownCommand = Notification.Name("pageDownCommand")
+    static let scrollToStartCommand = Notification.Name("scrollToStartCommand")
+    static let scrollToEndCommand = Notification.Name("scrollToEndCommand")
+    static let recentFilesCommand = Notification.Name("recentFilesCommand")
+    static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
 }
 
-// Application delegate for macOS app lifecycle
-class AppDelegate: NSObject, NSApplicationDelegate {
-    func applicationDidFinishLaunching(_: Notification) {
-        // Ensure the app has a regular activation policy so the Menu Bar is visible
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-    }
-
-    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
-        // Close the app when the last window (red button) is closed
-        true
-    }
-
-    func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
-        let alert = NSAlert()
-        alert.messageText = "Quit HarryFanReader?"
-        alert.informativeText = "Are you sure you want to quit?"
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Quit")
-        alert.addButton(withTitle: "Cancel")
-        let response = alert.runModal()
-        return response == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
-    }
-}
-
-// Main app entry point and scene configuration
-@main
-struct HarryFanReaderApp: App {
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var fontManager = FontManager()
-    @StateObject private var bookmarkManager = BookmarkManager()
-
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .environmentObject(fontManager)
-                .environmentObject(bookmarkManager)
-                .frame(minWidth: 600, minHeight: 480)
-                .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings
-        }
-        .windowStyle(.titleBar)
-        .defaultSize(width: 800, height: 600)
-        .defaultPosition(.center)
-        .commands {
+enum AppCommands {
+    static func buildCommands() -> some Commands {
+        Group {
             CommandGroup(replacing: .newItem) {
-                Button("Open") {
+                Button("Open...") {
                     NotificationCenter.default.post(name: .openFileCommand, object: nil)
+                }
+                Button("Recent Files") {
+                    NotificationCenter.default.post(name: .recentFilesCommand, object: nil)
+                }
+                Button("Clear Recent") {
+                    NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil)
                 }
             }
             CommandGroup(replacing: .appTermination) {
@@ -122,12 +95,16 @@ struct HarryFanReaderApp: App {
                     NotificationCenter.default.post(name: .pageDownCommand, object: nil)
                 }
                 .keyboardShortcut(.downArrow, modifiers: .control)
+                Divider()
+                Button("Scroll to start") {
+                    NotificationCenter.default.post(name: .scrollToStartCommand, object: nil)
+                }
+                .keyboardShortcut(.home, modifiers: [])
+                Button("Scroll to end") {
+                    NotificationCenter.default.post(name: .scrollToEndCommand, object: nil)
+                }
+                .keyboardShortcut(.end, modifiers: [])
             }
-        }
-
-        Settings {
-            SettingsView()
-                .environmentObject(fontManager)
         }
     }
 }

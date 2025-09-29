@@ -9,13 +9,6 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 // Main content view for the app
-extension Notification.Name {
-    static let scrollUpCommand = Notification.Name("scrollUpCommand")
-    static let scrollDownCommand = Notification.Name("scrollDownCommand")
-    static let pageUpCommand = Notification.Name("pageUpCommand")
-    static let pageDownCommand = Notification.Name("pageDownCommand")
-}
-
 struct ContentView: View {
     @StateObject private var document = TextDocument()
     @EnvironmentObject var fontManager: FontManager
@@ -30,7 +23,7 @@ struct ContentView: View {
     @State private var gotoLineNumber = ""
 
     init() {
-        print("ContentView initializing...")
+        DebugLogger.log("ContentView initializing...")
     }
 
     var body: some View {
@@ -74,7 +67,6 @@ struct ContentView: View {
     }
 
     // Main layout
-
     private var mainLayout: some View {
         VStack(spacing: 0) {
             TitleBar(document: document)
@@ -100,7 +92,6 @@ struct ContentView: View {
     }
 
     // File Import Handler
-
     private func handleFileImport(_ result: Result<[URL], Error>) {
         switch result {
         case let .success(urls):
@@ -108,12 +99,11 @@ struct ContentView: View {
                 document.openFile(at: url)
             }
         case let .failure(error):
-            print("Error selecting file: \(error)")
+            DebugLogger.logError("Error selecting file: \(error)")
         }
     }
 
     // Go To Line Dialog
-
     private var gotoLineDialog: some View {
         Group {
             TextField("Line number", text: $gotoLineNumber)
@@ -150,7 +140,7 @@ private struct MainContentScreenView: View {
                     if document.fileName.isEmpty {
                         document.loadWelcomeText()
                     }
-                    print("Main content area appeared")
+                    DebugLogger.log("Main content area appeared")
                 }
         }
     }

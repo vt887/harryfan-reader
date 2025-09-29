@@ -25,6 +25,8 @@ struct AppTheme {
     let menuBarBackground: Color
     let menuBarForeground: Color
     let bottomMenuForeground: Color
+    let helpMenuBackground: Color
+    let helpMenuForeground: Color
 
     static func theme(for appearance: AppAppearance) -> AppTheme {
         switch appearance {
@@ -37,7 +39,8 @@ struct AppTheme {
                 menuBarBackground: Color(red: 0.9, green: 0.9, blue: 0.9), // Very light gray
                 menuBarForeground: .black,
                 bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
-                helpManuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
+                helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         case .dark:
             AppTheme(
@@ -48,6 +51,8 @@ struct AppTheme {
                 menuBarBackground: Color(red: 0.1, green: 0.1, blue: 0.1),
                 menuBarForeground: .white,
                 bottomMenuForeground: Color(red: 0.8, green: 0.8, blue: 0.8),
+                helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         case .blue:
             AppTheme(
@@ -58,6 +63,8 @@ struct AppTheme {
                 menuBarBackground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
                 menuBarForeground: .black,
                 bottomMenuForeground: Color(red: 0.9, green: 0.9, blue: 0.9),
+                helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         }
     }

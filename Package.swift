@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "HarryfanReader",
+    name: "HarryFanReader",
     platforms: [
         .macOS(.v14),
     ],
@@ -17,7 +17,7 @@ let package = Package(
         .executableTarget(
             name: "HarryFan Reader",
             dependencies: [],
-            path: "harryfan-reader",
+            path: "Sources/HarryFanReader",
             exclude: [
                 "HarryFanReader.entitlements",
                 "Info.plist",
@@ -27,6 +27,11 @@ let package = Package(
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
             ],
+        ),
+        .testTarget(
+            name: "HarryFanReaderTests",
+            dependencies: ["HarryFan Reader"],
+            path: "Tests/HarryFanReaderTests"
         ),
     ],
 )
