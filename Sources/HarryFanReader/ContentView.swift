@@ -205,7 +205,8 @@ private struct NotificationsModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .openRecentFileCommand)) { notification in
                 if let userInfo = notification.userInfo,
-                   let url = userInfo["url"] as? URL {
+                   let url = userInfo["url"] as? URL
+                {
                     document.openFile(at: url)
                     recentFilesManager.addRecentFile(url: url)
                 }
@@ -215,8 +216,8 @@ private struct NotificationsModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .openBookmarkCommand)) { notification in
                 if let userInfo = notification.userInfo,
-                   let bookmark = userInfo["bookmark"] as? BookmarkManager.Bookmark {
-
+                   let bookmark = userInfo["bookmark"] as? BookmarkManager.Bookmark
+                {
                     // If the current file is different from the bookmark's file, we need to open it first
                     if document.fileName != bookmark.fileName {
                         // For now, we'll just go to the line in the current file

@@ -31,7 +31,7 @@ let package = Package(
         .testTarget(
             name: "HarryFanReaderTests",
             dependencies: ["HarryFan Reader"],
-            path: "Tests/HarryFanReaderTests"
+            path: "Tests/HarryFanReaderTests",
         ),
     ],
 )

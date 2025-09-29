@@ -51,7 +51,7 @@ struct AppCommands: Commands {
                                 NotificationCenter.default.post(
                                     name: .openRecentFileCommand,
                                     object: nil,
-                                    userInfo: ["url": file.url]
+                                    userInfo: ["url": file.url],
                                 )
                             }
                         }
@@ -104,7 +104,7 @@ struct AppCommands: Commands {
                                 NotificationCenter.default.post(
                                     name: .openBookmarkCommand,
                                     object: nil,
-                                    userInfo: ["bookmark": bookmark]
+                                    userInfo: ["bookmark": bookmark],
                                 )
                             }
                         }
