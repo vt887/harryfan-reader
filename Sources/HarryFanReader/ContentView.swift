@@ -31,7 +31,7 @@ struct ContentView: View {
         mainLayout
             .frame(
                 width: CGFloat(AppSettings.cols * AppSettings.charW),
-                height: CGFloat(document.rows) * CGFloat(AppSettings.charH),
+                height: CGFloat(25) * CGFloat(AppSettings.charH),
             )
             .background(Colors.theme.background)
             .fileImporter(isPresented: $showingFilePicker,
@@ -73,21 +73,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             TitleBar(document: document)
 
-            ScreenView(document: document,
-                       contentToDisplay: " ",
-                       displayRows: 1,
-                       rowOffset: 1)
-                .environmentObject(fontManager)
-                .frame(height: CGFloat(1) * CGFloat(AppSettings.charH))
-
             MainContentScreenView(document: document)
-
-            ScreenView(document: document,
-                       contentToDisplay: String(repeating: "\n", count: 14),
-                       displayRows: 14,
-                       rowOffset: 9)
-                .environmentObject(fontManager)
-                .frame(height: CGFloat(14) * CGFloat(AppSettings.charH))
 
             MenuBar(document: document)
         }
@@ -132,13 +118,13 @@ private struct MainContentScreenView: View {
 
     var body: some View {
         if document.shouldShowQuitMessage {
-            ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: 7, rowOffset: 2)
+            ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: 23, rowOffset: 1)
                 .environmentObject(fontManager)
-                .frame(height: CGFloat(7) * CGFloat(ScreenView.charH))
+                .frame(height: CGFloat(23) * CGFloat(ScreenView.charH))
         } else {
-            ScreenView(document: document, displayRows: 7, rowOffset: 2)
+            ScreenView(document: document, displayRows: 23, rowOffset: 1)
                 .environmentObject(fontManager)
-                .frame(height: CGFloat(7) * CGFloat(ScreenView.charH))
+                .frame(height: CGFloat(23) * CGFloat(ScreenView.charH))
                 .onAppear {
                     if document.fileName.isEmpty {
                         document.loadWelcomeText()
@@ -226,6 +212,20 @@ private struct NotificationsModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .clearRecentFilesCommand)) { _ in
                 recentFilesManager.clearRecentFiles()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openBookmarkCommand)) { notification in
+                if let userInfo = notification.userInfo,
+                   let bookmark = userInfo["bookmark"] as? BookmarkManager.Bookmark {
+
+                    // If the current file is different from the bookmark's file, we need to open it first
+                    if document.fileName != bookmark.fileName {
+                        // For now, we'll just go to the line in the current file
+                        // In a more complete implementation, we'd open the file first
+                        document.gotoLine(bookmark.line + 1)
+                    } else {
+                        document.gotoLine(bookmark.line + 1)
+                    }
+                }
             }
     }
 }

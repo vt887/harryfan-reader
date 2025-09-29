@@ -47,14 +47,14 @@ struct HarryFanReaderApp: App {
                 .environmentObject(fontManager)
                 .environmentObject(bookmarkManager)
                 .environmentObject(recentFilesManager)
-                .frame(minWidth: 600, minHeight: 480)
+                .frame(minWidth: 600, minHeight: 520)
                 .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings
         }
         .windowStyle(.titleBar)
-        .defaultSize(width: 800, height: 600)
+        .defaultSize(width: 800, height: 680)
         .defaultPosition(.center)
         .commands {
-            AppCommands(recentFilesManager: recentFilesManager)
+            AppCommands(recentFilesManager: recentFilesManager, bookmarkManager: bookmarkManager)
         }
 
         Settings {

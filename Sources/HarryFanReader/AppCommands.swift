@@ -25,12 +25,14 @@ extension Notification.Name {
     static let scrollToStartCommand = Notification.Name("scrollToStartCommand")
     static let scrollToEndCommand = Notification.Name("scrollToEndCommand")
     static let openRecentFileCommand = Notification.Name("AppCommand.openRecentFile")
+    static let openBookmarkCommand = Notification.Name("AppCommand.openBookmark")
     static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
 }
 
 struct AppCommands: Commands {
     @ObservedObject var recentFilesManager: RecentFilesManager
-    
+    @ObservedObject var bookmarkManager: BookmarkManager
+
     var body: some Commands {
         Group {
             CommandGroup(replacing: .newItem) {
@@ -38,8 +40,8 @@ struct AppCommands: Commands {
                     NotificationCenter.default.post(name: .openFileCommand, object: nil)
                 }
                 .keyboardShortcut("o", modifiers: .command)
-                
-                Menu("Recent Files ▸") {
+
+                Menu("Recent Files") {
                     if recentFilesManager.recentFiles.isEmpty {
                         Text("No Recent Files")
                             .disabled(true)
@@ -53,9 +55,9 @@ struct AppCommands: Commands {
                                 )
                             }
                         }
-                        
+
                         Divider()
-                        
+
                         Button("Clear Recent") {
                             NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil)
                         }
@@ -87,15 +89,26 @@ struct AppCommands: Commands {
                     NotificationCenter.default.post(name: .addBookmarkCommand, object: nil)
                 }
                 .keyboardShortcut("b", modifiers: .command)
-                Button("Next Bookmark") {
-                    NotificationCenter.default.post(name: .nextBookmarkCommand, object: nil)
-                }
-                Button("Previous Bookmark") {
-                    NotificationCenter.default.post(name: .previousBookmarkCommand, object: nil)
-                }
+
                 Divider()
-                Button("Show Bookmarks") {
-                    NotificationCenter.default.post(name: .showBookmarksCommand, object: nil)
+
+                Menu("Bookmarks") {
+                    let allBookmarks = bookmarkManager.bookmarks
+
+                    if allBookmarks.isEmpty {
+                        Text("No Bookmarks")
+                            .disabled(true)
+                    } else {
+                        ForEach(allBookmarks) { bookmark in
+                            Button("\(bookmark.fileName): Line \(bookmark.line + 1)") {
+                                NotificationCenter.default.post(
+                                    name: .openBookmarkCommand,
+                                    object: nil,
+                                    userInfo: ["bookmark": bookmark]
+                                )
+                            }
+                        }
+                    }
                 }
             }
             CommandMenu("Navigate") {

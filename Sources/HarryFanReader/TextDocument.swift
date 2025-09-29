@@ -46,11 +46,11 @@ class TextDocument: ObservableObject {
             let rawLines = cleanLines(splitLines(decodedString))
             content = wrapLines(rawLines)
             encoding = "CP866"
-            print("File loaded with CP866 encoding")
+            DebugLogger.log("File loaded with CP866 encoding")
             totalLines = content.count
             currentLine = 0
         } catch {
-            print("Error opening file: \(error)")
+            DebugLogger.log("Error opening file: \(error)")
         }
     }
 
@@ -62,9 +62,9 @@ class TextDocument: ObservableObject {
             return appName.padding(toLength: 80, withPad: " ", startingAt: 0)
         } else {
             let percent = totalLines > 0 ? Int((Double(currentLine + 1) / Double(totalLines)) * 100.0) : 0
-            let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)% \(encoding)"
+            let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)%  "
 
-            let availableWidth = 80 - appName.count - statusText.count - 3 // 3 for " - " delimiters
+            let availableWidth = AppSettings.cols - appName.count - statusText.count - 3 // 3 for " - " delimiters
 
             var displayFileName = fileName
             if fileName.count > availableWidth {
