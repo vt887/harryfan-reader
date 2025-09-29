@@ -12,7 +12,7 @@ on:
 jobs:
   build:
     name: Swift 6.2 on macOS
-    runs-on: macos-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       - uses: swift-actions/setup-swift@v2
