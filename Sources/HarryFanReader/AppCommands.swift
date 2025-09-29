@@ -24,22 +24,42 @@ extension Notification.Name {
     static let pageDownCommand = Notification.Name("pageDownCommand")
     static let scrollToStartCommand = Notification.Name("scrollToStartCommand")
     static let scrollToEndCommand = Notification.Name("scrollToEndCommand")
-    static let recentFilesCommand = Notification.Name("recentFilesCommand")
+    static let openRecentFileCommand = Notification.Name("AppCommand.openRecentFile")
     static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
 }
 
-enum AppCommands {
-    static func buildCommands() -> some Commands {
+struct AppCommands: Commands {
+    @ObservedObject var recentFilesManager: RecentFilesManager
+    
+    var body: some Commands {
         Group {
             CommandGroup(replacing: .newItem) {
                 Button("Open...") {
                     NotificationCenter.default.post(name: .openFileCommand, object: nil)
                 }
-                Button("Recent Files") {
-                    NotificationCenter.default.post(name: .recentFilesCommand, object: nil)
-                }
-                Button("Clear Recent") {
-                    NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil)
+                .keyboardShortcut("o", modifiers: .command)
+                
+                Menu("Recent Files ▸") {
+                    if recentFilesManager.recentFiles.isEmpty {
+                        Text("No Recent Files")
+                            .disabled(true)
+                    } else {
+                        ForEach(recentFilesManager.recentFiles) { file in
+                            Button(file.displayName) {
+                                NotificationCenter.default.post(
+                                    name: .openRecentFileCommand,
+                                    object: nil,
+                                    userInfo: ["url": file.url]
+                                )
+                            }
+                        }
+                        
+                        Divider()
+                        
+                        Button("Clear Recent") {
+                            NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil)
+                        }
+                    }
                 }
             }
             CommandGroup(replacing: .appTermination) {

@@ -13,6 +13,7 @@ struct ContentView: View {
     @StateObject private var document = TextDocument()
     @EnvironmentObject var fontManager: FontManager
     @EnvironmentObject var bookmarkManager: BookmarkManager
+    @EnvironmentObject var recentFilesManager: RecentFilesManager
 
     @State private var showingFilePicker = false
     @State private var showingSearch = false
@@ -63,6 +64,7 @@ struct ContentView: View {
             .applyNotifications(document: document,
                                 showingSearch: $showingSearch,
                                 showingBookmarks: $showingBookmarks,
+                                showingFilePicker: $showingFilePicker,
                                 lastSearchTerm: $lastSearchTerm)
     }
 
@@ -97,6 +99,7 @@ struct ContentView: View {
         case let .success(urls):
             if let url = urls.first {
                 document.openFile(at: url)
+                recentFilesManager.addRecentFile(url: url)
             }
         case let .failure(error):
             DebugLogger.logError("Error selecting file: \(error)")
@@ -151,14 +154,19 @@ private struct NotificationsModifier: ViewModifier {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
     @EnvironmentObject var bookmarkManager: BookmarkManager
+    @EnvironmentObject var recentFilesManager: RecentFilesManager
     @Binding var showingSearch: Bool
     @Binding var showingBookmarks: Bool
+    @Binding var showingFilePicker: Bool
     @Binding var lastSearchTerm: String
 
     func body(content: Content) -> some View {
         content
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
                 // Handle window focus
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openFileCommand)) { _ in
+                showingFilePicker = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .openSearchCommand)) { _ in
                 if document.fileName.isEmpty { return }
@@ -209,13 +217,23 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .pageDownCommand)) { _ in
                 document.pageDown() // Use pageDown with default page size
             }
+            .onReceive(NotificationCenter.default.publisher(for: .openRecentFileCommand)) { notification in
+                if let userInfo = notification.userInfo,
+                   let url = userInfo["url"] as? URL {
+                    document.openFile(at: url)
+                    recentFilesManager.addRecentFile(url: url)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .clearRecentFilesCommand)) { _ in
+                recentFilesManager.clearRecentFiles()
+            }
     }
 }
 
 // Extension for applying notification modifier to views
 private extension View {
-    func applyNotifications(document: TextDocument, showingSearch: Binding<Bool>, showingBookmarks: Binding<Bool>, lastSearchTerm: Binding<String>) -> some View {
-        modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, lastSearchTerm: lastSearchTerm))
+    func applyNotifications(document: TextDocument, showingSearch: Binding<Bool>, showingBookmarks: Binding<Bool>, showingFilePicker: Binding<Bool>, lastSearchTerm: Binding<String>) -> some View {
+        modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, showingFilePicker: showingFilePicker, lastSearchTerm: lastSearchTerm))
     }
 }
 
@@ -256,4 +274,5 @@ struct RetroMenuButtonStyle: ButtonStyle {
     ContentView()
         .environmentObject(FontManager())
         .environmentObject(BookmarkManager())
+        .environmentObject(RecentFilesManager())
 }

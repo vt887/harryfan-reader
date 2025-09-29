@@ -39,12 +39,14 @@ struct HarryFanReaderApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var fontManager = FontManager()
     @StateObject private var bookmarkManager = BookmarkManager()
+    @StateObject private var recentFilesManager = RecentFilesManager()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(fontManager)
                 .environmentObject(bookmarkManager)
+                .environmentObject(recentFilesManager)
                 .frame(minWidth: 600, minHeight: 480)
                 .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings
         }
@@ -52,7 +54,7 @@ struct HarryFanReaderApp: App {
         .defaultSize(width: 800, height: 600)
         .defaultPosition(.center)
         .commands {
-            AppCommands.buildCommands()
+            AppCommands(recentFilesManager: recentFilesManager)
         }
 
         Settings {
