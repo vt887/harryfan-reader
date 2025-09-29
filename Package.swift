@@ -1,28 +1,32 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
-    name: "TxtViewer",
+    name: "HarryfanReader",
     platforms: [
-        .macOS(.v14)
+        .macOS(.v14),
     ],
     products: [
         .executable(
-            name: "TxtViewer",
-            targets: ["TxtViewer"]
-        )
+            name: "HarryFan Reader",
+            targets: ["HarryFan Reader"],
+        ),
     ],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "TxtViewer",
+            name: "HarryFan Reader",
             dependencies: [],
-            path: "TxtViewer",
+            path: "harryfan-reader",
+            exclude: [
+                "HarryFanReader.entitlements",
+                "Info.plist",
+            ],
             resources: [
-                .process("vdu.8x16.raw"),
+                .copy("Fonts"),
                 .process("Assets.xcassets"),
-                .process("Preview Content/Preview Assets.xcassets")
-            ]
-        )
-    ]
+                .process("Preview Content/Preview Assets.xcassets"),
+            ],
+        ),
+    ],
 )
