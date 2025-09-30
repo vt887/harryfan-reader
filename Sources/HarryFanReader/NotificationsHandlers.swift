@@ -5,8 +5,8 @@
 //  Created by @vt887 on 9/29/25.
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 private struct NotificationsModifier: ViewModifier {
     @ObservedObject var document: TextDocument
@@ -44,4 +44,3 @@ extension View {
         modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, showingFilePicker: showingFilePicker, lastSearchTerm: lastSearchTerm))
     }
 }
-
