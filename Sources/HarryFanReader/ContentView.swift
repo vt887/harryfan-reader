@@ -130,9 +130,6 @@ private struct MainContentScreenView: View {
                         document.loadWelcomeText()
                     }
                     DebugLogger.log("Main content area appeared")
-                    for row in 1 ... 24 {
-                        DebugLogger.log("Row number: \(row)")
-                    }
                 }
         }
     }
@@ -170,7 +167,6 @@ struct RetroMenuButtonStyle: ButtonStyle {
             )
     }
 }
-
 
 #Preview {
     ContentView()

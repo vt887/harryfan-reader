@@ -127,8 +127,8 @@ final class FontManager: ObservableObject {
     private func parseFontData() {
         guard let data = fontData else { return }
 
-        let charHeight = 16
-        let charWidth = 8
+        let charHeight = AppSettings.charH
+        let charWidth = AppSettings.charW
         let numChars = 256
         let expectedBytes = numChars * charHeight
         let headerSize = max(0, data.count - expectedBytes)

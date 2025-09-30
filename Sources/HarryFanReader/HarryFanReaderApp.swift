@@ -22,8 +22,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
+        if !AppSettings.shouldShowQuitMessage {
+            return .terminateNow
+        }
+        // Show a confirmation dialog before quitting
         let alert = NSAlert()
-        alert.messageText = "Quit HarryFanReader?"
+        alert.messageText = "Quit \(AppSettings.appName)?"
         alert.informativeText = "Are you sure you want to quit?"
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Quit")

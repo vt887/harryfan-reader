@@ -30,9 +30,6 @@ class TextDocument: ObservableObject {
     func loadWelcomeText() {
         content = splitLines(Messages.welcomeMessage)
         totalLines = content.count
-        currentLine = 0
-        fileName = ""
-        encoding = "ASCII"
     }
 
     // Opens a file and loads its content
@@ -45,7 +42,6 @@ class TextDocument: ObservableObject {
             let decodedString = decodeCP866(from: data)
             let rawLines = cleanLines(splitLines(decodedString))
             content = wrapLines(rawLines)
-            encoding = "CP866"
             DebugLogger.log("File loaded with CP866 encoding")
             totalLines = content.count
             currentLine = 0
@@ -72,7 +68,7 @@ class TextDocument: ObservableObject {
             }
 
             let title = "\(appName) - \(displayFileName)"
-            let rightPaddedTitle = title.padding(toLength: 80 - statusText.count, withPad: " ", startingAt: 0)
+            let rightPaddedTitle = title.padding(toLength: AppSettings.cols - statusText.count - 3, withPad: " ", startingAt: 0)
             return "\(rightPaddedTitle)\(statusText)"
         }
     }
@@ -87,7 +83,7 @@ class TextDocument: ObservableObject {
                                                        withPad: " ",
                                                        startingAt: 0) }
             .joined(separator: "")
-        return menuBarString.padding(toLength: 80, withPad: " ", startingAt: 0)
+        return menuBarString.padding(toLength: AppSettings.cols, withPad: " ", startingAt: 0)
     }
 
     // Decodes CP866 encoded data to a string
@@ -229,7 +225,7 @@ class TextDocument: ObservableObject {
 
     // Moves up one line in the document
     func lineUp() {
-        currentLine = max(0, currentLine - 1)
+        currentLine -= 1
     }
 
     // Moves down one line in the document
@@ -273,8 +269,8 @@ class TextDocument: ObservableObject {
 
     // Returns the visible lines for display
     func getVisibleLines() -> [String] {
-        let startLine = max(0, currentLine)
-        let endLine = min(content.count, startLine + 24) // Show 24 lines as default
+        let startLine = currentLine
+        let endLine = min(content.count, startLine + AppSettings.cols)
         return Array(content[startLine ..< endLine])
     }
 }

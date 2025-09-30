@@ -25,7 +25,6 @@ final class UtilityTests: XCTestCase {
         XCTAssertEqual(AppSettings.fontFileName, "ddd.8x16")
         XCTAssertEqual(AppSettings.defaultFontFileName, "vdu.8x16")
         XCTAssertEqual(AppSettings.appearance, .blue)
-        XCTAssertEqual(AppSettings.numScreenRows, 24)
         XCTAssertEqual(AppSettings.cols, 80)
         XCTAssertEqual(AppSettings.rows, 24)
         XCTAssertEqual(AppSettings.charW, 8)
