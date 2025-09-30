@@ -32,11 +32,6 @@ struct ScreenView: View {
     // Character height in pixels (from AppSettings)
     static let charH = AppSettings.charH
 
-    // MS-DOS-like background color
-    private let bgColor = Colors.theme.background
-    // MS-DOS-like foreground color
-    private let fgColor = Colors.theme.foreground
-
     // Main view body rendering the text screen
     var body: some View {
         Canvas { context, size in
@@ -70,21 +65,10 @@ struct ScreenView: View {
 
             // Draw characters
             for row in 0 ..< displayRows {
-                // Draw line number
-                let lineNumber = String(format: "%2d", row + rowOffset + 1)
                 var currentColumn = 0
-                for character in lineNumber {
-                    drawChar(character,
-                             at: (currentColumn, row),
-                             in: context, origin: CGPoint(x: offsetX, y: 0),
-                             customFgColor: Colors.scrollLaneColor)
-                    currentColumn += 1
-                }
-
                 if row < linesToRender.count {
                     let line = linesToRender[row]
                     // Loop columns up to 80
-
                     for character in line {
                         if currentColumn >= ScreenView.cols { break }
                         drawChar(character, at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: 0))

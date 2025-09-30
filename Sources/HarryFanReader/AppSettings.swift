@@ -39,6 +39,7 @@ enum AppSettings {
             UserDefaults.standard.set(newValue, forKey: "enableAntiAliasing")
         }
     }
+
     // Debug mode - enables console logging when true
     static let debug: Bool = false
 }

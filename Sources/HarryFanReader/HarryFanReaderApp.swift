@@ -15,9 +15,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
-        // Set default anti-aliasing setting if not already set
+        // Set default settings if not already set
         if UserDefaults.standard.object(forKey: "enableAntiAliasing") == nil {
             UserDefaults.standard.set(true, forKey: "enableAntiAliasing")
+        }
+        if UserDefaults.standard.object(forKey: "showLineNumbers") == nil {
+            UserDefaults.standard.set(false, forKey: "showLineNumbers")
         }
 
         // Enable anti-aliasing for all windows (if enabled in settings)
