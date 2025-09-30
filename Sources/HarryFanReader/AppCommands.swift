@@ -22,8 +22,8 @@ extension Notification.Name {
     static let scrollDownCommand = Notification.Name("scrollDownCommand")
     static let pageUpCommand = Notification.Name("pageUpCommand")
     static let pageDownCommand = Notification.Name("pageDownCommand")
-    static let scrollToStartCommand = Notification.Name("scrollToStartCommand")
-    static let scrollToEndCommand = Notification.Name("scrollToEndCommand")
+    static let gotoStartCommand = Notification.Name("gotoStartCommand")
+    static let gotoEndCommand = Notification.Name("gotoEndCommand")
     static let openRecentFileCommand = Notification.Name("AppCommand.openRecentFile")
     static let openBookmarkCommand = Notification.Name("AppCommand.openBookmark")
     static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
@@ -123,20 +123,20 @@ struct AppCommands: Commands {
                 Button("Scroll Up Page") {
                     NotificationCenter.default.post(name: .pageUpCommand, object: nil)
                 }
-                .keyboardShortcut(.upArrow, modifiers: .control)
+                .keyboardShortcut(.upArrow, modifiers: .command)
                 Button("Scroll Down Page") {
                     NotificationCenter.default.post(name: .pageDownCommand, object: nil)
                 }
-                .keyboardShortcut(.downArrow, modifiers: .control)
+                .keyboardShortcut(.downArrow, modifiers: .command)
                 Divider()
-                Button("Scroll to start") {
-                    NotificationCenter.default.post(name: .scrollToStartCommand, object: nil)
+                Button("Go to Start") {
+                    NotificationCenter.default.post(name: .gotoStartCommand, object: nil)
                 }
-                .keyboardShortcut(.home, modifiers: [])
-                Button("Scroll to end") {
-                    NotificationCenter.default.post(name: .scrollToEndCommand, object: nil)
+                .keyboardShortcut(.upArrow, modifiers: [.control, .command])
+                Button("Go to End") {
+                    NotificationCenter.default.post(name: .gotoEndCommand, object: nil)
                 }
-                .keyboardShortcut(.end, modifiers: [])
+                .keyboardShortcut(.downArrow, modifiers: [.control, .command])
             }
         }
     }

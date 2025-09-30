@@ -14,6 +14,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Ensure the app has a regular activation policy so the Menu Bar is visible
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+
+        // Set default anti-aliasing setting if not already set
+        if UserDefaults.standard.object(forKey: "enableAntiAliasing") == nil {
+            UserDefaults.standard.set(true, forKey: "enableAntiAliasing")
+        }
+
+        // Enable anti-aliasing for all windows (if enabled in settings)
+        NSWindow.allowsAutomaticWindowTabbing = false
+        if AppSettings.enableAntiAliasing {
+            if let window = NSApp.windows.first {
+                window.contentView?.layer?.contentsScale = NSScreen.main?.backingScaleFactor ?? 2.0
+            }
+        }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {

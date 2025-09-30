@@ -40,6 +40,15 @@ struct ScreenView: View {
     // Main view body rendering the text screen
     var body: some View {
         Canvas { context, size in
+            // Conditionally enable anti-aliasing for smoother text rendering
+            if AppSettings.enableAntiAliasing {
+                context.withCGContext { cgContext in
+                    cgContext.setShouldAntialias(true)
+                    cgContext.setShouldSmoothFonts(true)
+                    cgContext.setAllowsFontSmoothing(true)
+                }
+            }
+
             // Fill background
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
 
@@ -115,7 +124,7 @@ struct ScreenView: View {
         // Determine foreground color to use
         let currentFgColor = customFgColor ?? fontColor
 
-        // Draw as per-pixel rectangles without antialiasing
+        // Draw as per-pixel rectangles with anti-aliasing
         for rowIndex in 0 ..< ScreenView.charH {
             for columnIndex in 0 ..< ScreenView.charW {
                 if bitmap[rowIndex * ScreenView.charW + columnIndex] {

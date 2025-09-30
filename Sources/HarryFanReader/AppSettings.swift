@@ -30,6 +30,15 @@ enum AppSettings {
     static let wordWrap: Bool = true
     // Quit confirmation
     static let shouldShowQuitMessage: Bool = false
+    // Anti-aliasing for smoother text rendering (configurable via settings)
+    static var enableAntiAliasing: Bool {
+        get {
+            UserDefaults.standard.bool(forKey: "enableAntiAliasing")
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "enableAntiAliasing")
+        }
+    }
     // Debug mode - enables console logging when true
     static let debug: Bool = false
 }
