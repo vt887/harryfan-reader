@@ -29,8 +29,8 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .nextBookmarkCommand)) { _ in guard !document.fileName.isEmpty else { return }; if let bookmark = bookmarkManager.nextBookmark(after: document.currentLine, in: document.fileName) { document.gotoLine(bookmark.line + 1) } }
             .onReceive(NotificationCenter.default.publisher(for: .previousBookmarkCommand)) { _ in guard !document.fileName.isEmpty else { return }; if let bookmark = bookmarkManager.previousBookmark(before: document.currentLine, in: document.fileName) { document.gotoLine(bookmark.line + 1) } }
             .onReceive(NotificationCenter.default.publisher(for: .showBookmarksCommand)) { _ in guard !document.fileName.isEmpty else { return }; showingBookmarks = true }
-            .onReceive(NotificationCenter.default.publisher(for: .scrollUpCommand)) { _ in document.gotoStart() }
-            .onReceive(NotificationCenter.default.publisher(for: .scrollDownCommand)) { _ in document.gotoEnd() }
+            .onReceive(NotificationCenter.default.publisher(for: .scrollUpCommand)) { _ in document.lineUp() }
+            .onReceive(NotificationCenter.default.publisher(for: .scrollDownCommand)) { _ in document.lineDown() }
             .onReceive(NotificationCenter.default.publisher(for: .pageUpCommand)) { _ in document.pageUp() }
             .onReceive(NotificationCenter.default.publisher(for: .pageDownCommand)) { _ in document.pageDown() }
             .onReceive(NotificationCenter.default.publisher(for: .openRecentFileCommand)) { notification in if let userInfo = notification.userInfo, let url = userInfo["url"] as? URL { document.openFile(at: url); recentFilesManager.addRecentFile(url: url) } }

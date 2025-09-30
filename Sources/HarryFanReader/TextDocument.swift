@@ -212,19 +212,29 @@ class TextDocument: ObservableObject {
 
     // Navigates to the end of the document
     func gotoEnd() {
-        currentLine = max(0, totalLines - 1)
+        currentLine = totalLines - 1
     }
 
     // Moves up one page in the document
     func pageUp() {
-        let pageSize = 20 // Number of lines per page
+        let pageSize = AppSettings.rows - 2 // Number of lines per page
         currentLine = max(0, currentLine - pageSize)
     }
 
     // Moves down one page in the document
     func pageDown() {
-        let pageSize = 20 // Number of lines per page
+        let pageSize = AppSettings.rows - 2 // Number of lines per page
         currentLine = min(totalLines - 1, currentLine + pageSize)
+    }
+
+    // Moves up one line in the document
+    func lineUp() {
+        currentLine = max(0, currentLine - 1)
+    }
+
+    // Moves down one line in the document
+    func lineDown() {
+        currentLine = min(totalLines - 1, currentLine + 1)
     }
 
     // Searches for a query string in the document

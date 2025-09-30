@@ -61,6 +61,11 @@ struct ContentView: View {
             } message: {
                 Text("Enter line number to go to:")
             }
+            .applyNotifications(document: document,
+                                showingSearch: $showingSearch,
+                                showingBookmarks: $showingBookmarks,
+                                showingFilePicker: $showingFilePicker,
+                                lastSearchTerm: $lastSearchTerm)
     }
 
     // Main layout
@@ -165,6 +170,7 @@ struct RetroMenuButtonStyle: ButtonStyle {
             )
     }
 }
+
 
 #Preview {
     ContentView()
