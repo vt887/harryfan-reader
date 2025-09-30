@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by @vt887 on 9/1/25.
 //
 
 import SwiftUI
@@ -31,11 +31,11 @@ struct ContentView: View {
         mainLayout
             .frame(
                 width: CGFloat(AppSettings.cols * AppSettings.charW),
-                height: CGFloat(25) * CGFloat(AppSettings.charH)
+                height: CGFloat(AppSettings.rows * AppSettings.charH)
             )
             .background(Colors.theme.background)
             .fileImporter(isPresented: $showingFilePicker,
-                          allowedContentTypes: [.plainText],
+                          allowedContentTypes: [UTType.plainText],
                           allowsMultipleSelection: false,
                           onCompletion: handleFileImport)
             .sheet(isPresented: $showingSearch) {
@@ -61,11 +61,6 @@ struct ContentView: View {
             } message: {
                 Text("Enter line number to go to:")
             }
-            .applyNotifications(document: document,
-                                showingSearch: $showingSearch,
-                                showingBookmarks: $showingBookmarks,
-                                showingFilePicker: $showingFilePicker,
-                                lastSearchTerm: $lastSearchTerm)
     }
 
     // Main layout
@@ -118,123 +113,23 @@ private struct MainContentScreenView: View {
 
     var body: some View {
         if document.shouldShowQuitMessage {
-            ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: 23, rowOffset: 1)
+            ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: AppSettings.rows - 2, rowOffset: 1)
                 .environmentObject(fontManager)
-                .frame(height: CGFloat(23) * CGFloat(ScreenView.charH))
+                .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
         } else {
-            ScreenView(document: document, displayRows: 23, rowOffset: 1)
+            ScreenView(document: document, displayRows: AppSettings.rows - 2, rowOffset: 1)
                 .environmentObject(fontManager)
-                .frame(height: CGFloat(23) * CGFloat(ScreenView.charH))
+                .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
                 .onAppear {
                     if document.fileName.isEmpty {
                         document.loadWelcomeText()
                     }
                     DebugLogger.log("Main content area appeared")
-                }
-        }
-    }
-}
-
-// ViewModifier for handling notifications and commands
-private struct NotificationsModifier: ViewModifier {
-    @ObservedObject var document: TextDocument
-    @EnvironmentObject var fontManager: FontManager
-    @EnvironmentObject var bookmarkManager: BookmarkManager
-    @EnvironmentObject var recentFilesManager: RecentFilesManager
-    @Binding var showingSearch: Bool
-    @Binding var showingBookmarks: Bool
-    @Binding var showingFilePicker: Bool
-    @Binding var lastSearchTerm: String
-
-    func body(content: Content) -> some View {
-        content
-            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
-                // Handle window focus
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .openFileCommand)) { _ in
-                showingFilePicker = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .openSearchCommand)) { _ in
-                if document.fileName.isEmpty { return }
-                showingSearch = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .findNextCommand)) { _ in
-                guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
-                if let idx = document.search(lastSearchTerm, direction: .forward) {
-                    document.gotoLine(idx + 1)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .findPreviousCommand)) { _ in
-                guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
-                if let idx = document.search(lastSearchTerm, direction: .backward) {
-                    document.gotoLine(idx + 1)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in
-                guard !document.fileName.isEmpty else { return }
-                let desc = document.getCurrentLine()
-                bookmarkManager.addBookmark(fileName: document.fileName, line: document.currentLine, description: desc)
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .nextBookmarkCommand)) { _ in
-                guard !document.fileName.isEmpty else { return }
-                if let bookmark = bookmarkManager.nextBookmark(after: document.currentLine, in: document.fileName) {
-                    document.gotoLine(bookmark.line + 1)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .previousBookmarkCommand)) { _ in
-                guard !document.fileName.isEmpty else { return }
-                if let bookmark = bookmarkManager.previousBookmark(before: document.currentLine, in: document.fileName) {
-                    document.gotoLine(bookmark.line + 1)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .showBookmarksCommand)) { _ in
-                guard !document.fileName.isEmpty else { return }
-                showingBookmarks = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .scrollUpCommand)) { _ in
-                document.gotoStart() // Use gotoStart for scroll up
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .scrollDownCommand)) { _ in
-                document.gotoEnd() // Use gotoEnd for scroll down
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .pageUpCommand)) { _ in
-                document.pageUp() // Use pageUp with default page size
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .pageDownCommand)) { _ in
-                document.pageDown() // Use pageDown with default page size
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .openRecentFileCommand)) { notification in
-                if let userInfo = notification.userInfo,
-                   let url = userInfo["url"] as? URL
-                {
-                    document.openFile(at: url)
-                    recentFilesManager.addRecentFile(url: url)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .clearRecentFilesCommand)) { _ in
-                recentFilesManager.clearRecentFiles()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .openBookmarkCommand)) { notification in
-                if let userInfo = notification.userInfo,
-                   let bookmark = userInfo["bookmark"] as? BookmarkManager.Bookmark
-                {
-                    // If the current file is different from the bookmark's file, we need to open it first
-                    if document.fileName != bookmark.fileName {
-                        // For now, we'll just go to the line in the current file
-                        // In a more complete implementation, we'd open the file first
-                        document.gotoLine(bookmark.line + 1)
-                    } else {
-                        document.gotoLine(bookmark.line + 1)
+                    for row in 1...24 {
+                        DebugLogger.log("Row number: \(row)")
                     }
                 }
-            }
-    }
-}
-
-// Extension for applying notification modifier to views
-private extension View {
-    func applyNotifications(document: TextDocument, showingSearch: Binding<Bool>, showingBookmarks: Binding<Bool>, showingFilePicker: Binding<Bool>, lastSearchTerm: Binding<String>) -> some View {
-        modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, showingFilePicker: showingFilePicker, lastSearchTerm: lastSearchTerm))
+        }
     }
 }
 

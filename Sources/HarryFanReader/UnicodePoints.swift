@@ -2,7 +2,7 @@
 // UnicodePoints.swift
 // harryfan-reader
 //
-// Created by Vad Tymoshyk on 9/28/25.
+// Created by @vt887 on 9/28/25.
 //
 
 import Foundation

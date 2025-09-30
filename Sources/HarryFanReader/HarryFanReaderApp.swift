@@ -2,7 +2,7 @@
 //  HarryFanReaderApp.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by @vt887 on 9/1/25.
 //
 
 import AppKit
@@ -41,17 +41,20 @@ struct HarryFanReaderApp: App {
     @StateObject private var bookmarkManager = BookmarkManager()
     @StateObject private var recentFilesManager = RecentFilesManager()
 
+    var windowWidth: CGFloat { CGFloat(AppSettings.cols * AppSettings.charW) }
+    var windowHeight: CGFloat { CGFloat((AppSettings.rows - 2) * AppSettings.charH) } // -2 for TitleBar and MenuBar
+
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(fontManager)
                 .environmentObject(bookmarkManager)
                 .environmentObject(recentFilesManager)
-                .frame(minWidth: 600, minHeight: 520)
+                .frame(minWidth: windowWidth, minHeight: windowHeight)
                 .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings
         }
         .windowStyle(.titleBar)
-        .defaultSize(width: 800, height: 680)
+        .defaultSize(width: windowWidth, height: windowHeight)
         .defaultPosition(.center)
         .commands {
             AppCommands(recentFilesManager: recentFilesManager, bookmarkManager: bookmarkManager)

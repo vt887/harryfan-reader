@@ -2,7 +2,7 @@
 //  SettingsView.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by @vt887 on 9/1/25.
 //
 
 import SwiftUI

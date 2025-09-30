@@ -2,7 +2,7 @@
 //  RecentFilesManager.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/29/25.
+//  Created by @vt887 on 9/29/25.
 //
 
 import Foundation

@@ -2,7 +2,7 @@
 //  AppSettings.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/28/25.
+//  Created by @vt887 on 9/28/25.
 //
 
 import SwiftUI
@@ -21,7 +21,6 @@ enum AppSettings {
     static let fontFileName: String = "ddd.8x16"
     static let defaultFontFileName: String = "vdu.8x16"
     static let appearance: AppAppearance = .blue
-    static let numScreenRows: Int = 24
     // 80x24 text mode with 8x16 font
     static let cols = 80
     static let rows = 24

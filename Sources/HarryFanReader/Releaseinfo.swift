@@ -2,7 +2,7 @@
 //  Releaseinfo.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/27/25.
+//  Created by @vt887 on 9/27/25.
 //
 
 import SwiftUI
