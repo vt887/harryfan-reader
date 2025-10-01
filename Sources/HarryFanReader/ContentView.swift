@@ -32,7 +32,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             TitleBar(document: document)
 
-            MainContentScreenView(document: document)
+            MainContentScreenView(document: document, showingFilePicker: $showingFilePicker)
 
             MenuBar(document: document)
         }
@@ -83,11 +83,13 @@ private struct MainContentScreenView: View {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
     @State private var quitKeysMonitor: Any?
+    @Binding var showingFilePicker: Bool
 
     // Centralized key codes for clarity / future extension
-    private enum QuitKeyCode {
+    private enum KeyCode {
         static let f10: UInt16 = 109
         static let escape: UInt16 = 53
+        static let f3: UInt16 = 99
     }
 
     // Unified quit handling for F10 / Esc
@@ -102,17 +104,21 @@ private struct MainContentScreenView: View {
     // Event handler separated for readability & testability
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
         switch event.keyCode {
-        case QuitKeyCode.f10:
+        case KeyCode.f10:
             DebugLogger.log("F10 key pressed")
             handleQuitKey()
             return nil
-        case QuitKeyCode.escape:
+        case KeyCode.escape:
             if AppSettings.debug { // Esc only when debug enabled
                 DebugLogger.log("Esc key pressed (debug mode)")
                 handleQuitKey()
                 return nil
             }
-            return event // pass through if not in debug
+            return event
+        case KeyCode.f3:
+            DebugLogger.log("F3 key pressed - opening file picker")
+            showingFilePicker = true
+            return nil
         default:
             return event
         }
