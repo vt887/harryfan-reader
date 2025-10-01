@@ -28,7 +28,7 @@ class TextDocument: ObservableObject {
 
     // Loads the welcome text into the document
     func loadWelcomeText() {
-        content = splitLines(Messages.welcomeMessage)
+        content = splitLines(Messages.centeredWelcomeMessage(screenWidth: AppSettings.cols, screenHeight: AppSettings.rows - 2))
         totalLines = content.count
     }
 
@@ -53,30 +53,39 @@ class TextDocument: ObservableObject {
     // Returns the formatted title bar text
     func getTitleBarText() -> String {
         let appName = AppSettings.appName
-
-        if fileName.isEmpty {
-            return " \(appName.padding(toLength: 79, withPad: " ", startingAt: 0))"
-        }
-
+        let totalCols = AppSettings.cols
+        let emptyFile = fileName.isEmpty
         let percent = totalLines > 0 ? Int((Double(currentLine + 1) / Double(totalLines)) * 100.0) : 0
         let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)%  "
-
-        let availableWidth = AppSettings.cols - appName.count - statusText.count - 4 // 4 for leading space + " - " delimiters
+        let leftPad = " "
+        let rightPad = " "
+        let minTitleLen = 10
 
         var displayFileName = fileName
-        if fileName.count > availableWidth {
-            displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
+        if !emptyFile {
+            // Calculate available width for file name
+            let usedWidth = appName.count + statusText.count + leftPad.count + rightPad.count + 2 // 2 for double space between appName and fileName
+            let availableWidth = max(minTitleLen, totalCols - usedWidth)
+            if fileName.count > availableWidth {
+                displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
+            }
         }
 
-        let title = "\(appName)  \(displayFileName)"
-        let rightPaddedTitle = title.padding(toLength: AppSettings.cols - statusText.count - 1, withPad: " ", startingAt: 0)
-        return " \(rightPaddedTitle)\(statusText)"
-    
+        let title: String
+        if emptyFile {
+            title = leftPad + appName.padding(toLength: totalCols - leftPad.count, withPad: " ", startingAt: 0)
+        } else {
+            let left = leftPad + appName + "  " + displayFileName
+            let paddedLeft = left.padding(toLength: totalCols - statusText.count - rightPad.count, withPad: " ", startingAt: 0)
+            title = paddedLeft + statusText
+        }
+        DebugLogger.log("TitleBar result: '\(title)'")
+        return title
     }
 
     // Returns the formatted menu bar text
     func getMenuBarText(_ items: [String]) -> String {
-        let menuBarString = items.enumerated().map { (index, item) in
+        let menuBarString = items.enumerated().map { index, item in
             let itemText = " \(index + 1)\(item)" // Add leading space before number
             return itemText.padding(toLength: 8, withPad: " ", startingAt: 0)
         }.joined(separator: "")

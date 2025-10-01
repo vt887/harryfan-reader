@@ -52,4 +52,21 @@ enum Messages {
     ║                                                  ║
     ╚══════════════════════════════════════════════════╝
     """
+
+    // Returns the welcome message centered horizontally and vertically for the current screen size
+    static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {
+        let lines = welcomeMessage.components(separatedBy: "\n")
+        let centeredLines = lines.map { line in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let padding = max(0, (screenWidth - trimmed.count) / 2)
+            let padStr = String(repeating: " ", count: padding)
+            return padStr + trimmed
+        }
+        let totalLines = centeredLines.count
+        let verticalPadding = max(0, (screenHeight - totalLines) / 2)
+        let emptyLine = String(repeating: " ", count: screenWidth)
+        let topPadding = Array(repeating: emptyLine, count: verticalPadding)
+        let bottomPadding = Array(repeating: emptyLine, count: screenHeight - totalLines - verticalPadding)
+        return (topPadding + centeredLines + bottomPadding).joined(separator: "\n")
+    }
 }

@@ -7,11 +7,9 @@
 
 import SwiftUI
 
-
-
 let menuItems = [
     "Help", "Decode", "Open", "Search", "Goto",
-    "Bookm", "Start", "End", "Menu", "Quit"
+    "Bookm", "Start", "End", "Menu", "Quit",
 ]
 
 // View for displaying the menu bar in the app
