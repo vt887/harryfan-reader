@@ -2,7 +2,7 @@
 //  TitleBar.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/26/25.
+//  Created by @vt887 on 9/26/25.
 //
 
 import SwiftUI

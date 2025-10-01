@@ -2,7 +2,7 @@
 //  BookmarkManager.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by @vt887 on 9/1/25.
 //
 
 import Foundation
@@ -80,13 +80,13 @@ class BookmarkManager: ObservableObject {
     // Save bookmarks to persistent storage
     private func saveBookmarks() {
         if let data = try? JSONEncoder().encode(bookmarks) {
-            UserDefaults.standard.set(data, forKey: "TxtViewerBookmarks")
+            UserDefaults.standard.set(data, forKey: "\(AppSettings.appName)Bookmarks")
         }
     }
 
     // Load bookmarks from persistent storage
     private func loadBookmarks() {
-        if let data = UserDefaults.standard.data(forKey: "TxtViewerBookmarks"),
+        if let data = UserDefaults.standard.data(forKey: "\(AppSettings.appName)Bookmarks"),
            let loadedBookmarks = try? JSONDecoder().decode([Bookmark].self, from: data)
         {
             bookmarks = loadedBookmarks

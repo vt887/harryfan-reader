@@ -2,11 +2,12 @@
 //  Colors.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/27/25.
+//  Created by @vt887 on 9/27/25.
 //
 
 import SwiftUI
 
+// Enum for color constants used in the app
 enum Colors {
     static let scrollLaneColor = Color(red: 0.333, green: 1.0, blue: 0.333) // Bright green
     static let bookmarkColor = Color(red: 0.8, green: 0.2, blue: 0.2)
@@ -17,6 +18,7 @@ enum Colors {
     }
 }
 
+// Struct for app theme color definitions
 struct AppTheme {
     let background: Color
     let foreground: Color
@@ -24,7 +26,11 @@ struct AppTheme {
     let titleBarForeground: Color
     let menuBarBackground: Color
     let menuBarForeground: Color
+    let menuBarNumbers: Color
+    let menuBarText: Color
     let bottomMenuForeground: Color
+    let helpMenuBackground: Color
+    let helpMenuForeground: Color
 
     static func theme(for appearance: AppAppearance) -> AppTheme {
         switch appearance {
@@ -36,8 +42,11 @@ struct AppTheme {
                 titleBarForeground: .black,
                 menuBarBackground: Color(red: 0.9, green: 0.9, blue: 0.9), // Very light gray
                 menuBarForeground: .black,
+                menuBarNumbers: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
-                helpManuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
+                helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
             )
         case .dark:
             AppTheme(
@@ -47,7 +56,11 @@ struct AppTheme {
                 titleBarForeground: .white,
                 menuBarBackground: Color(red: 0.1, green: 0.1, blue: 0.1),
                 menuBarForeground: .white,
+                menuBarNumbers: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.8, green: 0.8, blue: 0.8),
+                helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
             )
         case .blue:
             AppTheme(
@@ -55,9 +68,13 @@ struct AppTheme {
                 foreground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
                 titleBarBackground: Color(red: 0.667, green: 0.667, blue: 0.667), // Light gray
                 titleBarForeground: .black,
-                menuBarBackground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
+                menuBarBackground: Color(red: 0.29, green: 0.65, blue: 0.65), // Teal (#4BA5A7)
                 menuBarForeground: .black,
+                menuBarNumbers: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.9, green: 0.9, blue: 0.9),
+                helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
             )
         }
     }

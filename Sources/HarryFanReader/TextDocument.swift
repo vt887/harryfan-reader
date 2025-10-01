@@ -2,7 +2,7 @@
 //  TextDocument.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by @vt887 on 9/1/25.
 //
 
 import Foundation
@@ -28,16 +28,14 @@ class TextDocument: ObservableObject {
 
     // Loads the welcome text into the document
     func loadWelcomeText() {
-        content = splitLines(Messages.welcomeMessage)
+        content = splitLines(Messages.centeredWelcomeMessage(screenWidth: AppSettings.cols, screenHeight: AppSettings.rows - 2))
         totalLines = content.count
-        currentLine = 0
-        fileName = ""
-        encoding = "ASCII"
     }
 
     // Opens a file and loads its content
     func openFile(at url: URL) {
         do {
+            DebugLogger.log("Opening file: \(url.path)")
             fileName = url.lastPathComponent
             originalData = try Data(contentsOf: url)
             guard let data = originalData else { return }
@@ -45,49 +43,59 @@ class TextDocument: ObservableObject {
             let decodedString = decodeCP866(from: data)
             let rawLines = cleanLines(splitLines(decodedString))
             content = wrapLines(rawLines)
-            encoding = "CP866"
-            print("File loaded with CP866 encoding")
             totalLines = content.count
-            currentLine = 0
+            DebugLogger.log("Opened file '\(fileName)' size=\(data.count) bytes lines=\(totalLines) encoding=CP866")
+            // Position cursor at line 11 (1-based) if possible
+            gotoLine(11)
         } catch {
-            print("Error opening file: \(error)")
+            DebugLogger.log("Error opening file: \(error)")
         }
     }
 
     // Returns the formatted title bar text
     func getTitleBarText() -> String {
         let appName = AppSettings.appName
+        let totalCols = AppSettings.cols
+        let emptyFile = fileName.isEmpty
+        let percent = totalLines > 0 ? Int((Double(currentLine + 1) / Double(totalLines)) * 100.0) : 0
+        let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)%  "
+        let leftPad = " "
+        let rightPad = " "
+        let separator = " │ "
+        let minTitleLen = 10
 
-        if fileName.isEmpty {
-            return appName.padding(toLength: 80, withPad: " ", startingAt: 0)
-        } else {
-            let percent = totalLines > 0 ? Int((Double(currentLine + 1) / Double(totalLines)) * 100.0) : 0
-            let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)% \(encoding)"
-
-            let availableWidth = 80 - appName.count - statusText.count - 3 // 3 for " - " delimiters
-
-            var displayFileName = fileName
+        var displayFileName = fileName
+        if !emptyFile {
+            // Calculate available width for file name
+            let usedWidth = appName.count + separator.count + statusText.count + leftPad.count + rightPad.count
+            let availableWidth = max(minTitleLen, totalCols - usedWidth)
             if fileName.count > availableWidth {
                 displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
             }
-
-            let title = "\(appName) - \(displayFileName)"
-            let rightPaddedTitle = title.padding(toLength: 80 - statusText.count, withPad: " ", startingAt: 0)
-            return "\(rightPaddedTitle)\(statusText)"
         }
+
+        let title: String
+        if emptyFile {
+            let left = leftPad + appName + separator
+            title = left.padding(toLength: totalCols, withPad: " ", startingAt: 0)
+        } else {
+            let left = leftPad + appName + separator + displayFileName
+            let paddedLeft = left.padding(toLength: totalCols - statusText.count - rightPad.count, withPad: " ", startingAt: 0)
+            title = paddedLeft + statusText
+        }
+        DebugLogger.log("TitleBar result: '\(title)'")
+        return title
     }
 
     // Returns the formatted menu bar text
-    func getMenuBarText() -> String {
-        let menuItems = [
-            " 1Help", " 2Wrap  ", " 3Open  ", " 4Search ", " 5Goto  ",
-            " 6Bookm  ", " 7Start  ", " 8End   ", " 9Menu  ", "10Quit  ",
-        ]
-        let menuBarString = menuItems.map { $0.padding(toLength: 7,
-                                                       withPad: " ",
-                                                       startingAt: 0) }
-            .joined(separator: "")
-        return menuBarString.padding(toLength: 80, withPad: " ", startingAt: 0)
+    func getMenuBarText(_ items: [String]) -> String {
+        let menuBarString = items.enumerated().map { index, item in
+            let itemText = " \(index + 1)\(item)" // Add leading space before number
+            return itemText.padding(toLength: 8, withPad: " ", startingAt: 0)
+        }.joined(separator: "")
+        let result = menuBarString.padding(toLength: AppSettings.cols, withPad: " ", startingAt: 0)
+        DebugLogger.log("MenuBar result: '\(result)'")
+        return result
     }
 
     // Decodes CP866 encoded data to a string
@@ -217,14 +225,30 @@ class TextDocument: ObservableObject {
 
     // Moves up one page in the document
     func pageUp() {
-        let pageSize = 20 // Number of lines per page
+        let pageSize = AppSettings.rows - 2 // Number of lines per page
         currentLine = max(0, currentLine - pageSize)
     }
 
     // Moves down one page in the document
     func pageDown() {
-        let pageSize = 20 // Number of lines per page
+        let pageSize = AppSettings.rows - 2 // Number of lines per page
         currentLine = min(totalLines - 1, currentLine + pageSize)
+    }
+
+    // Moves up one line in the document
+    func lineUp() {
+        guard totalLines > 0 else { return }
+        if currentLine == totalLines - 1 {
+            // Special behavior: first move from EOF jumps 13 lines up
+            currentLine = max(0, currentLine - 13)
+        } else {
+            currentLine = max(0, currentLine - 1)
+        }
+    }
+
+    // Moves down one line in the document
+    func lineDown() {
+        currentLine = min(totalLines - 1, currentLine + 1)
     }
 
     // Searches for a query string in the document
@@ -263,13 +287,13 @@ class TextDocument: ObservableObject {
 
     // Returns the visible lines for display
     func getVisibleLines() -> [String] {
-        let startLine = max(0, currentLine)
-        let endLine = min(content.count, startLine + 24) // Show 24 lines as default
+        let startLine = currentLine
+        let endLine = min(content.count, startLine + AppSettings.cols)
         return Array(content[startLine ..< endLine])
     }
 }
 
-// Enum for search direction
+// Enum for search direction in text document
 enum SearchDirection {
     case forward
     case backward

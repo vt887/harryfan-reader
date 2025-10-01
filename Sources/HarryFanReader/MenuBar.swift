@@ -2,10 +2,15 @@
 //  MenuBar.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/25/25.
+//  Created by @vt887 on 9/25/25.
 //
 
 import SwiftUI
+
+let menuItems = [
+    "Help", "Decode", "Open", "Search", "Goto",
+    "Bookm", "Start", "End", "Menu", "Quit",
+]
 
 // View for displaying the menu bar in the app
 struct MenuBar: View {
@@ -17,7 +22,7 @@ struct MenuBar: View {
     // Main view body rendering the menu bar
     var body: some View {
         ScreenView(document: document,
-                   contentToDisplay: document.getMenuBarText(),
+                   contentToDisplay: document.getMenuBarText(menuItems),
                    displayRows: 1,
                    rowOffset: document.rows - 1,
                    backgroundColor: Colors.theme.menuBarBackground,

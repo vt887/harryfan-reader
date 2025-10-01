@@ -1,15 +1,15 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 5.9
 import PackageDescription
 
 let package = Package(
-    name: "HarryfanReader",
+    name: "HarryFanReader",
     platforms: [
         .macOS(.v14),
     ],
     products: [
         .executable(
             name: "HarryFan Reader",
-            targets: ["HarryFan Reader"],
+            targets: ["HarryFan Reader"]
         ),
     ],
     dependencies: [],
@@ -17,7 +17,7 @@ let package = Package(
         .executableTarget(
             name: "HarryFan Reader",
             dependencies: [],
-            path: "harryfan-reader",
+            path: "Sources/HarryFanReader",
             exclude: [
                 "HarryFanReader.entitlements",
                 "Info.plist",
@@ -26,7 +26,12 @@ let package = Package(
                 .copy("Fonts"),
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
-            ],
+            ]
         ),
-    ],
+        .testTarget(
+            name: "HarryFanReaderTests",
+            dependencies: ["HarryFan Reader"],
+            path: "Tests/HarryFanReaderTests"
+        ),
+    ]
 )

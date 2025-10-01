@@ -2,7 +2,7 @@
 //  FontManager.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by @vt887 on 9/1/25.
 //
 
 import AppKit
@@ -57,7 +57,7 @@ final class FontManager: ObservableObject {
         if let fontFiles = try? fm.contentsOfDirectory(
             at: userFontsURL,
             includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles,
+            options: .skipsHiddenFiles
         ) {
             let rawFonts = fontFiles
                 .filter { $0.pathExtension == "raw" }
@@ -77,20 +77,20 @@ final class FontManager: ObservableObject {
         var fontURL = findFontURL(for: effectiveFont)
 
         if fontURL == nil {
-            print("\(effectiveFont).raw not found. Falling back to default: \(AppSettings.defaultFontFileName).raw")
+            DebugLogger.logWarning("\(effectiveFont).raw not found. Falling back to default: \(AppSettings.defaultFontFileName).raw")
             effectiveFont = AppSettings.defaultFontFileName
             fontURL = findFontURL(for: effectiveFont)
         }
 
         guard let url = fontURL else {
-            print("Failed to find any font file.")
+            DebugLogger.logError("Failed to find any font file.")
             return
         }
 
         do {
             fontData = try Data(contentsOf: url)
             parseFontData()
-            print("Font loaded from: \(url.path)")
+            DebugLogger.log("Font loaded from: \(url.path)")
 
             if currentFont.rawValue != effectiveFont,
                let newFont = MSDOSFont(rawValue: effectiveFont)
@@ -98,7 +98,7 @@ final class FontManager: ObservableObject {
                 currentFont = newFont
             }
         } catch {
-            print("Failed to load font: \(error)")
+            DebugLogger.logError("Failed to load font: \(error)")
         }
     }
 
@@ -127,8 +127,8 @@ final class FontManager: ObservableObject {
     private func parseFontData() {
         guard let data = fontData else { return }
 
-        let charHeight = 16
-        let charWidth = 8
+        let charHeight = AppSettings.charH
+        let charWidth = AppSettings.charW
         let numChars = 256
         let expectedBytes = numChars * charHeight
         let headerSize = max(0, data.count - expectedBytes)

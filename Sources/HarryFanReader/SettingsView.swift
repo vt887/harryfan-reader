@@ -2,7 +2,7 @@
 //  SettingsView.swift
 //  harryfan-reader
 //
-//  Created by Vad Tymoshyk on 9/1/25.
+//  Created by @vt887 on 9/1/25.
 //
 
 import SwiftUI
@@ -36,6 +36,10 @@ struct SettingsView: View {
     @State private var originalWordWrap: Bool = true
     // Original wrap width value for cancel functionality
     @State private var originalWrapWidth: Double = 80.0
+    // Anti-aliasing toggle
+    @State private var enableAntiAliasing: Bool = true
+    // Original anti-aliasing value for cancel functionality
+    @State private var originalEnableAntiAliasing: Bool = true
 
     // Main view body rendering the settings UI
     var body: some View {
@@ -49,7 +53,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -64,7 +68,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -79,7 +83,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -121,7 +125,7 @@ struct SettingsView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
-                alignment: .bottom,
+                alignment: .bottom
             )
 
             // Settings content
@@ -159,6 +163,11 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Display") {
+                    Toggle("Enable anti-aliasing", isOn: $enableAntiAliasing)
+                        .help("Smooth text rendering for better visual quality")
+                }
+
                 Section("About") {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("HarryFan Reader")
@@ -186,6 +195,7 @@ struct SettingsView: View {
                     removeEmptyLines = originalRemoveEmptyLines
                     wordWrap = originalWordWrap
                     wrapWidth = originalWrapWidth
+                    enableAntiAliasing = originalEnableAntiAliasing
                     dismiss()
                 }
                 .keyboardShortcut(.escape)
@@ -198,6 +208,9 @@ struct SettingsView: View {
                     document.removeEmptyLines = removeEmptyLines
                     document.wordWrap = wordWrap
                     document.wrapWidth = Int(wrapWidth)
+
+                    // Apply anti-aliasing setting
+                    AppSettings.enableAntiAliasing = enableAntiAliasing
 
                     // Reload file with new settings if a file is open
                     if !document.fileName.isEmpty {
@@ -215,7 +228,7 @@ struct SettingsView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
-                alignment: .top,
+                alignment: .top
             )
         }
         .frame(width: 450, height: 400)
@@ -228,6 +241,7 @@ struct SettingsView: View {
             originalRemoveEmptyLines = document.removeEmptyLines
             originalWordWrap = document.wordWrap
             originalWrapWidth = Double(document.wrapWidth)
+            originalEnableAntiAliasing = AppSettings.enableAntiAliasing
 
             // Set current values
             selectedFont = fontManager.currentFont
@@ -235,6 +249,7 @@ struct SettingsView: View {
             removeEmptyLines = document.removeEmptyLines
             wordWrap = document.wordWrap
             wrapWidth = Double(document.wrapWidth)
+            enableAntiAliasing = AppSettings.enableAntiAliasing
         }
     }
 }
@@ -243,4 +258,5 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
         .environmentObject(FontManager())
+        .environmentObject(TextDocument())
 }
