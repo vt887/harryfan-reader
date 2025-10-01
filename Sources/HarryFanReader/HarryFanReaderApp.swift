@@ -63,7 +63,7 @@ struct HarryFanReaderApp: App {
     @StateObject private var document = TextDocument()
 
     var windowWidth: CGFloat { CGFloat(AppSettings.cols * AppSettings.charW) }
-    var windowHeight: CGFloat { CGFloat((AppSettings.rows - 2) * AppSettings.charH) } // -2 for TitleBar and MenuBar
+    var windowHeight: CGFloat { CGFloat(AppSettings.rows * AppSettings.charH) } // Match ScreenView size exactly
 
     var body: some Scene {
         WindowGroup {

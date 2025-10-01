@@ -28,20 +28,23 @@ enum AppSettings {
     static let charH = 16
     static let wrapWidth = 80
     static let wordWrap: Bool = true
-    // Quit confirmation
-    static let shouldShowQuitMessage: Bool = false
-    // Anti-aliasing for smoother text rendering (configurable via settings)
-    static var enableAntiAliasing: Bool {
-        get {
-            UserDefaults.standard.object(forKey: "enableAntiAliasing") as? Bool ?? true
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: "enableAntiAliasing")
-        }
+    // Quit confirmation (persisted)
+    static var shouldShowQuitMessage: Bool {
+        get { UserDefaults.standard.object(forKey: "shouldShowQuitMessage") as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: "shouldShowQuitMessage") }
     }
 
-    // Debug mode - enables console logging when true
-    static let debug: Bool = true
+    // Anti-aliasing for smoother text rendering (configurable via settings)
+    static var enableAntiAliasing: Bool {
+        get { UserDefaults.standard.object(forKey: "enableAntiAliasing") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "enableAntiAliasing") }
+    }
+
+    // Debug mode - enables console logging when true (persisted)
+    static var debug: Bool {
+        get { UserDefaults.standard.object(forKey: "debug") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "debug") }
+    }
 }
 
 // Debug logging utility

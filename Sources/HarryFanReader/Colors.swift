@@ -68,7 +68,7 @@ struct AppTheme {
                 foreground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
                 titleBarBackground: Color(red: 0.667, green: 0.667, blue: 0.667), // Light gray
                 titleBarForeground: .black,
-                menuBarBackground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
+                menuBarBackground: Color(red: 0.29, green: 0.65, blue: 0.65), // Teal (#4BA5A7)
                 menuBarForeground: .black,
                 menuBarNumbers: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
                 menuBarText: .black,

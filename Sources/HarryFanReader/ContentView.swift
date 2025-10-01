@@ -5,6 +5,7 @@
 //  Created by @vt887 on 9/1/25.
 //
 
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -81,23 +82,73 @@ struct ContentView: View {
 private struct MainContentScreenView: View {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
+    @State private var quitKeysMonitor: Any?
+
+    // Centralized key codes for clarity / future extension
+    private enum QuitKeyCode {
+        static let f10: UInt16 = 109
+        static let escape: UInt16 = 53
+    }
+
+    // Unified quit handling for F10 / Esc
+    private func handleQuitKey() {
+        if AppSettings.shouldShowQuitMessage, !document.shouldShowQuitMessage {
+            document.shouldShowQuitMessage = true
+            return
+        }
+        NSApp.terminate(nil)
+    }
+
+    // Event handler separated for readability & testability
+    private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
+        switch event.keyCode {
+        case QuitKeyCode.f10:
+            DebugLogger.log("F10 key pressed")
+            handleQuitKey()
+            return nil
+        case QuitKeyCode.escape:
+            if AppSettings.debug { // Esc only when debug enabled
+                DebugLogger.log("Esc key pressed (debug mode)")
+                handleQuitKey()
+                return nil
+            }
+            return event // pass through if not in debug
+        default:
+            return event
+        }
+    }
+
+    // Refactored monitor installer
+    private func installQuitMonitor() {
+        guard quitKeysMonitor == nil else { return }
+        quitKeysMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: handleKeyEvent)
+    }
+
+    private func removeQuitMonitor() {
+        if let monitor = quitKeysMonitor {
+            NSEvent.removeMonitor(monitor)
+            quitKeysMonitor = nil
+        }
+    }
 
     var body: some View {
-        if document.shouldShowQuitMessage {
-            ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: AppSettings.rows - 2, rowOffset: 1)
-                .environmentObject(fontManager)
-                .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
-        } else {
-            ScreenView(document: document, displayRows: AppSettings.rows - 2, rowOffset: 1)
-                .environmentObject(fontManager)
-                .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
-                .onAppear {
-                    if document.fileName.isEmpty {
-                        document.loadWelcomeText()
+        Group {
+            if document.shouldShowQuitMessage {
+                ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: AppSettings.rows - 2, rowOffset: 1)
+                    .environmentObject(fontManager)
+                    .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
+            } else {
+                ScreenView(document: document, displayRows: AppSettings.rows - 2, rowOffset: 1)
+                    .environmentObject(fontManager)
+                    .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
+                    .onAppear {
+                        if document.fileName.isEmpty { document.loadWelcomeText() }
+                        DebugLogger.log("Main content area appeared")
                     }
-                    DebugLogger.log("Main content area appeared")
-                }
+            }
         }
+        .onAppear { installQuitMonitor() }
+        .onDisappear { removeQuitMonitor() }
     }
 }
 

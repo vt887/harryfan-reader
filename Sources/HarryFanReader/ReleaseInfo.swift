@@ -9,7 +9,7 @@ import SwiftUI
 
 // Enum for release information
 enum ReleaseInfo {
-    static let version = "0.1-alpha"
+    static let version = "0.2-alpha"
     static let build = "1"
-    static let releaseDate = "2025-09-27"
+    static let releaseDate = "2025-10-01"
 }

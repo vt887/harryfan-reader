@@ -35,6 +35,7 @@ class TextDocument: ObservableObject {
     // Opens a file and loads its content
     func openFile(at url: URL) {
         do {
+            DebugLogger.log("Opening file: \(url.path)")
             fileName = url.lastPathComponent
             originalData = try Data(contentsOf: url)
             guard let data = originalData else { return }
@@ -42,9 +43,10 @@ class TextDocument: ObservableObject {
             let decodedString = decodeCP866(from: data)
             let rawLines = cleanLines(splitLines(decodedString))
             content = wrapLines(rawLines)
-            DebugLogger.log("File loaded with CP866 encoding")
             totalLines = content.count
-            currentLine = 0
+            DebugLogger.log("Opened file '\(fileName)' size=\(data.count) bytes lines=\(totalLines) encoding=CP866")
+            // Position cursor at line 11 (1-based) if possible
+            gotoLine(11)
         } catch {
             DebugLogger.log("Error opening file: \(error)")
         }
@@ -218,7 +220,7 @@ class TextDocument: ObservableObject {
 
     // Navigates to the end of the document
     func gotoEnd() {
-        currentLine = totalLines - 1
+        currentLine = max(0, totalLines - 1)
     }
 
     // Moves up one page in the document
@@ -235,7 +237,13 @@ class TextDocument: ObservableObject {
 
     // Moves up one line in the document
     func lineUp() {
-        currentLine -= 1
+        guard totalLines > 0 else { return }
+        if currentLine == totalLines - 1 {
+            // Special behavior: first move from EOF jumps 13 lines up
+            currentLine = max(0, currentLine - 13)
+        } else {
+            currentLine = max(0, currentLine - 1)
+        }
     }
 
     // Moves down one line in the document

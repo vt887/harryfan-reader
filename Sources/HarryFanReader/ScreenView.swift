@@ -108,15 +108,41 @@ struct ScreenView: View {
         // Determine foreground color to use
         let currentFgColor = customFgColor ?? fontColor
 
-        // Draw as per-pixel rectangles with anti-aliasing
-        for rowIndex in 0 ..< ScreenView.charH {
-            for columnIndex in 0 ..< ScreenView.charW {
-                if bitmap[rowIndex * ScreenView.charW + columnIndex] {
-                    let rect = CGRect(x: baseX + CGFloat(columnIndex),
-                                      y: baseY + CGFloat(rowIndex),
-                                      width: 1,
-                                      height: 1)
-                    context.fill(Path(rect), with: .color(currentFgColor))
+        if AppSettings.enableAntiAliasing {
+            // Draw with anti-aliasing for smoother text
+            context.withCGContext { cgContext in
+                cgContext.setShouldAntialias(true)
+                cgContext.setAllowsAntialiasing(true)
+                cgContext.setShouldSmoothFonts(true)
+
+                for rowIndex in 0 ..< ScreenView.charH {
+                    for columnIndex in 0 ..< ScreenView.charW {
+                        if bitmap[rowIndex * ScreenView.charW + columnIndex] {
+                            let rect = CGRect(
+                                x: baseX + CGFloat(columnIndex),
+                                y: baseY + CGFloat(rowIndex),
+                                width: 1.0,
+                                height: 1.0
+                            )
+                            cgContext.setFillColor(currentFgColor.cgColor ?? CGColor(red: 1, green: 1, blue: 1, alpha: 1))
+                            cgContext.fill(rect)
+                        }
+                    }
+                }
+            }
+        } else {
+            // Draw without anti-aliasing for sharp, pixel-perfect text
+            for rowIndex in 0 ..< ScreenView.charH {
+                for columnIndex in 0 ..< ScreenView.charW {
+                    if bitmap[rowIndex * ScreenView.charW + columnIndex] {
+                        let rect = CGRect(
+                            x: baseX + CGFloat(columnIndex),
+                            y: baseY + CGFloat(rowIndex),
+                            width: 1,
+                            height: 1
+                        )
+                        context.fill(Path(rect), with: .color(currentFgColor))
+                    }
                 }
             }
         }
