@@ -7,6 +7,7 @@
 
 import Foundation
 
+// Enum for static app messages
 enum Messages {
     static let welcomeMessage = """
     ╔══════════════════════════════════════════════════╗
@@ -18,7 +19,7 @@ enum Messages {
     ╚══════════════════════════════════════════════════╝
     """
 
-    static let helloMessage = """
+    static let helpMessage = """
     ╔═════════════════════════════════════════════════════════════════════════════╗
     ║                                                                             ║
     ║  Welcome! This reader is designed to give you a retro text viewing          ║
@@ -48,14 +49,19 @@ enum Messages {
     ╔══════════════════════════════════════════════════╗
     ║                                                  ║
     ║        Thank you for using HarryFan Reader!      ║
+    ║                                                  ║
     ║           Exiting application - Y/N?             ║
     ║                                                  ║
     ╚══════════════════════════════════════════════════╝
     """
 
-    // Returns the welcome message centered horizontally and vertically for the current screen size
+    // Returns the welcome message centered horizontally and vertically for the current screen size, with version
     static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {
-        let lines = welcomeMessage.components(separatedBy: "\n")
+        // Debug log for ReleaseInfo.version
+        DebugLogger.log("ReleaseInfo.version: '\(ReleaseInfo.version)'")
+        // Replace %version% with the actual version from ReleaseInfo
+        let versionedMessage = welcomeMessage.replacingOccurrences(of: "%version%", with: ReleaseInfo.version)
+        let lines = versionedMessage.components(separatedBy: "\n")
         let centeredLines = lines.map { line in
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             let padding = max(0, (screenWidth - trimmed.count) / 2)

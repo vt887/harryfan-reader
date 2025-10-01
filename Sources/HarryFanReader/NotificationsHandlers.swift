@@ -8,6 +8,7 @@
 import AppKit
 import SwiftUI
 
+// ViewModifier for handling app-wide notifications
 private struct NotificationsModifier: ViewModifier {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
@@ -88,6 +89,7 @@ private struct NotificationsModifier: ViewModifier {
     }
 }
 
+// Extension to apply notification handling to any view
 extension View {
     func applyNotifications(document: TextDocument, showingSearch: Binding<Bool>, showingBookmarks: Binding<Bool>, showingFilePicker: Binding<Bool>, lastSearchTerm: Binding<String>) -> some View {
         modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, showingFilePicker: showingFilePicker, lastSearchTerm: lastSearchTerm))

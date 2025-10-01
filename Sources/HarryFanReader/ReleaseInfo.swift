@@ -1,5 +1,5 @@
 //
-//  Releaseinfo.swift
+//  ReleaseInfo.swift
 //  harryfan-reader
 //
 //  Created by @vt887 on 9/27/25.
@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Enum for release information
 enum ReleaseInfo {
     static let version = "0.1-alpha"
     static let build = "1"

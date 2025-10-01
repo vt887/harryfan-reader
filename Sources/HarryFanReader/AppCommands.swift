@@ -29,6 +29,7 @@ extension Notification.Name {
     static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
 }
 
+// Main app commands for menu and shortcuts
 struct AppCommands: Commands {
     @ObservedObject var recentFilesManager: RecentFilesManager
     @ObservedObject var bookmarkManager: BookmarkManager

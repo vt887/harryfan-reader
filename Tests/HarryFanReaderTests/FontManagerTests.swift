@@ -9,6 +9,7 @@ import AppKit
 @testable import HarryFan_Reader
 import XCTest
 
+// Unit tests for FontManager
 final class FontManagerTests: XCTestCase {
     var fontManager: FontManager!
 

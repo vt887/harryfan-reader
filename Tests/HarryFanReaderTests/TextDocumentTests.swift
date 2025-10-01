@@ -8,6 +8,7 @@
 @testable import HarryFan_Reader
 import XCTest
 
+// Unit tests for TextDocument
 final class TextDocumentTests: XCTestCase {
     var textDocument: TextDocument!
 
@@ -41,10 +42,12 @@ final class TextDocumentTests: XCTestCase {
         XCTAssertEqual(textDocument.totalLines, textDocument.content.count)
         XCTAssertEqual(textDocument.currentLine, 0)
         XCTAssertEqual(textDocument.fileName, "")
-        XCTAssertEqual(textDocument.encoding, "ASCII")
+        XCTAssertEqual(textDocument.encoding, "Unknown") // Encoding is not set by loadWelcomeText anymore
         // Welcome message should contain the app name somewhere
         let contentText = textDocument.content.joined(separator: " ")
         XCTAssertTrue(contentText.contains("HarryFan Reader"))
+        // Should be centered for the screen size
+        XCTAssertEqual(textDocument.totalLines, AppSettings.rows - 2) // Should fill the available screen height
     }
 
     // MARK: - Navigation Tests
@@ -254,7 +257,8 @@ final class TextDocumentTests: XCTestCase {
     func testGetTitleBarTextEmptyFile() {
         let titleBarText = textDocument.getTitleBarText()
         XCTAssertTrue(titleBarText.contains("HarryFan Reader"))
-        XCTAssertEqual(titleBarText.count, 80) // Should be padded to 80 characters
+        XCTAssertTrue(titleBarText.contains(" │ ")) // Should contain separator
+        XCTAssertEqual(titleBarText.count, AppSettings.cols) // Should be padded to column width
     }
 
     func testGetTitleBarTextWithFile() {
@@ -269,8 +273,8 @@ final class TextDocumentTests: XCTestCase {
         XCTAssertTrue(titleBarText.contains("test.txt"))
         XCTAssertTrue(titleBarText.contains("Line 50 of 100"))
         XCTAssertTrue(titleBarText.contains("50%"))
-        XCTAssertTrue(titleBarText.contains("CP866"))
-        XCTAssertEqual(titleBarText.count, 80)
+        XCTAssertTrue(titleBarText.contains(" │ ")) // Should contain separator
+        XCTAssertEqual(titleBarText.count, AppSettings.cols) // Should be padded to column width
     }
 
     func testGetTitleBarTextLongFileName() {
@@ -282,23 +286,29 @@ final class TextDocumentTests: XCTestCase {
 
         let titleBarText = textDocument.getTitleBarText()
         XCTAssertTrue(titleBarText.contains("...")) // Should be truncated
-        XCTAssertEqual(titleBarText.count, 80)
+        XCTAssertTrue(titleBarText.contains(" │ ")) // Should contain separator
+        XCTAssertEqual(titleBarText.count, AppSettings.cols) // Should be padded to column width
     }
 
     // MARK: - Menu Bar Tests
 
     func testGetMenuBarText() {
-        let menuBarText = textDocument.getMenuBarText()
+        let testItems = ["Help", "Wrap", "Open", "Search", "Goto", "Bookm", "Start", "End", "Menu", "Qu"]
+        let menuBarText = textDocument.getMenuBarText(testItems)
         XCTAssertFalse(menuBarText.isEmpty)
-        XCTAssertEqual(menuBarText.count, 80)
+        XCTAssertEqual(menuBarText.count, AppSettings.cols)
 
         // Should contain some expected menu items
         XCTAssertTrue(menuBarText.contains("Help"))
-        XCTAssertTrue(menuBarText.contains("Quit"))
+        XCTAssertTrue(menuBarText.contains("Qu"))
 
-        // Should contain numbered items
-        XCTAssertTrue(menuBarText.contains("1"))
-        XCTAssertTrue(menuBarText.contains("10"))
+        // Should contain numbered items with leading space
+        XCTAssertTrue(menuBarText.contains(" 1Help")) // Leading space + number + item
+        XCTAssertTrue(menuBarText.contains(" 10Qu")) // Leading space + number + item
+
+        // Each item should be padded to 8 characters
+        // Test that items are properly formatted with leading space and padding
+        XCTAssertTrue(menuBarText.contains(" 1Help  ")) // 8 characters: space + 1 + Help + 2 spaces
     }
 
     // MARK: - File Operations Tests

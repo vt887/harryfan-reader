@@ -56,17 +56,6 @@ struct ContentView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showingBookmarks) {
-            BookmarksView(isPresented: $showingBookmarks,
-                          document: document)
-                .environmentObject(bookmarkManager)
-                .frame(width: 400, height: 300)
-        }
-        .alert("Go to Line", isPresented: $showingGotoDialog) {
-            gotoLineDialog
-        } message: {
-            Text("Enter line number to go to:")
-        }
         .applyNotifications(document: document,
                             showingSearch: $showingSearch,
                             showingBookmarks: $showingBookmarks,
@@ -86,27 +75,9 @@ struct ContentView: View {
             DebugLogger.logError("Error selecting file: \(error)")
         }
     }
-
-    // Go To Line Dialog
-    private var gotoLineDialog: some View {
-        Group {
-            TextField("Line number", text: $gotoLineNumber)
-
-            Button("Go") {
-                if let lineNumber = Int(gotoLineNumber) {
-                    document.gotoLine(lineNumber - 1)
-                }
-                gotoLineNumber = ""
-            }
-
-            Button("Cancel", role: .cancel) {
-                gotoLineNumber = ""
-            }
-        }
-    }
 }
 
-// Main content area view, displays either quit message or main content
+// Private struct for the main content screen view
 private struct MainContentScreenView: View {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager

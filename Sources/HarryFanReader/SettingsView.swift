@@ -258,4 +258,5 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
         .environmentObject(FontManager())
+        .environmentObject(TextDocument())
 }

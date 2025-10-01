@@ -8,6 +8,7 @@
 @testable import HarryFan_Reader
 import XCTest
 
+// Unit tests for BookmarkManager
 final class BookmarkManagerTests: XCTestCase {
     var bookmarkManager: BookmarkManager!
 

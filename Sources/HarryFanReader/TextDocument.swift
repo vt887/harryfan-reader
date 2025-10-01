@@ -59,12 +59,13 @@ class TextDocument: ObservableObject {
         let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)%  "
         let leftPad = " "
         let rightPad = " "
+        let separator = " │ "
         let minTitleLen = 10
 
         var displayFileName = fileName
         if !emptyFile {
             // Calculate available width for file name
-            let usedWidth = appName.count + statusText.count + leftPad.count + rightPad.count + 2 // 2 for double space between appName and fileName
+            let usedWidth = appName.count + separator.count + statusText.count + leftPad.count + rightPad.count
             let availableWidth = max(minTitleLen, totalCols - usedWidth)
             if fileName.count > availableWidth {
                 displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
@@ -73,9 +74,10 @@ class TextDocument: ObservableObject {
 
         let title: String
         if emptyFile {
-            title = leftPad + appName.padding(toLength: totalCols - leftPad.count, withPad: " ", startingAt: 0)
+            let left = leftPad + appName + separator
+            title = left.padding(toLength: totalCols, withPad: " ", startingAt: 0)
         } else {
-            let left = leftPad + appName + "  " + displayFileName
+            let left = leftPad + appName + separator + displayFileName
             let paddedLeft = left.padding(toLength: totalCols - statusText.count - rightPad.count, withPad: " ", startingAt: 0)
             title = paddedLeft + statusText
         }
@@ -283,7 +285,7 @@ class TextDocument: ObservableObject {
     }
 }
 
-// Enum for search direction
+// Enum for search direction in text document
 enum SearchDirection {
     case forward
     case backward

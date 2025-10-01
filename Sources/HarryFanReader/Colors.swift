@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// Enum for color constants used in the app
 enum Colors {
     static let scrollLaneColor = Color(red: 0.333, green: 1.0, blue: 0.333) // Bright green
     static let bookmarkColor = Color(red: 0.8, green: 0.2, blue: 0.2)
@@ -17,6 +18,7 @@ enum Colors {
     }
 }
 
+// Struct for app theme color definitions
 struct AppTheme {
     let background: Color
     let foreground: Color

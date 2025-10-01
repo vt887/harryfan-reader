@@ -60,6 +60,7 @@ struct HarryFanReaderApp: App {
     @StateObject private var fontManager = FontManager()
     @StateObject private var bookmarkManager = BookmarkManager()
     @StateObject private var recentFilesManager = RecentFilesManager()
+    @StateObject private var document = TextDocument()
 
     var windowWidth: CGFloat { CGFloat(AppSettings.cols * AppSettings.charW) }
     var windowHeight: CGFloat { CGFloat((AppSettings.rows - 2) * AppSettings.charH) } // -2 for TitleBar and MenuBar
@@ -83,6 +84,7 @@ struct HarryFanReaderApp: App {
         Settings {
             SettingsView()
                 .environmentObject(fontManager)
+                .environmentObject(document)
         }
     }
 }

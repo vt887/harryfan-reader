@@ -8,6 +8,7 @@
 @testable import HarryFan_Reader
 import XCTest
 
+// Unit tests for utility functions and enums
 final class UtilityTests: XCTestCase {
     // MARK: - SearchDirection Enum Tests
 
@@ -80,15 +81,15 @@ final class UtilityTests: XCTestCase {
     }
 
     func testHelloMessage() {
-        let helloMessage = Messages.helloMessage
-        XCTAssertFalse(helloMessage.isEmpty)
-        XCTAssertTrue(helloMessage.contains("Welcome"))
-        XCTAssertTrue(helloMessage.contains("retro"))
-        XCTAssertTrue(helloMessage.contains("MS-DOS"))
-        XCTAssertTrue(helloMessage.contains("F1"))
-        XCTAssertTrue(helloMessage.contains("F10"))
-        XCTAssertTrue(helloMessage.contains("Help"))
-        XCTAssertTrue(helloMessage.contains("Quit"))
+        let helpMessage = Messages.helpMessage
+        XCTAssertFalse(helpMessage.isEmpty)
+        XCTAssertTrue(helpMessage.contains("Welcome"))
+        XCTAssertTrue(helpMessage.contains("retro"))
+        XCTAssertTrue(helpMessage.contains("MS-DOS"))
+        XCTAssertTrue(helpMessage.contains("F1"))
+        XCTAssertTrue(helpMessage.contains("F10"))
+        XCTAssertTrue(helpMessage.contains("Help"))
+        XCTAssertTrue(helpMessage.contains("Quit"))
     }
 
     func testQuitMessage() {
@@ -105,7 +106,7 @@ final class UtilityTests: XCTestCase {
 
     func testMessageBoxFormatting() {
         // Test that messages have proper box drawing characters
-        let messages = [Messages.welcomeMessage, Messages.helloMessage, Messages.quitMessage]
+        let messages = [Messages.welcomeMessage, Messages.helpMessage, Messages.quitMessage]
 
         for message in messages {
             XCTAssertTrue(message.contains("╔"), "Message should have top-left corner")
@@ -114,6 +115,37 @@ final class UtilityTests: XCTestCase {
             XCTAssertTrue(message.contains("╝"), "Message should have bottom-right corner")
             XCTAssertTrue(message.contains("║"), "Message should have vertical borders")
         }
+    }
+
+    func testCenteredWelcomeMessage() {
+        let screenWidth = 80
+        let screenHeight = 24
+        let centeredMessage = Messages.centeredWelcomeMessage(screenWidth: screenWidth, screenHeight: screenHeight)
+
+        // Should not be empty
+        XCTAssertFalse(centeredMessage.isEmpty)
+
+        // Should contain the app name
+        XCTAssertTrue(centeredMessage.contains("HarryFan Reader"))
+
+        // Should contain version (replaced from %version%)
+        XCTAssertTrue(centeredMessage.contains(ReleaseInfo.version))
+        XCTAssertFalse(centeredMessage.contains("%version%")) // Should be replaced
+
+        // Should have proper line count (should fill the screen height)
+        let lines = centeredMessage.components(separatedBy: "\n")
+        XCTAssertEqual(lines.count, screenHeight)
+
+        // All lines should be the same width
+        for line in lines {
+            XCTAssertEqual(line.count, screenWidth, "Line should be padded to screen width: '\(line)'")
+        }
+
+        // Should contain box drawing characters
+        XCTAssertTrue(centeredMessage.contains("╔"))
+        XCTAssertTrue(centeredMessage.contains("╗"))
+        XCTAssertTrue(centeredMessage.contains("╚"))
+        XCTAssertTrue(centeredMessage.contains("╝"))
     }
 
     // MARK: - Unicode Points Tests
@@ -188,7 +220,7 @@ final class UtilityTests: XCTestCase {
 
     func testMessageFormattingWithAppSettings() {
         // Test that messages fit within the expected column width
-        let lines = Messages.helloMessage.components(separatedBy: .newlines)
+        let lines = Messages.helpMessage.components(separatedBy: .newlines)
 
         for line in lines {
             // Remove box drawing characters for content length check
@@ -216,7 +248,7 @@ final class UtilityTests: XCTestCase {
     func testEmptyStringHandling() {
         // Test that empty strings are handled gracefully in messages
         XCTAssertFalse(Messages.welcomeMessage.isEmpty)
-        XCTAssertFalse(Messages.helloMessage.isEmpty)
+        XCTAssertFalse(Messages.helpMessage.isEmpty)
         XCTAssertFalse(Messages.quitMessage.isEmpty)
     }
 
@@ -235,7 +267,7 @@ final class UtilityTests: XCTestCase {
         measure {
             for _ in 0 ..< 100 {
                 _ = Messages.welcomeMessage
-                _ = Messages.helloMessage
+                _ = Messages.helpMessage
                 _ = Messages.quitMessage
             }
         }
