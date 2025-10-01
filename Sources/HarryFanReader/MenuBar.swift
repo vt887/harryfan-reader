@@ -7,6 +7,13 @@
 
 import SwiftUI
 
+
+
+let menuItems = [
+    "Help", "Decode", "Open", "Search", "Goto",
+    "Bookm", "Start", "End", "Menu", "Quit"
+]
+
 // View for displaying the menu bar in the app
 struct MenuBar: View {
     // Observed document model for the menu bar
@@ -17,7 +24,7 @@ struct MenuBar: View {
     // Main view body rendering the menu bar
     var body: some View {
         ScreenView(document: document,
-                   contentToDisplay: document.getMenuBarText(),
+                   contentToDisplay: document.getMenuBarText(menuItems),
                    displayRows: 1,
                    rowOffset: document.rows - 1,
                    backgroundColor: Colors.theme.menuBarBackground,

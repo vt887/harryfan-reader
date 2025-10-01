@@ -33,7 +33,7 @@ enum AppSettings {
     // Anti-aliasing for smoother text rendering (configurable via settings)
     static var enableAntiAliasing: Bool {
         get {
-            UserDefaults.standard.bool(forKey: "enableAntiAliasing")
+            UserDefaults.standard.object(forKey: "enableAntiAliasing") as? Bool ?? true
         }
         set {
             UserDefaults.standard.set(newValue, forKey: "enableAntiAliasing")
@@ -41,7 +41,7 @@ enum AppSettings {
     }
 
     // Debug mode - enables console logging when true
-    static let debug: Bool = false
+    static let debug: Bool = true
 }
 
 // Debug logging utility

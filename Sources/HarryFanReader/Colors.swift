@@ -24,6 +24,8 @@ struct AppTheme {
     let titleBarForeground: Color
     let menuBarBackground: Color
     let menuBarForeground: Color
+    let menuBarNumbers: Color
+    let menuBarText: Color
     let bottomMenuForeground: Color
     let helpMenuBackground: Color
     let helpMenuForeground: Color
@@ -38,6 +40,8 @@ struct AppTheme {
                 titleBarForeground: .black,
                 menuBarBackground: Color(red: 0.9, green: 0.9, blue: 0.9), // Very light gray
                 menuBarForeground: .black,
+                menuBarNumbers: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
                 helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
@@ -50,6 +54,8 @@ struct AppTheme {
                 titleBarForeground: .white,
                 menuBarBackground: Color(red: 0.1, green: 0.1, blue: 0.1),
                 menuBarForeground: .white,
+                menuBarNumbers: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.8, green: 0.8, blue: 0.8),
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
                 helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
@@ -62,6 +68,8 @@ struct AppTheme {
                 titleBarForeground: .black,
                 menuBarBackground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
                 menuBarForeground: .black,
+                menuBarNumbers: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
+                menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.9, green: 0.9, blue: 0.9),
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
                 helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray

@@ -55,35 +55,34 @@ class TextDocument: ObservableObject {
         let appName = AppSettings.appName
 
         if fileName.isEmpty {
-            return appName.padding(toLength: 80, withPad: " ", startingAt: 0)
-        } else {
-            let percent = totalLines > 0 ? Int((Double(currentLine + 1) / Double(totalLines)) * 100.0) : 0
-            let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)%  "
-
-            let availableWidth = AppSettings.cols - appName.count - statusText.count - 3 // 3 for " - " delimiters
-
-            var displayFileName = fileName
-            if fileName.count > availableWidth {
-                displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
-            }
-
-            let title = "\(appName) - \(displayFileName)"
-            let rightPaddedTitle = title.padding(toLength: AppSettings.cols - statusText.count - 3, withPad: " ", startingAt: 0)
-            return "\(rightPaddedTitle)\(statusText)"
+            return " \(appName.padding(toLength: 79, withPad: " ", startingAt: 0))"
         }
+
+        let percent = totalLines > 0 ? Int((Double(currentLine + 1) / Double(totalLines)) * 100.0) : 0
+        let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)%  "
+
+        let availableWidth = AppSettings.cols - appName.count - statusText.count - 4 // 4 for leading space + " - " delimiters
+
+        var displayFileName = fileName
+        if fileName.count > availableWidth {
+            displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
+        }
+
+        let title = "\(appName)  \(displayFileName)"
+        let rightPaddedTitle = title.padding(toLength: AppSettings.cols - statusText.count - 1, withPad: " ", startingAt: 0)
+        return " \(rightPaddedTitle)\(statusText)"
+    
     }
 
     // Returns the formatted menu bar text
-    func getMenuBarText() -> String {
-        let menuItems = [
-            " 1Help", " 2Wrap  ", " 3Open  ", " 4Search ", " 5Goto  ",
-            " 6Bookm  ", " 7Start  ", " 8End   ", " 9Menu  ", "10Quit  ",
-        ]
-        let menuBarString = menuItems.map { $0.padding(toLength: 7,
-                                                       withPad: " ",
-                                                       startingAt: 0) }
-            .joined(separator: "")
-        return menuBarString.padding(toLength: AppSettings.cols, withPad: " ", startingAt: 0)
+    func getMenuBarText(_ items: [String]) -> String {
+        let menuBarString = items.enumerated().map { (index, item) in
+            let itemText = " \(index + 1)\(item)" // Add leading space before number
+            return itemText.padding(toLength: 8, withPad: " ", startingAt: 0)
+        }.joined(separator: "")
+        let result = menuBarString.padding(toLength: AppSettings.cols, withPad: " ", startingAt: 0)
+        DebugLogger.log("MenuBar result: '\(result)'")
+        return result
     }
 
     // Decodes CP866 encoded data to a string

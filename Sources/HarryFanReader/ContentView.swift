@@ -28,48 +28,6 @@ struct ContentView: View {
     }
 
     var body: some View {
-        mainLayout
-            .frame(
-                width: CGFloat(AppSettings.cols * AppSettings.charW),
-                height: CGFloat(AppSettings.rows * AppSettings.charH)
-            )
-            .background(Colors.theme.background)
-            .fileImporter(isPresented: $showingFilePicker,
-                          allowedContentTypes: [UTType.plainText],
-                          allowsMultipleSelection: false,
-                          onCompletion: handleFileImport)
-            .sheet(isPresented: $showingSearch) {
-                SearchView(isPresented: $showingSearch,
-                           document: document,
-                           lastSearchTerm: $lastSearchTerm)
-            }
-            .sheet(isPresented: $showingSettings) {
-                SettingsView()
-                    .environmentObject(fontManager)
-                    .environmentObject(document)
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
-            }
-            .sheet(isPresented: $showingBookmarks) {
-                BookmarksView(isPresented: $showingBookmarks,
-                              document: document)
-                    .environmentObject(bookmarkManager)
-                    .frame(width: 400, height: 300)
-            }
-            .alert("Go to Line", isPresented: $showingGotoDialog) {
-                gotoLineDialog
-            } message: {
-                Text("Enter line number to go to:")
-            }
-            .applyNotifications(document: document,
-                                showingSearch: $showingSearch,
-                                showingBookmarks: $showingBookmarks,
-                                showingFilePicker: $showingFilePicker,
-                                lastSearchTerm: $lastSearchTerm)
-    }
-
-    // Main layout
-    private var mainLayout: some View {
         VStack(spacing: 0) {
             TitleBar(document: document)
 
@@ -77,6 +35,43 @@ struct ContentView: View {
 
             MenuBar(document: document)
         }
+        .frame(
+            width: CGFloat(AppSettings.cols * AppSettings.charW),
+            height: CGFloat(AppSettings.rows * AppSettings.charH)
+        )
+        .background(Colors.theme.background)
+        .fileImporter(isPresented: $showingFilePicker,
+                      allowedContentTypes: [UTType.plainText],
+                      allowsMultipleSelection: false,
+                      onCompletion: handleFileImport)
+        .sheet(isPresented: $showingSearch) {
+            SearchView(isPresented: $showingSearch,
+                       document: document,
+                       lastSearchTerm: $lastSearchTerm)
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
+                .environmentObject(fontManager)
+                .environmentObject(document)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingBookmarks) {
+            BookmarksView(isPresented: $showingBookmarks,
+                          document: document)
+                .environmentObject(bookmarkManager)
+                .frame(width: 400, height: 300)
+        }
+        .alert("Go to Line", isPresented: $showingGotoDialog) {
+            gotoLineDialog
+        } message: {
+            Text("Enter line number to go to:")
+        }
+        .applyNotifications(document: document,
+                            showingSearch: $showingSearch,
+                            showingBookmarks: $showingBookmarks,
+                            showingFilePicker: $showingFilePicker,
+                            lastSearchTerm: $lastSearchTerm)
     }
 
     // File Import Handler
@@ -132,39 +127,6 @@ private struct MainContentScreenView: View {
                     DebugLogger.log("Main content area appeared")
                 }
         }
-    }
-}
-
-// Button style for retro-themed buttons
-struct RetroButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundColor(.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(configuration.isPressed ? Color.gray : Color(red: 0, green: 0, blue: 0.7))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.white, lineWidth: 1)
-            )
-    }
-}
-
-// Button style for retro-themed menu buttons
-struct RetroMenuButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundColor(.black)
-            .font(.system(size: 12, weight: .bold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(configuration.isPressed ? Color.gray : Color.clear)
-            )
     }
 }
 
