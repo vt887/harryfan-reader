@@ -64,18 +64,47 @@ struct ScreenView: View {
 
     // Only overlay layers are stored in @State, now passed as a Binding
     @Binding var overlayLayers: [ScreenLayer]
+    @Binding var overlayOpacities: [UUID: Double]
 
     // Helper to generate the base layer from main content
     private func makeBaseLayer() -> ScreenLayer {
         var base = ScreenLayer(rows: displayRows, cols: ScreenView.cols)
-        let lines: [String] = if let content = contentToDisplay {
-            content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        } else {
-            document.getVisibleLines(displayRows: displayRows)
-        }
+        // Get lines to display, either from overlay content or document
+        let lines: [String] = contentToDisplay?.components(separatedBy: .newlines) ?? document.getVisibleLines(displayRows: displayRows)
+
+        // Helper: is this the menu bar row?
+        let isMenuBarRow = displayRows == 1 && rowOffset == document.rows - 1
+
         for (row, line) in lines.prefix(displayRows).enumerated() {
-            for (col, char) in line.prefix(ScreenView.cols).enumerated() {
-                base[row, col] = ScreenCell(char: char, fgColor: fontColor, bgColor: nil)
+            var col = 0
+            let lineChars = Array(line)
+            while col < min(lineChars.count, ScreenView.cols) {
+                let char = lineChars[col]
+                if isMenuBarRow {
+                    // Menu bar: invert color for numbers 1-9 and their leading space
+                    if char.isNumber,
+                       let digit = char.wholeNumberValue, (1 ... 9).contains(digit),
+                       col > 0, lineChars[col - 1] == " "
+                    {
+                        base[row, col - 1] = ScreenCell(char: " ", fgColor: Colors.theme.titleBarBackground, bgColor: Colors.theme.menuBarForeground)
+                        base[row, col] = ScreenCell(char: char, fgColor: Colors.theme.titleBarBackground, bgColor: Colors.theme.menuBarForeground)
+                        col += 1
+                        continue
+                    }
+                    // Menu bar: invert color for "10"
+                    if char == "1", col + 1 < lineChars.count, lineChars[col + 1] == "0" {
+                        base[row, col] = ScreenCell(char: "1", fgColor: Colors.theme.titleBarBackground, bgColor: Colors.theme.menuBarForeground)
+                        base[row, col + 1] = ScreenCell(char: "0", fgColor: Colors.theme.titleBarBackground, bgColor: Colors.theme.menuBarForeground)
+                        col += 2
+                        continue
+                    }
+                    // Menu bar: normal menu item text
+                    base[row, col] = ScreenCell(char: char, fgColor: Colors.theme.menuBarForeground, bgColor: Colors.theme.menuBarBackground)
+                } else {
+                    // Normal content
+                    base[row, col] = ScreenCell(char: char, fgColor: fontColor, bgColor: nil)
+                }
+                col += 1
             }
         }
         return base
@@ -87,11 +116,14 @@ struct ScreenView: View {
         let cols = ScreenView.cols
         var result = makeBaseLayer().grid
         for layer in overlayLayers {
+            let alpha = overlayOpacities[layer.id] ?? 1.0
             for row in 0 ..< min(rows, layer.grid.count) {
                 for col in 0 ..< min(cols, layer.grid[row].count) {
                     let cell = layer.grid[row][col]
                     if cell.char != " " {
-                        result[row][col] = cell
+                        var adjusted = cell
+                        if let c = cell.fgColor { adjusted.fgColor = c.opacity(alpha) }
+                        result[row][col] = adjusted
                     }
                 }
             }
@@ -124,7 +156,7 @@ struct ScreenView: View {
             for row in 0 ..< displayRows {
                 for col in 0 ..< ScreenView.cols {
                     let cell = grid[row][col]
-                    drawChar(cell.char, at: (col, row), in: context, origin: CGPoint(x: offsetX, y: 0), customFgColor: cell.fgColor)
+                    drawChar(cell.char, at: (col, row), in: context, origin: CGPoint(x: offsetX, y: 0), customFgColor: cell.fgColor, customBgColor: cell.bgColor)
                 }
             }
         }
@@ -136,7 +168,8 @@ struct ScreenView: View {
                           at pos: (Int, Int),
                           in context: GraphicsContext,
                           origin: CGPoint,
-                          customFgColor: Color? = nil)
+                          customFgColor: Color? = nil,
+                          customBgColor: Color? = nil)
     {
         guard let bitmap = fontManager.getCharacterBitmap(for: character),
               bitmap.count == (ScreenView.charW * ScreenView.charH) else { return }
@@ -145,8 +178,15 @@ struct ScreenView: View {
         let baseX = origin.x + CGFloat(column * ScreenView.charW)
         let baseY = origin.y + CGFloat(row * ScreenView.charH)
 
-        // Determine foreground color to use
+        // Determine foreground and background color to use
         let currentFgColor = customFgColor ?? fontColor
+        let currentBgColor = customBgColor
+
+        // Draw background color if present
+        if let bg = currentBgColor {
+            let rect = CGRect(x: baseX, y: baseY, width: CGFloat(ScreenView.charW), height: CGFloat(ScreenView.charH))
+            context.fill(Path(rect), with: .color(bg))
+        }
 
         if AppSettings.enableAntiAliasing {
             // Draw with anti-aliasing for smoother text

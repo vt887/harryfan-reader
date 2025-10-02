@@ -222,6 +222,13 @@ class TextDocument: ObservableObject {
         currentLine = topLine + fixedCursorRow
     }
 
+    // Toggles word wrap and reloads content
+    func toggleWordWrap() {
+        wordWrap.toggle()
+        DebugLogger.log("Word wrap toggled to: \(wordWrap)")
+        reloadWithNewSettings()
+    }
+
     // Navigates to a specific line in the document
     func gotoLine(_ line: Int) {
         guard totalLines > 0 else { return }

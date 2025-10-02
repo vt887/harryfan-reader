@@ -27,6 +27,7 @@ extension Notification.Name {
     static let openRecentFileCommand = Notification.Name("AppCommand.openRecentFile")
     static let openBookmarkCommand = Notification.Name("AppCommand.openBookmark")
     static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
+    static let toggleWordWrapCommand = Notification.Name("AppCommand.toggleWordWrap")
 }
 
 // Main app commands for menu and shortcuts
@@ -111,6 +112,12 @@ struct AppCommands: Commands {
                         }
                     }
                 }
+            }
+            CommandMenu("View") {
+                Button("Toggle Word Wrap") {
+                    NotificationCenter.default.post(name: .toggleWordWrapCommand, object: nil)
+                }
+                .keyboardShortcut("w", modifiers: .command)
             }
             CommandMenu("Navigate") {
                 Button("Scroll Up Line") {

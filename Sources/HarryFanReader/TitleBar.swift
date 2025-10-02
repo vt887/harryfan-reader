@@ -20,6 +20,7 @@ struct TitleBar: View {
                    rowOffset: 0,
                    backgroundColor: Colors.theme.titleBarBackground,
                    fontColor: Colors.theme.titleBarForeground,
-                   overlayLayers: .constant([]))
+                   overlayLayers: .constant([]),
+                   overlayOpacities: .constant([:]))
     }
 }
