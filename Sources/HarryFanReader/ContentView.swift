@@ -174,13 +174,7 @@ private struct MainContentScreenView: View {
         }
         // Always remove help overlay on any key event
         removeHelpOverlayIfPresent()
-        // Remove file text overlay on ESC
-        if event.keyCode == KeyCode.escape, let fId = fileTextOverlayId {
-            removeOverlay(id: fId)
-            fileTextOverlayId = nil
-            DebugLogger.log("File text overlay hidden via ESC (keyCode=\(event.keyCode))")
-            return nil
-        }
+
         // F2 toggles word wrap
         if event.keyCode == KeyCode.f2 {
             document.toggleWordWrap()
@@ -210,13 +204,6 @@ private struct MainContentScreenView: View {
             DebugLogger.log("F10 key pressed")
             handleQuitKey()
             return nil
-        case KeyCode.escape:
-            if AppSettings.debug { // Esc only when debug enabled (no active help)
-                DebugLogger.log("Esc key pressed (debug mode)")
-                handleQuitKey()
-                return nil
-            }
-            return event
         case KeyCode.f3:
             DebugLogger.log("F3 key pressed - opening file picker")
             showingFilePicker = true

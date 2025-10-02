@@ -20,7 +20,7 @@ class TextDocument: ObservableObject {
     @Published var wrapWidth: Int = AppSettings.wrapWidth
     @Published var shouldShowQuitMessage: Bool = AppSettings.shouldShowQuitMessage
     @Published var rows: Int = AppSettings.rows
-    // Top visible line of viewport (Variant B scrolling model)
+    // Top visible line of viewport
     @Published var topLine: Int = 0
     // Fixed cursor row (highlight). For now we keep it at 0 (top of viewport)
     let fixedCursorRow: Int = 0

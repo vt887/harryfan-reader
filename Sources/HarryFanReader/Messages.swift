@@ -10,38 +10,24 @@ import Foundation
 // Enum for static app messages
 enum Messages {
     static let welcomeMessage = """
-    ╔══════════════════════════════════════════════════╗
-    ║                                                  ║
-    ║                 HarryFan Reader                  ║
-    ║                                                  ║
-    ║          Retro MS-DOS Style Text Viewer          ║
-    ║                                                  ║
-    ╚══════════════════════════════════════════════════╝
+    ╔═══════════════════════════════════════════╗
+    ║             HarryFan Reader               ║
+    ║                                           ║
+    ║      Retro MS-DOS Style Text Viewer       ║
+    ║                                           ║
+    ║             Press any key...              ║
+    ╚═══════════════════════════════════════════╝
     """
 
     static let helpMessage = """
-    ╔═════════════════════════════════════════════════════════════════════════════╗
-    ║                                                                             ║
-    ║  Welcome! This reader is designed to give you a retro text viewing          ║
-    ║  experience, reminiscent of the old MS-DOS days.                            ║
-    ║                                                                             ║
-    ║  To get started, press '3' or click 'Open' in the menu bar to open a text   ║
-    ║  file. You can navigate through the file using the scroll buttons, or       ║
-    ║  by pressing 'PgUp'/'PgDn' (not yet implemented in UI, but keyboard works). ║
-    ║                                                                             ║
-    ║  Here are some available commands:                                          ║
-    ║  F1  - Help        Show/hide this help screen                               ║
-    ║  F2  - Word Wrap   Toggle word wrapping on/off                              ║
-    ║  F3  - Open File   Open a new text file                                     ║
-    ║  F7  - Go Start    Jump to the beginning of the file                        ║
-    ║  F8  - Go End      Jump to the end of the file                              ║
-    ║  F10 - Quit        Exit the application                                     ║
-    ║                                                                             ║
-    ║  You can also use number keys 1-0 for menu items:                          ║
-    ║  1-Help, 2-Wrap, 3-Open, 4-Search, 5-Goto, 6-Bookm, 7-Start, 8-End, 9-Menu, 0-Quit ║
-    ║                                                                             ║
-    ║  Enjoy your reading experience!                                             ║
-    ╚═════════════════════════════════════════════════════════════════════════════╝
+    ╔═════════════════════════════════════════════════════════════╗                                                                             ║
+    ║  F1  - Help        Show/hide this help screen               ║
+    ║  F2  - Word Wrap   Toggle word wrapping on/off              ║
+    ║  F3  - Open File   Open a new text file                     ║
+    ║  F7  - Go Start    Jump to the beginning of the file        ║
+    ║  F8  - Go End      Jump to the end of the file              ║
+    ║  F10 - Quit        Exit the application                     ║
+    ╚═════════════════════════════════════════════════════════════╝
     """
 
     static let quitMessage = """
