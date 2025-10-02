@@ -31,9 +31,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             TitleBar(document: document)
-
             MainContentScreenView(document: document, showingFilePicker: $showingFilePicker)
-
             MenuBar(document: document)
         }
         .frame(
@@ -85,11 +83,17 @@ private struct MainContentScreenView: View {
     @State private var quitKeysMonitor: Any?
     @Binding var showingFilePicker: Bool
 
+    // Overlay management
+    @State private var overlayLayers: [ScreenLayer] = []
+    @State private var welcomeOverlayId: UUID? = nil
+
     // Centralized key codes for clarity / future extension
     private enum KeyCode {
         static let f10: UInt16 = 109
         static let escape: UInt16 = 53
         static let f3: UInt16 = 99
+        static let f7: UInt16 = 98 // Jump to start
+        static let f8: UInt16 = 100 // Jump to end
     }
 
     // Unified quit handling for F10 / Esc
@@ -103,6 +107,16 @@ private struct MainContentScreenView: View {
 
     // Event handler separated for readability & testability
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
+        // First: if welcome overlay is showing, remove it on ANY key
+        if let id = welcomeOverlayId {
+            let removingId = id
+            DispatchQueue.main.async {
+                overlayLayers.removeAll { $0.id == removingId }
+                welcomeOverlayId = nil
+                DebugLogger.log("Welcome overlay removed (keyCode=\(event.keyCode))")
+            }
+            // Continue processing this key normally below
+        }
         switch event.keyCode {
         case KeyCode.f10:
             DebugLogger.log("F10 key pressed")
@@ -119,8 +133,16 @@ private struct MainContentScreenView: View {
             DebugLogger.log("F3 key pressed - opening file picker")
             showingFilePicker = true
             return nil
+        case KeyCode.f7:
+            DebugLogger.log("F7 key pressed - goto start")
+            document.gotoStart()
+            return nil
+        case KeyCode.f8:
+            DebugLogger.log("F8 key pressed - goto end")
+            document.gotoEnd()
+            return nil
         default:
-            return event
+            return event // Pass through other keys
         }
     }
 
@@ -140,16 +162,28 @@ private struct MainContentScreenView: View {
     var body: some View {
         Group {
             if document.shouldShowQuitMessage {
-                ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: AppSettings.rows - 2, rowOffset: 1)
+                ScreenView(document: document, contentToDisplay: Messages.quitMessage, displayRows: AppSettings.rows - 2, rowOffset: 1, overlayLayers: .constant([]))
                     .environmentObject(fontManager)
                     .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
             } else {
-                ScreenView(document: document, displayRows: AppSettings.rows - 2, rowOffset: 1)
+                ScreenView(document: document, displayRows: AppSettings.rows - 2, rowOffset: 1, overlayLayers: $overlayLayers)
                     .environmentObject(fontManager)
                     .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
                     .onAppear {
-                        if document.fileName.isEmpty { document.loadWelcomeText() }
+                        // Do NOT load welcome text into the document; keep base empty so when overlay is removed the screen clears properly.
+                        if document.fileName.isEmpty, document.totalLines == 0 {
+                            // Leave document content empty until a file is opened.
+                            DebugLogger.log("Skipping loadWelcomeText; using overlay only")
+                        }
                         DebugLogger.log("Main content area appeared")
+                        // Add welcome overlay if not already present
+                        if welcomeOverlayId == nil, document.fileName.isEmpty {
+                            let layer = ScreenView(document: document, displayRows: AppSettings.rows - 2, overlayLayers: .constant([])).centeredOverlayLayer(from: Messages.welcomeMessage)
+                            welcomeOverlayId = layer.id
+                            overlayLayers.append(layer)
+                            DebugLogger.log("Welcome overlay added (id=\(layer.id))")
+                        }
+                        installQuitMonitor()
                     }
             }
         }

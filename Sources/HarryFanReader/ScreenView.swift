@@ -7,6 +7,34 @@
 
 import SwiftUI
 
+// Represents a single cell in the screen grid
+struct ScreenCell {
+    var char: Character
+    var fgColor: Color?
+    var bgColor: Color?
+}
+
+// Represents a layer (window) of the screen
+struct ScreenLayer: Identifiable {
+    let id = UUID()
+    var grid: [[ScreenCell]] // [row][col], 24x80
+
+    init(rows: Int = AppSettings.rows, cols: Int = AppSettings.cols) {
+        grid = Array(
+            repeating: Array(
+                repeating: ScreenCell(char: " ", fgColor: nil, bgColor: nil),
+                count: cols
+            ),
+            count: rows
+        )
+    }
+
+    subscript(row: Int, col: Int) -> ScreenCell {
+        get { grid[row][col] }
+        set { grid[row][col] = newValue }
+    }
+}
+
 // View for rendering the main text screen in the app
 struct ScreenView: View {
     // Observed document model for the screen
@@ -24,6 +52,8 @@ struct ScreenView: View {
     var backgroundColor: Color = Colors.theme.background
     // Font color for the screen
     var fontColor: Color = Colors.theme.foreground
+    // New flag to highlight the cursor (current) line (top visible line)
+    var highlightCursorLine: Bool = false
 
     // Number of columns in the screen (from AppSettings)
     static let cols = AppSettings.cols
@@ -31,6 +61,43 @@ struct ScreenView: View {
     static let charW = AppSettings.charW
     // Character height in pixels (from AppSettings)
     static let charH = AppSettings.charH
+
+    // Only overlay layers are stored in @State, now passed as a Binding
+    @Binding var overlayLayers: [ScreenLayer]
+
+    // Helper to generate the base layer from main content
+    private func makeBaseLayer() -> ScreenLayer {
+        var base = ScreenLayer(rows: displayRows, cols: ScreenView.cols)
+        let lines: [String] = if let content = contentToDisplay {
+            content.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        } else {
+            document.getVisibleLines(displayRows: displayRows)
+        }
+        for (row, line) in lines.prefix(displayRows).enumerated() {
+            for (col, char) in line.prefix(ScreenView.cols).enumerated() {
+                base[row, col] = ScreenCell(char: char, fgColor: fontColor, bgColor: nil)
+            }
+        }
+        return base
+    }
+
+    // Composite the base layer with overlays
+    func compositeGrid() -> [[ScreenCell]] {
+        let rows = displayRows
+        let cols = ScreenView.cols
+        var result = makeBaseLayer().grid
+        for layer in overlayLayers {
+            for row in 0 ..< min(rows, layer.grid.count) {
+                for col in 0 ..< min(cols, layer.grid[row].count) {
+                    let cell = layer.grid[row][col]
+                    if cell.char != " " {
+                        result[row][col] = cell
+                    }
+                }
+            }
+        }
+        return result
+    }
 
     // Main view body rendering the text screen
     var body: some View {
@@ -47,44 +114,17 @@ struct ScreenView: View {
             // Fill background
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
 
-            let linesToRender: [String]
-            if let customContent = contentToDisplay {
-                linesToRender = customContent.components(separatedBy: "\n")
-            } else {
-                guard document.totalLines > 0 else { return }
-                // Compute visible window so that document.currentLine is centered
-                let half = displayRows / 2
-                let maxStart = max(0, document.totalLines - displayRows)
-                let startLine = max(0, min(maxStart, document.currentLine - half))
-                linesToRender = Array(document.content[startLine ..< min(document.content.count, startLine + displayRows)])
-            }
-
-            // Precompute cell size to fit exactly 640x384; if canvas is larger, center the content
+            let grid = compositeGrid()
             let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW), height: CGFloat(displayRows * ScreenView.charH))
             let offsetX = (size.width - idealSize.width) / 2.0
 
-            // Draw characters
+            // Determine cursor line index within the visible viewport (removed highlight feature)
+            // (Cursor line highlight disabled as per user request)
+
             for row in 0 ..< displayRows {
-                var currentColumn = 0
-                if row < linesToRender.count {
-                    let line = linesToRender[row]
-                    // Loop columns up to 80
-                    for character in line {
-                        if currentColumn >= ScreenView.cols { break }
-                        drawChar(character, at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: 0))
-                        currentColumn += 1
-                    }
-                    // Fill the rest with spaces
-                    while currentColumn < ScreenView.cols {
-                        drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: 0))
-                        currentColumn += 1
-                    }
-                } else {
-                    // Empty line - fill the rest with spaces
-                    while currentColumn < ScreenView.cols {
-                        drawChar(" ", at: (currentColumn, row), in: context, origin: CGPoint(x: offsetX, y: 0))
-                        currentColumn += 1
-                    }
+                for col in 0 ..< ScreenView.cols {
+                    let cell = grid[row][col]
+                    drawChar(cell.char, at: (col, row), in: context, origin: CGPoint(x: offsetX, y: 0), customFgColor: cell.fgColor)
                 }
             }
         }
@@ -146,5 +186,26 @@ struct ScreenView: View {
                 }
             }
         }
+    }
+
+    // Helper to create a centered overlay layer from a string
+    func centeredOverlayLayer(from message: String) -> ScreenLayer {
+        var layer = ScreenLayer(rows: displayRows, cols: ScreenView.cols)
+        let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        let totalLines = lines.count
+        let verticalPadding = max(0, (displayRows - totalLines) / 2)
+        for (i, line) in lines.enumerated() {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            let padding = max(0, (ScreenView.cols - trimmed.count) / 2)
+            let startCol = padding
+            for (j, char) in trimmed.enumerated() {
+                let row = verticalPadding + i
+                let col = startCol + j
+                if row < displayRows, col < ScreenView.cols {
+                    layer[row, col] = ScreenCell(char: char, fgColor: fontColor, bgColor: nil)
+                }
+            }
+        }
+        return layer
     }
 }

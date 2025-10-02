@@ -19,6 +19,7 @@ struct TitleBar: View {
                    displayRows: 1,
                    rowOffset: 0,
                    backgroundColor: Colors.theme.titleBarBackground,
-                   fontColor: Colors.theme.titleBarForeground)
+                   fontColor: Colors.theme.titleBarForeground,
+                   overlayLayers: .constant([]))
     }
 }

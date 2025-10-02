@@ -20,6 +20,10 @@ class TextDocument: ObservableObject {
     @Published var wrapWidth: Int = AppSettings.wrapWidth
     @Published var shouldShowQuitMessage: Bool = AppSettings.shouldShowQuitMessage
     @Published var rows: Int = AppSettings.rows
+    // Top visible line of viewport (Variant B scrolling model)
+    @Published var topLine: Int = 0
+    // Fixed cursor row (highlight). For now we keep it at 0 (top of viewport)
+    let fixedCursorRow: Int = 0
 
     private var originalData: Data?
 
@@ -30,6 +34,8 @@ class TextDocument: ObservableObject {
     func loadWelcomeText() {
         content = splitLines(Messages.centeredWelcomeMessage(screenWidth: AppSettings.cols, screenHeight: AppSettings.rows - 2))
         totalLines = content.count
+        topLine = 0
+        currentLine = 0
     }
 
     // Opens a file and loads its content
@@ -45,8 +51,9 @@ class TextDocument: ObservableObject {
             content = wrapLines(rawLines)
             totalLines = content.count
             DebugLogger.log("Opened file '\(fileName)' size=\(data.count) bytes lines=\(totalLines) encoding=CP866")
-            // Position cursor at line 11 (1-based) if possible
-            gotoLine(11)
+            // Initialize viewport at top
+            topLine = 0
+            currentLine = 0
         } catch {
             DebugLogger.log("Error opening file: \(error)")
         }
@@ -57,23 +64,29 @@ class TextDocument: ObservableObject {
         let appName = AppSettings.appName
         let totalCols = AppSettings.cols
         let emptyFile = fileName.isEmpty
-        let percent = totalLines > 0 ? Int((Double(currentLine + 1) / Double(totalLines)) * 100.0) : 0
-        let statusText = "Line \(currentLine + 1) of \(totalLines) \(percent)%  "
+        // Variant B percent based on bottom visible line
+        let displayRows = AppSettings.rows - 2
+        let bottomLine = min(totalLines == 0 ? 0 : totalLines - 1, topLine + displayRows - 1)
+        let percent: Int = {
+            guard totalLines > 0 else { return 0 }
+            if bottomLine == totalLines - 1 { return 100 }
+            if topLine == 0 { return 0 }
+            return Int((Double(bottomLine + 1) / Double(totalLines)) * 100.0)
+        }()
+        // Updated status text: remove current line number, show total lines only
+        let statusText = "Lines: \(totalLines) \(percent)% "
         let leftPad = " "
         let rightPad = " "
         let separator = " │ "
         let minTitleLen = 10
-
         var displayFileName = fileName
         if !emptyFile {
-            // Calculate available width for file name
             let usedWidth = appName.count + separator.count + statusText.count + leftPad.count + rightPad.count
             let availableWidth = max(minTitleLen, totalCols - usedWidth)
             if fileName.count > availableWidth {
                 displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
             }
         }
-
         let title: String
         if emptyFile {
             let left = leftPad + appName + separator
@@ -205,50 +218,67 @@ class TextDocument: ObservableObject {
         let rawLines = cleanLines(splitLines(decodedString))
         content = wrapLines(rawLines)
         totalLines = content.count
+        topLine = min(topLine, max(0, totalLines - 1))
+        currentLine = topLine + fixedCursorRow
     }
 
     // Navigates to a specific line in the document
     func gotoLine(_ line: Int) {
-        let targetLine = max(0, min(line - 1, totalLines - 1))
-        currentLine = targetLine
+        guard totalLines > 0 else { return }
+        let target = max(0, min(line - 1, totalLines - 1))
+        // Show target line at top (cursor line)
+        topLine = target
+        currentLine = target
     }
 
     // Navigates to the start of the document
-    func gotoStart() {
-        currentLine = 0
-    }
+    func gotoStart() { topLine = 0; currentLine = 0 }
 
     // Navigates to the end of the document
     func gotoEnd() {
-        currentLine = max(0, totalLines - 1)
+        guard totalLines > 0 else { return }
+        let displayRows = AppSettings.rows - 2
+        topLine = max(0, totalLines - displayRows)
+        currentLine = topLine
     }
 
-    // Moves up one page in the document
+    // Scrolls up one page in the document
     func pageUp() {
-        let pageSize = AppSettings.rows - 2 // Number of lines per page
-        currentLine = max(0, currentLine - pageSize)
+        guard totalLines > 0 else { return }
+        let displayRows = AppSettings.rows - 2
+        topLine = max(0, topLine - displayRows)
+        currentLine = topLine
     }
 
-    // Moves down one page in the document
+    // Scrolls down one page in the document
     func pageDown() {
-        let pageSize = AppSettings.rows - 2 // Number of lines per page
-        currentLine = min(totalLines - 1, currentLine + pageSize)
+        guard totalLines > 0 else { return }
+        let displayRows = AppSettings.rows - 2
+        let maxTop = max(0, totalLines - displayRows)
+        topLine = min(maxTop, topLine + displayRows)
+        currentLine = topLine
     }
 
-    // Moves up one line in the document
+    // Scrolls up one line in the document
     func lineUp() {
         guard totalLines > 0 else { return }
-        if currentLine == totalLines - 1 {
-            // Special behavior: first move from EOF jumps 13 lines up
-            currentLine = max(0, currentLine - 13)
-        } else {
-            currentLine = max(0, currentLine - 1)
+        if topLine > 0 {
+            topLine -= 1
+            currentLine = topLine
         }
+        // If already at top, do nothing
     }
 
-    // Moves down one line in the document
+    // Scrolls down one line in the document
     func lineDown() {
-        currentLine = min(totalLines - 1, currentLine + 1)
+        guard totalLines > 0 else { return }
+        let displayRows = AppSettings.rows - 2
+        let bottomLine = min(totalLines - 1, topLine + displayRows - 1)
+        if bottomLine < totalLines - 1 {
+            topLine += 1
+            currentLine = topLine
+        }
+        // If already at bottom, do nothing
     }
 
     // Searches for a query string in the document
@@ -257,40 +287,52 @@ class TextDocument: ObservableObject {
 
         let searchQuery = caseSensitive ? query : query.lowercased()
         let lines = caseSensitive ? content : content.map { $0.lowercased() }
-
+        var found: Int? = nil
         if direction == .forward {
             for index in (currentLine + 1) ..< lines.count where lines[index].contains(searchQuery) {
-                return index
+                found = index; break
             }
-            for index in 0 ... currentLine where lines[index].contains(searchQuery) {
-                return index
+            if found == nil {
+                for index in 0 ... currentLine where lines[index].contains(searchQuery) {
+                    found = index; break
+                }
             }
         } else {
-            for index in stride(from: currentLine - 1, through: 0, by: -1) where lines[index].contains(searchQuery) {
-                return index
+            if currentLine > 0 {
+                for index in stride(from: currentLine - 1, through: 0, by: -1) where lines[index].contains(searchQuery) {
+                    found = index; break
+                }
             }
-            for index in stride(from: lines.count - 1, through: currentLine, by: -1) where lines[index].contains(searchQuery) {
-                return index
+            if found == nil {
+                for index in stride(from: lines.count - 1, through: currentLine, by: -1) where lines[index].contains(searchQuery) {
+                    found = index; break
+                }
             }
         }
-
-        return nil
+        if let idx = found {
+            topLine = idx
+            currentLine = idx
+        }
+        return found
     }
 
     // Returns the content of the current line
     func getCurrentLine() -> String {
-        guard currentLine >= 0, currentLine < content.count else {
-            return ""
-        }
+        guard currentLine >= 0, currentLine < content.count else { return "" }
         return content[currentLine]
     }
 
-    // Returns the visible lines for display
-    func getVisibleLines() -> [String] {
-        let startLine = currentLine
-        let endLine = min(content.count, startLine + AppSettings.cols)
-        return Array(content[startLine ..< endLine])
+    // Visible lines based on topLine (viewport)
+    func getVisibleLines(displayRows: Int) -> [String] {
+        guard totalLines > 0 else { return [] }
+        let top = min(max(0, topLine), max(0, totalLines - 1))
+        if totalLines <= displayRows { return content }
+        let end = min(totalLines, top + displayRows)
+        return Array(content[top ..< end])
     }
+
+    func getVisibleLines() -> [String] { getVisibleLines(displayRows: AppSettings.rows - 2) }
+    // Removed obsolete topVisibleLine centering method.
 }
 
 // Enum for search direction in text document

@@ -26,6 +26,7 @@ struct MenuBar: View {
                    displayRows: 1,
                    rowOffset: document.rows - 1,
                    backgroundColor: Colors.theme.menuBarBackground,
-                   fontColor: Colors.theme.menuBarForeground)
+                   fontColor: Colors.theme.menuBarForeground,
+                   overlayLayers: .constant([]))
     }
 }
