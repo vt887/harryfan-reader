@@ -33,8 +33,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
-        // Close the app when the last window (red button) is closed
-        true
+        // Keep the app running (and status bar icon visible) when window is closed
+        false
     }
 
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
