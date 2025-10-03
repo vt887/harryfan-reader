@@ -61,6 +61,7 @@ struct HarryFanReaderApp: App {
     @StateObject private var bookmarkManager = BookmarkManager()
     @StateObject private var recentFilesManager = RecentFilesManager()
     @StateObject private var document = TextDocument()
+    @StateObject private var statusBarManager = StatusBarManager()
 
     var windowWidth: CGFloat { CGFloat(AppSettings.cols * AppSettings.charW) }
     var windowHeight: CGFloat { CGFloat(AppSettings.rows * AppSettings.charH) } // Match ScreenView size exactly
@@ -71,6 +72,7 @@ struct HarryFanReaderApp: App {
                 .environmentObject(fontManager)
                 .environmentObject(bookmarkManager)
                 .environmentObject(recentFilesManager)
+                .environmentObject(statusBarManager)
                 .frame(minWidth: windowWidth, minHeight: windowHeight)
                 .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings
         }

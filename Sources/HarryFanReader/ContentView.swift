@@ -15,6 +15,7 @@ struct ContentView: View {
     @EnvironmentObject var fontManager: FontManager
     @EnvironmentObject var bookmarkManager: BookmarkManager
     @EnvironmentObject var recentFilesManager: RecentFilesManager
+    @EnvironmentObject var statusBarManager: StatusBarManager
 
     @State private var showingFilePicker = false
     @State private var showingSearch = false

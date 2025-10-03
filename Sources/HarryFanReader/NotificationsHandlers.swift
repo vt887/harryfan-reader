@@ -39,6 +39,9 @@ private struct NotificationsModifier: ViewModifier {
                 if document.fileName.isEmpty { return }
                 showingSearch = true
             }
+            .onReceive(NotificationCenter.default.publisher(for: .showSearchCommand)) { _ in
+                showingSearch = true
+            }
             .onReceive(NotificationCenter.default.publisher(for: .findNextCommand)) { _ in
                 guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
                 if let idx = document.search(lastSearchTerm, direction: .forward) {

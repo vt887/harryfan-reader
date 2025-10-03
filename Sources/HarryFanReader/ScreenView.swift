@@ -66,7 +66,56 @@ struct ScreenView: View {
     @Binding var overlayLayers: [ScreenLayer]
     @Binding var overlayOpacities: [UUID: Double]
 
-    // Helper to generate the base layer from main content
+    // Helper function to create inverted screen cell
+    private func createInvertedCell(_ char: Character) -> ScreenCell {
+        ScreenCell(
+            char: char,
+            fgColor: Colors.theme.titleBarBackground,
+            bgColor: Colors.theme.menuBarForeground
+        )
+    }
+
+    // Helper function to detect and handle digit patterns
+    private func detectDigitPattern(_ lineChars: [Character], _ col: Int) -> (pattern: String, length: Int)? {
+        let char = lineChars[col]
+
+        // Check for "10" first (two-digit number)
+        if char == "1", col + 1 < lineChars.count, lineChars[col + 1] == "0" {
+            return ("10", 2)
+        }
+
+        // Check for single digits 1-9
+        if char.isNumber,
+           let digit = char.wholeNumberValue, (1 ... 9).contains(digit)
+        {
+            return (String(digit), 1)
+        }
+
+        return nil
+    }
+
+    // Helper function to handle menu bar digit inversion
+    private func handleMenuBarDigitInversion(_ base: inout ScreenLayer, row: Int, lineChars: [Character], col: inout Int) -> Bool {
+        // Check if we have a leading space and a valid digit pattern
+        guard col > 0, lineChars[col - 1] == " ",
+              let (pattern, length) = detectDigitPattern(lineChars, col)
+        else {
+            return false
+        }
+
+        // Invert leading space
+        base[row, col - 1] = createInvertedCell(" ")
+
+        // Invert the digit pattern
+        for i in 0 ..< length {
+            let index = pattern.index(pattern.startIndex, offsetBy: i)
+            base[row, col + i] = createInvertedCell(pattern[index])
+        }
+
+        col += length
+        return true
+    }
+
     private func makeBaseLayer() -> ScreenLayer {
         var base = ScreenLayer(rows: displayRows, cols: ScreenView.cols)
         // Get lines to display, either from overlay content or document
@@ -81,21 +130,8 @@ struct ScreenView: View {
             while col < min(lineChars.count, ScreenView.cols) {
                 let char = lineChars[col]
                 if isMenuBarRow {
-                    // Menu bar: invert color for numbers 1-9 and their leading space
-                    if char.isNumber,
-                       let digit = char.wholeNumberValue, (1 ... 9).contains(digit),
-                       col > 0, lineChars[col - 1] == " "
-                    {
-                        base[row, col - 1] = ScreenCell(char: " ", fgColor: Colors.theme.titleBarBackground, bgColor: Colors.theme.menuBarForeground)
-                        base[row, col] = ScreenCell(char: char, fgColor: Colors.theme.titleBarBackground, bgColor: Colors.theme.menuBarForeground)
-                        col += 1
-                        continue
-                    }
-                    // Menu bar: invert color for "10"
-                    if char == "1", col + 1 < lineChars.count, lineChars[col + 1] == "0" {
-                        base[row, col] = ScreenCell(char: "1", fgColor: Colors.theme.titleBarBackground, bgColor: Colors.theme.menuBarForeground)
-                        base[row, col + 1] = ScreenCell(char: "0", fgColor: Colors.theme.titleBarBackground, bgColor: Colors.theme.menuBarForeground)
-                        col += 2
+                    // Handle menu bar digit inversion (1-10 and their leading spaces)
+                    if handleMenuBarDigitInversion(&base, row: row, lineChars: lineChars, col: &col) {
                         continue
                     }
                     // Menu bar: normal menu item text

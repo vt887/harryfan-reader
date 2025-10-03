@@ -74,7 +74,8 @@ class TextDocument: ObservableObject {
             return Int((Double(bottomLine + 1) / Double(totalLines)) * 100.0)
         }()
         // Updated status text: remove current line number, show total lines only
-        let statusText = "Lines: \(totalLines) \(percent)% "
+        let space = percent < 10 ? 3 : (percent < 100 ? 2 : 1) // Dynamic spacing based on percentage
+        let statusText = "Lines: \(totalLines)" + String(repeating: " ", count: space) + "\(percent)%"
         let leftPad = " "
         let rightPad = " "
         let separator = " │ "
