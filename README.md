@@ -2,6 +2,9 @@
 
 A nostalgic text viewer for macOS that emulates the classic MS-DOS aesthetic with blue background, white text, and support for CP866 encoding (perfect for Cyrillic text files).
 
+![MS-DOS background](Files/background.png)
+
+
 ## Features
 
 - **Retro MS-DOS Aesthetic**: Blue background with white text, reminiscent of classic DOS applications (credits to Peter Norton, USA)
