@@ -64,8 +64,8 @@ struct AppTheme {
             )
         case .blue:
             AppTheme(
-                background: Color(red: 0.0, green: 0.0, blue: 0.667), // Sky blue
-                foreground: Color(red: 0.333, green: 1.0, blue: 1.0), // Bright cyan
+                background: Color(red: 0.0, green: 0.0, blue: 0.66), // #0000AA
+                foreground: Color(red: 0.33, green: 1.0, blue: 1.0), // #55FFFF
                 titleBarBackground: Color(red: 0.667, green: 0.667, blue: 0.667), // Light gray
                 titleBarForeground: .black,
                 menuBarBackground: Color(red: 0.29, green: 0.65, blue: 0.65), // Teal (#4BA5A7)

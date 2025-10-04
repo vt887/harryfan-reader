@@ -19,6 +19,9 @@ run:
 test:
 	swift test
 
+stat:
+	wc -l Sources/HarryFanReader/*.swift
+
 pre-commit:
 	@echo "Installing pre-commit hook..."
 	@cp scripts/pre-commit.sh .git/hooks/pre-commit

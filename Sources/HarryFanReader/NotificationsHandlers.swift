@@ -32,10 +32,14 @@ private struct NotificationsModifier: ViewModifier {
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .clearRecentFilesCommand)) { _ in recentFilesManager.clearRecentFiles() }
+            .onReceive(NotificationCenter.default.publisher(for: .toggleWordWrapCommand)) { _ in document.toggleWordWrap() }
 
         let contentWithSearch = contentWithFile
             .onReceive(NotificationCenter.default.publisher(for: .openSearchCommand)) { _ in
                 if document.fileName.isEmpty { return }
+                showingSearch = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .showSearchCommand)) { _ in
                 showingSearch = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .findNextCommand)) { _ in

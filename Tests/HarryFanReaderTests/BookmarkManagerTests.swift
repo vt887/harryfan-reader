@@ -15,13 +15,15 @@ final class BookmarkManagerTests: XCTestCase {
     override func setUp() {
         super.setUp()
         // Clear any existing bookmarks from UserDefaults for clean testing
-        UserDefaults.standard.removeObject(forKey: "TxtViewerBookmarks")
+        let key = "\(AppSettings.appName)Bookmarks"
+        UserDefaults.standard.removeObject(forKey: key)
         bookmarkManager = BookmarkManager()
     }
 
     override func tearDown() {
         // Clean up UserDefaults after each test
-        UserDefaults.standard.removeObject(forKey: "TxtViewerBookmarks")
+        let key = "\(AppSettings.appName)Bookmarks"
+        UserDefaults.standard.removeObject(forKey: key)
         bookmarkManager = nil
         super.tearDown()
     }
