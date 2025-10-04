@@ -29,10 +29,9 @@ jobs:
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+    - name: Build with SwiftPM
+      run: swift build --build-tests
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
         category: '/language:${{matrix.language}}'
-
