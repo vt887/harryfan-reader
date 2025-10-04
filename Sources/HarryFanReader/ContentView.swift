@@ -33,7 +33,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             TitleBar(document: document)
             MainContentScreenView(document: document, recentFilesManager: recentFilesManager, showingFilePicker: $showingFilePicker)
-            MenuBar(document: document)
+            BottomBar(document: document)
         }
         .frame(
             width: CGFloat(AppSettings.cols * AppSettings.charW),
@@ -64,6 +64,7 @@ struct ContentView: View {
 private struct MainContentScreenView: View {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
+    @EnvironmentObject var overlayManager: OverlayManager
     var recentFilesManager: RecentFilesManager
     @State private var quitKeysMonitor: Any?
     @Binding var showingFilePicker: Bool
@@ -75,15 +76,6 @@ private struct MainContentScreenView: View {
     @State private var helpOverlayId: UUID? = nil // help overlay tracking
     @State private var fileTextOverlayId: UUID? = nil // file text overlay tracking
 
-    // Overlay helper utilities
-    private func removeHelpOverlayIfPresent(fadeDuration: Double = 0.25) {
-        if let hId = helpOverlayId {
-            removeOverlay(id: hId, fadeDuration: fadeDuration)
-            helpOverlayId = nil
-            DebugLogger.log("Help overlay removed (auto)")
-        }
-    }
-
     private func removeWelcomeOverlayIfPresent(fadeDuration: Double = 0.25) {
         if let wId = welcomeOverlayId {
             removeOverlay(id: wId, fadeDuration: fadeDuration)
@@ -93,7 +85,7 @@ private struct MainContentScreenView: View {
     }
 
     private func addOverlay(kind: OverlayKind, fadeDuration: Double = 0.25) -> UUID {
-        removeHelpOverlayIfPresent()
+        overlayManager.removeHelpOverlay()
         let layer = OverlayFactory.make(kind: kind, rows: AppSettings.rows - 2, cols: AppSettings.cols)
         let id = layer.id
         overlayLayers.append(layer)
@@ -152,7 +144,7 @@ private struct MainContentScreenView: View {
     // File Import Handler (now here)
     // Always removes HelpOverlay and WelcomeOverlay before opening a file
     private func handleFileImport(_ result: Result<[URL], Error>) {
-        removeHelpOverlayIfPresent()
+        overlayManager.removeHelpOverlay()
         removeWelcomeOverlayIfPresent()
         switch result {
         case let .success(urls):
@@ -174,7 +166,7 @@ private struct MainContentScreenView: View {
             DebugLogger.log("Welcome overlay removed (keyCode=\(event.keyCode))")
         }
         // Always remove help overlay on any key event
-        removeHelpOverlayIfPresent()
+        overlayManager.removeHelpOverlay()
 
         // F2 toggles word wrap
         if event.keyCode == KeyCode.f2 {
@@ -314,7 +306,7 @@ private struct MainContentScreenView: View {
                                   onCompletion: handleFileImport)
                     .onChange(of: document.fileName) { _, newFileName in
                         if !newFileName.isEmpty {
-                            removeHelpOverlayIfPresent()
+                            overlayManager.removeHelpOverlay()
                             removeWelcomeOverlayIfPresent()
                         }
                     }

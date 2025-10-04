@@ -1,21 +1,24 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
+let baseName = "HarryFanReader"
+let productName = "HarryFan Reader"
+
 let package = Package(
-    name: "HarryFanReader",
+    name: baseName,
     platforms: [
         .macOS(.v14),
     ],
     products: [
         .executable(
-            name: "HarryFan Reader",
-            targets: ["HarryFan Reader"]
+            name: productName, // HarryFan Reader
+            targets: [baseName]
         ),
     ],
     dependencies: [],
     targets: [
         .executableTarget(
-            name: "HarryFan Reader",
+            name: baseName, // HarryFanReader
             dependencies: [],
             path: "Sources/HarryFanReader",
             exclude: [
@@ -29,8 +32,8 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "HarryFanReaderTests",
-            dependencies: ["HarryFan Reader"],
+            name: "\(baseName)Tests", // HarryFanReaderTests
+            dependencies: [.target(name: baseName)],
             path: "Tests/HarryFanReaderTests"
         ),
     ]

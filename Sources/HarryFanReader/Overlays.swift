@@ -72,38 +72,45 @@ enum OverlayFactory {
 // OverlayManager manages the stack of overlays currently displayed.
 // It allows adding, removing, and clearing overlays, as well as
 // controlling the opacity of the overlay layer.
-final class OverlayManager {
-    private(set) var overlays: [OverlayKind] = []
-    private(set) var opacity: Double = 1.0
+final class OverlayManager: ObservableObject {
+    // Published properties so SwiftUI views observing this manager
+    // will update when overlays or opacity change.
+    @Published private(set) var overlays: [OverlayKind] = []
+    @Published private(set) var opacity: Double = 1.0
 
-    // Adds a new overlay if it is not already present.
-    // Prevents duplicate overlays of the same kind.
+    // Adds a new overlay if it is not already present. Use either
+    // `addOverlay(.custom("..."))` or `addOverlay(kind: .fileText(...))`.
     func addOverlay(_ kind: OverlayKind) {
         if !overlays.contains(kind) {
             overlays.append(kind)
         }
     }
 
+    // Labeled overload to match call sites that use `kind:` label.
+    func addOverlay(kind: OverlayKind) { addOverlay(kind) }
+
     // Removes the specified overlay kind from the stack.
-    // Only overlays matching the given kind are removed.
     func removeOverlay(_ kind: OverlayKind) {
         overlays.removeAll { $0 == kind }
     }
 
-    // Removes all overlays from the stack.
-    // This clears the overlay display completely.
-    func removeAll() {
-        overlays.removeAll()
-    }
+    // Labeled overload to match call sites that use `kind:` label.
+    func removeOverlay(kind: OverlayKind) { removeOverlay(kind) }
 
-    // Sets the opacity for the overlay layer.
-    // The value is clamped between 0.0 and 1.0.
+    // Removes all overlays from the stack.
+    func removeAll() { overlays.removeAll() }
+
+    // Sets the opacity for the overlay layer. The value is clamped
+    // between 0.0 and 1.0.
     func setOpacity(_ value: Double) {
         opacity = min(max(value, 0.0), 1.0)
     }
 
     // Returns the current opacity value for overlays.
-    func getOpacity() -> Double {
-        opacity
+    func getOpacity() -> Double { opacity }
+
+    /// Removes all overlays of type .help from the stack.
+    func removeHelpOverlay() {
+        overlays.removeAll { $0 == .help }
     }
 }

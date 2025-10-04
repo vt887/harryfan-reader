@@ -113,13 +113,7 @@ struct AppCommands: Commands {
                     }
                 }
             }
-            CommandMenu("View") {
-                Button("Toggle Word Wrap") {
-                    NotificationCenter.default.post(name: .toggleWordWrapCommand, object: nil)
-                }
-                .keyboardShortcut("w", modifiers: .command)
-            }
-            CommandMenu("Navigate") {
+            CommandMenu("Navigation") {
                 Button("Scroll Up Line") {
                     NotificationCenter.default.post(name: .scrollUpCommand, object: nil)
                 }
@@ -140,11 +134,11 @@ struct AppCommands: Commands {
                 Button("Go to Start") {
                     NotificationCenter.default.post(name: .gotoStartCommand, object: nil)
                 }
-                .keyboardShortcut(.upArrow, modifiers: [.control, .command])
+                .keyboardShortcut(.home, modifiers: [])
                 Button("Go to End") {
                     NotificationCenter.default.post(name: .gotoEndCommand, object: nil)
                 }
-                .keyboardShortcut(.downArrow, modifiers: [.control, .command])
+                .keyboardShortcut(.end, modifiers: [])
             }
         }
     }
