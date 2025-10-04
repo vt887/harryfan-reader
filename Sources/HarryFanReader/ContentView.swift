@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -76,6 +77,17 @@ private struct MainContentScreenView: View {
     @State private var helpOverlayId: UUID? = nil // help overlay tracking
     @State private var fileTextOverlayId: UUID? = nil // file text overlay tracking
 
+    // Overlay state for key handling
+    private enum ActiveOverlay {
+        case none
+        case welcome
+        case help
+        case quit
+        case custom
+    }
+
+    @State private var activeOverlay: ActiveOverlay = .none
+
     private func removeWelcomeOverlayIfPresent(fadeDuration: Double = 0.25) {
         if let wId = welcomeOverlayId {
             removeOverlay(id: wId, fadeDuration: fadeDuration)
@@ -93,6 +105,19 @@ private struct MainContentScreenView: View {
         withAnimation(.easeInOut(duration: fadeDuration)) {
             overlayOpacities[id] = 1.0
         }
+        // Set activeOverlay based on kind
+        switch kind {
+        case .welcome: activeOverlay = .welcome
+        case .help: activeOverlay = .help
+        case .quit: activeOverlay = .quit
+        case let .custom(msg):
+            if msg == Messages.quitMessage {
+                activeOverlay = .quit
+            } else {
+                activeOverlay = .custom
+            }
+        default: activeOverlay = .custom
+        }
         return id
     }
 
@@ -105,20 +130,9 @@ private struct MainContentScreenView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
             overlayLayers.removeAll { $0.id == id }
             overlayOpacities[id] = nil
+            // Reset activeOverlay if no overlays left
+            if overlayLayers.isEmpty { activeOverlay = .none }
         }
-    }
-
-    private func removeIfPresent(_ id: UUID?, fadeDuration: Double = 0.25) {
-        if let realId = id { removeOverlay(id: realId, fadeDuration: fadeDuration) }
-    }
-
-    private func showFileTextOverlay() {
-        // Remove any existing file text overlay
-        if let id = fileTextOverlayId { removeOverlay(id: id); fileTextOverlayId = nil }
-        // Use up to 40 lines from the file for preview
-        let preview = document.content.prefix(40).joined(separator: "\n")
-        let id = addOverlay(kind: .fileText(preview))
-        fileTextOverlayId = id
     }
 
     // Centralized key codes for clarity / future extension
@@ -130,6 +144,8 @@ private struct MainContentScreenView: View {
         static let f3: UInt16 = 99
         static let f7: UInt16 = 98 // Jump to start
         static let f8: UInt16 = 100 // Jump to end
+        static let yKey: UInt16 = 16 // Y key
+        static let nKey: UInt16 = 45 // N key
     }
 
     // Unified quit handling for F10 / Esc
@@ -159,6 +175,64 @@ private struct MainContentScreenView: View {
 
     // Event handler separated for readability & testability
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
+        DebugLogger.log("Key pressed: keyCode=\(event.keyCode), characters='\(event.charactersIgnoringModifiers ?? "")', activeOverlay=\(activeOverlay)")
+        switch activeOverlay {
+        case .quit:
+            // Accept both uppercase and lowercase Y/N
+            if event.charactersIgnoringModifiers?.lowercased() == "y" {
+                DebugLogger.log("Quit overlay: 'y' pressed, terminating app.")
+                NSApp.terminate(nil)
+            } else if event.charactersIgnoringModifiers?.lowercased() == "n" {
+                DebugLogger.log("Quit overlay: 'n' pressed, cancelling quit dialog.")
+                document.shouldShowQuitMessage = false
+                activeOverlay = .none
+                // Remove the quit overlay layer
+                if let quitId = fileTextOverlayId {
+                    removeOverlay(id: quitId)
+                    fileTextOverlayId = nil
+                }
+            } else {
+                DebugLogger.log("Quit overlay: ignored key.")
+            }
+            return nil
+        case .welcome:
+            // Dismiss on any key
+            if let wId = welcomeOverlayId {
+                DebugLogger.log("Welcome overlay: any key pressed, dismissing overlay.")
+                removeOverlay(id: wId)
+                welcomeOverlayId = nil
+                activeOverlay = .none
+                return nil
+            }
+        case .help:
+            // Dismiss on Escape only
+            if event.keyCode == KeyCode.escape {
+                DebugLogger.log("Help overlay: ESC pressed, dismissing overlay.")
+                if let hId = helpOverlayId {
+                    removeOverlay(id: hId)
+                    helpOverlayId = nil
+                    activeOverlay = .none
+                }
+                return nil
+            } else {
+                DebugLogger.log("Help overlay: ignored key.")
+                return nil // Ignore all other keys
+            }
+        case .custom:
+            // Dismiss on Escape
+            if event.keyCode == KeyCode.escape {
+                DebugLogger.log("Custom overlay: ESC pressed, dismissing all overlays.")
+                overlayLayers.removeAll()
+                overlayOpacities.removeAll()
+                activeOverlay = .none
+                return nil
+            } else {
+                DebugLogger.log("Custom overlay: ignored key.")
+                return nil // Ignore all other keys
+            }
+        case .none:
+            break // Normal key handling below
+        }
         // Remove welcome overlay on first key if present
         if let wId = welcomeOverlayId {
             removeOverlay(id: wId)
@@ -195,7 +269,11 @@ private struct MainContentScreenView: View {
         switch event.keyCode {
         case KeyCode.f10:
             DebugLogger.log("F10 key pressed")
-            handleQuitKey()
+            document.shouldShowQuitMessage = true
+            // Set the quit overlay and activeOverlay explicitly
+            let quitId = addOverlay(kind: .quit)
+            fileTextOverlayId = quitId
+            DebugLogger.log("Quit overlay shown (id=\(quitId))")
             return nil
         case KeyCode.f3:
             DebugLogger.log("F3 key pressed - opening file picker")

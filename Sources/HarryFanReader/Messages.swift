@@ -20,14 +20,14 @@ enum Messages {
     """
 
     static let helpMessage = """
-    ╔═════════════════════════════════════════════════════════════╗                                                                             ║
-    ║  F1  - Help        Show/hide this help screen               ║
-    ║  F2  - Word Wrap   Toggle word wrapping on/off              ║
-    ║  F3  - Open File   Open a new text file                     ║
-    ║  F7  - Go Start    Jump to the beginning of the file        ║
-    ║  F8  - Go End      Jump to the end of the file              ║
-    ║  F10 - Quit        Exit the application                     ║
-    ╚═════════════════════════════════════════════════════════════╝
+    ╔═══════════════════════════════════════════════════════╗                                                                             ║
+    ║  F1  - Help        Show/hide this help screen         ║
+    ║  F2  - Word Wrap   Toggle word wrapping on/off        ║
+    ║  F3  - Open File   Open a new text file               ║
+    ║  F7  - Go Start    Jump to the beginning of the file  ║
+    ║  F8  - Go End      Jump to the end of the file        ║
+    ║  F10 - Quit        Exit the application               ║
+    ╚═══════════════════════════════════════════════════════╝
     """
 
     static let quitMessage = """

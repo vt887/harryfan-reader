@@ -35,6 +35,47 @@ struct AppCommands: Commands {
     @ObservedObject var recentFilesManager: RecentFilesManager
     @ObservedObject var bookmarkManager: BookmarkManager
 
+    // Helper for Bookmarks menu items
+    @ViewBuilder
+    private func bookmarkMenuItems() -> some View {
+        let allBookmarks = bookmarkManager.bookmarks
+        if allBookmarks.isEmpty {
+            Text("No Bookmarks").disabled(true)
+        } else {
+            ForEach(allBookmarks) { bookmark in
+                Button("\(bookmark.fileName): Line \(bookmark.line + 1)") {
+                    NotificationCenter.default.post(
+                        name: .openBookmarkCommand,
+                        object: nil,
+                        userInfo: ["bookmark": bookmark]
+                    )
+                }
+            }
+        }
+    }
+
+    // Helper for Recent Files menu items
+    @ViewBuilder
+    private func recentFilesMenuItems() -> some View {
+        if recentFilesManager.recentFiles.isEmpty {
+            Text("No Recent Files").disabled(true)
+        } else {
+            ForEach(recentFilesManager.recentFiles) { file in
+                Button(file.displayName) {
+                    NotificationCenter.default.post(
+                        name: .openRecentFileCommand,
+                        object: nil,
+                        userInfo: ["url": file.url]
+                    )
+                }
+            }
+            Divider()
+            Button("Clear Recent") {
+                NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil)
+            }
+        }
+    }
+
     var body: some Commands {
         Group {
             CommandGroup(replacing: .newItem) {
@@ -44,26 +85,7 @@ struct AppCommands: Commands {
                 .keyboardShortcut("o", modifiers: .command)
 
                 Menu("Recent Files") {
-                    if recentFilesManager.recentFiles.isEmpty {
-                        Text("No Recent Files")
-                            .disabled(true)
-                    } else {
-                        ForEach(recentFilesManager.recentFiles) { file in
-                            Button(file.displayName) {
-                                NotificationCenter.default.post(
-                                    name: .openRecentFileCommand,
-                                    object: nil,
-                                    userInfo: ["url": file.url]
-                                )
-                            }
-                        }
-
-                        Divider()
-
-                        Button("Clear Recent") {
-                            NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil)
-                        }
-                    }
+                    recentFilesMenuItems()
                 }
             }
             CommandGroup(replacing: .appTermination) {
@@ -95,22 +117,7 @@ struct AppCommands: Commands {
                 Divider()
 
                 Menu("Bookmarks") {
-                    let allBookmarks = bookmarkManager.bookmarks
-
-                    if allBookmarks.isEmpty {
-                        Text("No Bookmarks")
-                            .disabled(true)
-                    } else {
-                        ForEach(allBookmarks) { bookmark in
-                            Button("\(bookmark.fileName): Line \(bookmark.line + 1)") {
-                                NotificationCenter.default.post(
-                                    name: .openBookmarkCommand,
-                                    object: nil,
-                                    userInfo: ["bookmark": bookmark]
-                                )
-                            }
-                        }
-                    }
+                    bookmarkMenuItems()
                 }
             }
             CommandMenu("Navigation") {
@@ -134,11 +141,11 @@ struct AppCommands: Commands {
                 Button("Go to Start") {
                     NotificationCenter.default.post(name: .gotoStartCommand, object: nil)
                 }
-                .keyboardShortcut(.home, modifiers: [])
+                .keyboardShortcut(.upArrow, modifiers: [.command, .control])
                 Button("Go to End") {
                     NotificationCenter.default.post(name: .gotoEndCommand, object: nil)
                 }
-                .keyboardShortcut(.end, modifiers: [])
+                .keyboardShortcut(.downArrow, modifiers: [.command, .control])
             }
         }
     }

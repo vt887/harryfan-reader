@@ -5,6 +5,7 @@
 //  Created by @vt887 on 9/28/25.
 //
 
+import Foundation
 import SwiftUI
 
 // Enum for supported app appearance themes
@@ -44,26 +45,5 @@ enum AppSettings {
     static var debug: Bool {
         get { UserDefaults.standard.object(forKey: "debug") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "debug") }
-    }
-}
-
-// Debug logging utility
-enum DebugLogger {
-    static func log(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
-        guard AppSettings.debug else { return }
-        let fileName = (file as NSString).lastPathComponent
-        print("[\(fileName):\(line)] \(function): \(message)")
-    }
-
-    static func logError(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
-        guard AppSettings.debug else { return }
-        let fileName = (file as NSString).lastPathComponent
-        print("ERROR [\(fileName):\(line)] \(function): \(message)")
-    }
-
-    static func logWarning(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
-        guard AppSettings.debug else { return }
-        let fileName = (file as NSString).lastPathComponent
-        print("WARNING [\(fileName):\(line)] \(function): \(message)")
     }
 }

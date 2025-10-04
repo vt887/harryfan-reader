@@ -120,12 +120,17 @@ final class FontManager: ObservableObject {
                 return url
             }
         #endif
+        if let url = Bundle.module.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
+            return url
+        }
         return Bundle.main.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts")
     }
 
     // Parses raw font data into bitmaps
     private func parseFontData() {
-        guard let data = fontData else { return }
+        guard let data = fontData else {
+            return
+        }
 
         let charHeight = AppSettings.charH
         let charWidth = AppSettings.charW
@@ -193,10 +198,5 @@ final class FontManager: ObservableObject {
             return UInt8(index)
         }
         return 0x3F // fallback to '?'
-    }
-
-    // Returns system monospaced font as fallback
-    func createCustomFont() -> NSFont {
-        NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
     }
 }

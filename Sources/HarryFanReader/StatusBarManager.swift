@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import Foundation
 import SwiftUI
 
 // Manager for the macOS status bar (menu bar) icon
@@ -155,7 +156,11 @@ class StatusBarManager: ObservableObject {
     // Show settings
     @objc private func showSettings() {
         DebugLogger.log("StatusBarManager: Settings menu item clicked")
-        NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+        if let menuItem = NSApp.mainMenu?.item(withTitle: "Settings") {
+            NSApp.mainMenu?.performActionForItem(at: menuItem.tag)
+        } else {
+            DebugLogger.log("StatusBarManager: No Settings menu item found. Implement settings window presentation here if needed.")
+        }
         DebugLogger.log("StatusBarManager: Sent showPreferencesWindow action")
     }
 

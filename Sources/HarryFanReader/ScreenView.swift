@@ -148,17 +148,19 @@ struct ScreenView: View {
 
     // Composite the base layer with overlays
     func compositeGrid() -> [[ScreenCell]] {
-        let rows = displayRows
-        let cols = ScreenView.cols
+        let gridRows = displayRows
+        let gridCols = ScreenView.cols
         var result = makeBaseLayer().grid
         for layer in overlayLayers {
             let alpha = overlayOpacities[layer.id] ?? 1.0
-            for row in 0 ..< min(rows, layer.grid.count) {
-                for col in 0 ..< min(cols, layer.grid[row].count) {
+            for row in 0 ..< min(gridRows, layer.grid.count) {
+                for col in 0 ..< min(gridCols, layer.grid[row].count) {
                     let cell = layer.grid[row][col]
                     if cell.char != " " {
                         var adjusted = cell
-                        if let c = cell.fgColor { adjusted.fgColor = c.opacity(alpha) }
+                        if let c = cell.fgColor {
+                            adjusted.fgColor = c.opacity(alpha)
+                        }
                         result[row][col] = adjusted
                     }
                 }
@@ -262,26 +264,5 @@ struct ScreenView: View {
                 }
             }
         }
-    }
-
-    // Helper to create a centered overlay layer from a string
-    func centeredOverlayLayer(from message: String) -> ScreenLayer {
-        var layer = ScreenLayer(rows: displayRows, cols: ScreenView.cols)
-        let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        let totalLines = lines.count
-        let verticalPadding = max(0, (displayRows - totalLines) / 2)
-        for (i, line) in lines.enumerated() {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            let padding = max(0, (ScreenView.cols - trimmed.count) / 2)
-            let startCol = padding
-            for (j, char) in trimmed.enumerated() {
-                let row = verticalPadding + i
-                let col = startCol + j
-                if row < displayRows, col < ScreenView.cols {
-                    layer[row, col] = ScreenCell(char: char, fgColor: fontColor, bgColor: nil)
-                }
-            }
-        }
-        return layer
     }
 }

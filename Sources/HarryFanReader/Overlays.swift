@@ -5,6 +5,7 @@
 //  Created by @vt887 on 10/01/25.
 //
 
+import Foundation
 import SwiftUI
 
 // OverlayKind defines the different types of overlays
@@ -13,6 +14,7 @@ import SwiftUI
 enum OverlayKind: Equatable {
     case welcome
     case help
+    case quit
     case custom(String)
     case fileText(String)
 
@@ -22,10 +24,32 @@ enum OverlayKind: Equatable {
         switch self {
         case .welcome: Messages.welcomeMessage
         case .help: Messages.helpMessage
+        case .quit: Messages.quitMessage
         case let .custom(s): s
         case let .fileText(s): s
         }
     }
+}
+
+// Utility to create a centered overlay layer from a string
+private func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: Color) -> ScreenLayer {
+    var layer = ScreenLayer(rows: rows, cols: cols)
+    let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+    let totalLines = lines.count
+    let verticalPadding = max(0, (rows - totalLines) / 2)
+    for (i, line) in lines.enumerated() {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        let padding = max(0, (cols - trimmed.count) / 2)
+        let startCol = padding
+        for (j, char) in trimmed.enumerated() {
+            let row = verticalPadding + i
+            let col = startCol + j
+            if row < rows, col < cols {
+                layer[row, col] = ScreenCell(char: char, fgColor: fgColor, bgColor: nil)
+            }
+        }
+    }
+    return layer
 }
 
 // OverlayFactory is responsible for creating overlays.
@@ -37,9 +61,11 @@ enum OverlayFactory {
                      cols: Int = AppSettings.cols,
                      fgColor: Color = Colors.theme.foreground) -> ScreenLayer
     {
-        // Prepare the text to be displayed in the overlay.
-        // The text is centered within the specified rows and columns.
         let text = kind.message
+        if text == Messages.welcomeMessage || text == Messages.helpMessage || text == Messages.quitMessage {
+            return centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
+        }
+        // Fallback to existing centering for custom overlays
         return centeredLayer(message: text, rows: rows, cols: cols, fgColor: fgColor)
     }
 
