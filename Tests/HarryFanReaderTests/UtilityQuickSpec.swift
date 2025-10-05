@@ -4,8 +4,6 @@
 //
 //  Created by @vt887 on 9/29/25.
 //
-//  Unit tests for utility types, constants, and helpers in HarryFanReader.
-//
 
 import AppKit
 @testable import HarryFanReader
