@@ -23,9 +23,9 @@ struct ScreenLayer: Identifiable {
         grid = Array(
             repeating: Array(
                 repeating: ScreenCell(char: " ", fgColor: nil, bgColor: nil),
-                count: cols
+                count: cols,
             ),
-            count: rows
+            count: rows,
         )
     }
 
@@ -71,7 +71,7 @@ struct ScreenView: View {
         ScreenCell(
             char: char,
             fgColor: Colors.theme.titleBarBackground,
-            bgColor: Colors.theme.menuBarForeground
+            bgColor: Colors.theme.menuBarForeground,
         )
     }
 
@@ -240,7 +240,7 @@ struct ScreenView: View {
                                 x: baseX + CGFloat(columnIndex),
                                 y: baseY + CGFloat(rowIndex),
                                 width: 1.0,
-                                height: 1.0
+                                height: 1.0,
                             )
                             cgContext.setFillColor(currentFgColor.cgColor ?? CGColor(red: 1, green: 1, blue: 1, alpha: 1))
                             cgContext.fill(rect)
@@ -257,7 +257,7 @@ struct ScreenView: View {
                             x: baseX + CGFloat(columnIndex),
                             y: baseY + CGFloat(rowIndex),
                             width: 1,
-                            height: 1
+                            height: 1,
                         )
                         context.fill(Path(rect), with: .color(currentFgColor))
                     }

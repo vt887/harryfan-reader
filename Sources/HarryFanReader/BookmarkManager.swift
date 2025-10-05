@@ -100,7 +100,7 @@ class BookmarkManager: ObservableObject {
 
         // Fallback: decode as a dictionary of fileName -> [Bookmark] (legacy format)
         if let legacyDict = try? JSONDecoder().decode([String: [Bookmark]].self, from: data) {
-            bookmarks = legacyDict.values.flatMap { $0 }
+            bookmarks = legacyDict.values.flatMap(\.self)
             // Migrate to current format by saving as a flat array
             saveBookmarks()
             return

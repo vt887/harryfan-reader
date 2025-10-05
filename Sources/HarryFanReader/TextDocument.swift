@@ -378,19 +378,6 @@ class TextDocument: ObservableObject {
             1
         }
     }
-
-    private func calculatePercent(bottomLine: Int, topLine: Int, totalLines: Int) -> Int {
-        guard totalLines > 0 else {
-            return 0
-        }
-        if bottomLine == totalLines - 1 {
-            return 100
-        }
-        if topLine == 0 {
-            return 0
-        }
-        return Int((Double(bottomLine + 1) / Double(totalLines)) * 100.0)
-    }
 }
 
 // Enum for search direction in text document

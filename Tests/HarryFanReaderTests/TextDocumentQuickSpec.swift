@@ -1,5 +1,5 @@
 //
-//  TextDocumentTests.swift
+//  TextDocumentQuickSpec.swift
 //  HarryFanReaderTests
 //
 //  Created by @vt887 on 9/29/25.

@@ -12,7 +12,7 @@ let package = Package(
     products: [
         .executable(
             name: productName, // HarryFan Reader
-            targets: [baseName]
+            targets: [baseName],
         ),
     ],
     dependencies: [
@@ -32,12 +32,12 @@ let package = Package(
                 .copy("Fonts"),
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
-            ]
+            ],
         ),
         .testTarget(
             name: "\(baseName)Tests", // HarryFanReaderTests
             dependencies: [.target(name: baseName), "Nimble", "Quick"],
-            path: "Tests/HarryFanReaderTests"
+            path: "Tests/HarryFanReaderTests",
         ),
-    ]
+    ],
 )

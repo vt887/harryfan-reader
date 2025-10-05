@@ -38,7 +38,7 @@ struct ContentView: View {
         }
         .frame(
             width: CGFloat(AppSettings.cols * AppSettings.charW),
-            height: CGFloat(AppSettings.rows * AppSettings.charH)
+            height: CGFloat(AppSettings.rows * AppSettings.charH),
         )
         .background(Colors.theme.background)
         .sheet(isPresented: $showingSearch) {

@@ -43,7 +43,7 @@ struct AppTheme {
                 menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
-                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         case .dark:
             AppTheme(
@@ -57,7 +57,7 @@ struct AppTheme {
                 menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.8, green: 0.8, blue: 0.8),
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
-                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         case .blue:
             AppTheme(
@@ -71,7 +71,7 @@ struct AppTheme {
                 menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.9, green: 0.9, blue: 0.9),
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
-                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         }
     }
