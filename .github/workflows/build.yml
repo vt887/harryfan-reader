@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted, macOS]
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -15,7 +15,8 @@ jobs:
         uses: fwal/setup-swift@v1
         with:
           swift-version: '5.9'
-      - name: Set SDK
-        run: export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
       - name: Build with SwiftPM
-        run: swift build --build-tests
+        run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
+          swift build --build-tests $SWIFT_FLAGS -v
