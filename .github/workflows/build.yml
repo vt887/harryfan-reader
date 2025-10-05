@@ -15,5 +15,7 @@ jobs:
         uses: fwal/setup-swift@v1
         with:
           swift-version: '5.9'
+      - name: Set SDK
+        run: export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
       - name: Build with SwiftPM
         run: swift build --build-tests
