@@ -12,6 +12,7 @@ import Quick
 final class TextDocumentQuickSpec: QuickSpec {
     override class func spec() {
         var textDocument: TextDocument!
+        let testFileName = "test.txt"
 
         beforeEach {
             textDocument = TextDocument()
@@ -263,14 +264,14 @@ final class TextDocumentQuickSpec: QuickSpec {
 
                 // Checks that getTitleBarText returns correct text with file name.
                 it("gets title bar text with file name") {
-                    textDocument.fileName = "test.txt"
+                    textDocument.fileName = testFileName
                     textDocument.content = Array(1 ... 100).map { "Line \($0)" }
                     textDocument.totalLines = 100
                     textDocument.currentLine = 49
                     textDocument.encoding = "CP866"
                     let titleBarText = textDocument.getTitleBarText()
                     expect(titleBarText).to(contain("HarryFan Reader"))
-                    expect(titleBarText).to(contain("test.txt"))
+                    expect(titleBarText).to(contain(testFileName))
                     expect(titleBarText).to(satisfyAnyOf(contain("Line 50 of 100"), contain("50%")))
                     expect(titleBarText).to(contain(" │ "))
                     expect(titleBarText.count).to(equal(AppSettings.cols))
@@ -306,7 +307,7 @@ final class TextDocumentQuickSpec: QuickSpec {
             context("file operations") {
                 // Checks that closeFile resets the document state.
                 it("closes the file") {
-                    textDocument.fileName = "test.txt"
+                    textDocument.fileName = testFileName
                     textDocument.content = ["Line 1", "Line 2"]
                     textDocument.totalLines = 2
                     textDocument.currentLine = 1
@@ -366,7 +367,7 @@ final class TextDocumentQuickSpec: QuickSpec {
         describe("Title bar formatting (QuickSpec)") {
             it("fits exactly the configured width and shows percent") {
                 let doc = TextDocument()
-                doc.fileName = "test.txt"
+                doc.fileName = testFileName
                 doc.content = Array(1 ... 100).map { "Line \($0)" }
                 doc.totalLines = 100
                 doc.currentLine = 49 // 50%
@@ -374,7 +375,7 @@ final class TextDocumentQuickSpec: QuickSpec {
                 let title = doc.getTitleBarText()
                 expect(title.count).to(equal(AppSettings.cols))
                 expect(title).to(contain("HarryFan Reader"))
-                expect(title).to(contain("test.txt"))
+                expect(title).to(contain(testFileName))
                 expect(title).to(satisfyAnyOf(contain("50%")))
                 expect(title).to(contain(" │ "))
             }
