@@ -203,6 +203,11 @@ final class FontManager: ObservableObject {
     // Creates and returns a custom NSFont using the current font name and size
     func createCustomFont() -> NSFont? {
         let fontName = currentFont.rawValue.replacingOccurrences(of: ".raw", with: "")
-        return NSFont(name: fontName, size: fontSize)
+        // Try to create the custom font first
+        if let customFont = NSFont(name: fontName, size: fontSize) {
+            return customFont
+        }
+        // Fall back to system monospaced font if custom font isn't available
+        return NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
     }
 }

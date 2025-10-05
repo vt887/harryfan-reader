@@ -15,7 +15,9 @@ let package = Package(
             targets: [baseName]
         ),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/Quick/Nimble.git", from: "12.0.0")
+    ],
     targets: [
         .executableTarget(
             name: baseName, // HarryFanReader
@@ -33,7 +35,7 @@ let package = Package(
         ),
         .testTarget(
             name: "\(baseName)Tests", // HarryFanReaderTests
-            dependencies: [.target(name: baseName)],
+            dependencies: [.target(name: baseName), "Nimble"],
             path: "Tests/HarryFanReaderTests"
         ),
     ]

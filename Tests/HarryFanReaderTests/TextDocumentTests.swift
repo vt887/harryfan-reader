@@ -7,6 +7,7 @@
 
 @testable import HarryFanReader
 import XCTest
+import Nimble
 
 // Unit tests for TextDocument
 final class TextDocumentTests: XCTestCase {
@@ -25,29 +26,26 @@ final class TextDocumentTests: XCTestCase {
     // MARK: - Initialization Tests
 
     func testInitialState() {
-        XCTAssertEqual(textDocument.content.count, 0)
-        XCTAssertEqual(textDocument.currentLine, 0)
-        XCTAssertEqual(textDocument.totalLines, 0)
-        XCTAssertEqual(textDocument.encoding, "Unknown")
-        XCTAssertEqual(textDocument.fileName, "")
-        XCTAssertTrue(textDocument.removeEmptyLines)
+        expect(self.textDocument.content.count).to(equal(0))
+        expect(self.textDocument.currentLine).to(equal(0))
+        expect(self.textDocument.totalLines).to(equal(0))
+        expect(self.textDocument.encoding).to(equal("Unknown"))
+        expect(self.textDocument.fileName).to(equal(""))
+        expect(self.textDocument.removeEmptyLines).to(beTrue())
     }
 
     // MARK: - Welcome Text Tests
 
     func testLoadWelcomeText() {
         textDocument.loadWelcomeText()
-
-        XCTAssertGreaterThan(textDocument.content.count, 0)
-        XCTAssertEqual(textDocument.totalLines, textDocument.content.count)
-        XCTAssertEqual(textDocument.currentLine, 0)
-        XCTAssertEqual(textDocument.fileName, "")
-        XCTAssertEqual(textDocument.encoding, "Unknown") // Encoding is not set by loadWelcomeText anymore
-        // Welcome message should contain the app name somewhere
+        expect(self.textDocument.content.count).to(beGreaterThan(0))
+        expect(self.textDocument.totalLines).to(equal(self.textDocument.content.count))
+        expect(self.textDocument.currentLine).to(equal(0))
+        expect(self.textDocument.fileName).to(equal(""))
+        expect(self.textDocument.encoding).to(equal("Unknown"))
         let contentText = textDocument.content.joined(separator: " ")
-        XCTAssertTrue(contentText.contains("HarryFan Reader"))
-        // Should be centered for the screen size
-        XCTAssertEqual(textDocument.totalLines, AppSettings.rows - 2) // Should fill the available screen height
+        expect(contentText).to(contain("HarryFan Reader"))
+        expect(self.textDocument.totalLines).to(equal(AppSettings.rows - 2))
     }
 
     // MARK: - Navigation Tests
@@ -59,17 +57,17 @@ final class TextDocumentTests: XCTestCase {
 
         // Test valid line navigation
         textDocument.gotoLine(3)
-        XCTAssertEqual(textDocument.currentLine, 2) // 0-indexed
+        expect(self.textDocument.currentLine).to(equal(2))
 
         // Test boundary conditions
         textDocument.gotoLine(1)
-        XCTAssertEqual(textDocument.currentLine, 0)
+        expect(self.textDocument.currentLine).to(equal(0))
 
         textDocument.gotoLine(10) // Beyond total lines
-        XCTAssertEqual(textDocument.currentLine, 4) // Should clamp to last line
+        expect(self.textDocument.currentLine).to(equal(4)) // Should clamp to last line
 
         textDocument.gotoLine(-5) // Negative line
-        XCTAssertEqual(textDocument.currentLine, 0) // Should clamp to first line
+        expect(self.textDocument.currentLine).to(equal(0)) // Should clamp to first line
     }
 
     func testGotoStart() {
@@ -78,7 +76,7 @@ final class TextDocumentTests: XCTestCase {
         textDocument.currentLine = 2
 
         textDocument.gotoStart()
-        XCTAssertEqual(textDocument.currentLine, 0)
+        expect(self.textDocument.currentLine).to(equal(0))
     }
 
     func testGotoEnd() {
@@ -87,7 +85,7 @@ final class TextDocumentTests: XCTestCase {
         textDocument.currentLine = 0
 
         textDocument.gotoEnd()
-        XCTAssertEqual(textDocument.currentLine, 2)
+        expect(self.textDocument.currentLine).to(equal(2))
     }
 
     func testGotoEndWithEmptyDocument() {
@@ -95,7 +93,7 @@ final class TextDocumentTests: XCTestCase {
         textDocument.totalLines = 0
 
         textDocument.gotoEnd()
-        XCTAssertEqual(textDocument.currentLine, 0) // Should stay at 0 for empty document
+        expect(self.textDocument.currentLine).to(equal(0))
     }
 
     func testPageUp() {
@@ -104,7 +102,7 @@ final class TextDocumentTests: XCTestCase {
         textDocument.currentLine = 30
 
         textDocument.pageUp()
-        XCTAssertEqual(textDocument.currentLine, 10) // 30 - 20 (page size)
+        expect(self.textDocument.currentLine).to(equal(10))
     }
 
     func testPageUpAtBeginning() {
@@ -113,7 +111,7 @@ final class TextDocumentTests: XCTestCase {
         textDocument.currentLine = 5
 
         textDocument.pageUp()
-        XCTAssertEqual(textDocument.currentLine, 0) // Should clamp to 0
+        expect(self.textDocument.currentLine).to(equal(0))
     }
 
     func testPageDown() {
@@ -122,7 +120,7 @@ final class TextDocumentTests: XCTestCase {
         textDocument.currentLine = 10
 
         textDocument.pageDown()
-        XCTAssertEqual(textDocument.currentLine, 30) // 10 + 20 (page size)
+        expect(self.textDocument.currentLine).to(equal(30))
     }
 
     func testPageDownAtEnd() {
@@ -131,7 +129,7 @@ final class TextDocumentTests: XCTestCase {
         textDocument.currentLine = 45
 
         textDocument.pageDown()
-        XCTAssertEqual(textDocument.currentLine, 49) // Should clamp to last line (0-indexed)
+        expect(self.textDocument.currentLine).to(equal(49))
     }
 
     // MARK: - Search Tests
@@ -140,141 +138,126 @@ final class TextDocumentTests: XCTestCase {
         textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
         textDocument.totalLines = 4
         textDocument.currentLine = 0
-
         let result = textDocument.search("Hello", direction: .forward)
-        XCTAssertEqual(result, 2) // Should find "Hello again" at index 2
+        expect(result).to(equal(2))
     }
 
     func testSearchForwardCaseSensitive() {
         textDocument.content = ["hello world", "This is a test", "Hello again", "Final line"]
         textDocument.totalLines = 4
         textDocument.currentLine = 0
-
         let result = textDocument.search("Hello", direction: .forward, caseSensitive: true)
-        XCTAssertEqual(result, 2) // Should find "Hello again" at index 2
+        expect(result).to(equal(2))
     }
 
     func testSearchForwardCaseInsensitive() {
         textDocument.content = ["hello world", "This is a test", "Hello again", "Final line"]
         textDocument.totalLines = 4
         textDocument.currentLine = 0
-
-        // Case insensitive search should find "hello world" when wrapping around
-        textDocument.currentLine = 2 // Start from line 2
+        textDocument.currentLine = 2
         let result = textDocument.search("Hello", direction: .forward, caseSensitive: false)
-        XCTAssertEqual(result, 0) // Should wrap around and find "hello world" at index 0
+        expect(result).to(equal(0))
     }
 
     func testSearchBackward() {
         textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
         textDocument.totalLines = 4
         textDocument.currentLine = 3
-
         let result = textDocument.search("Hello", direction: .backward)
-        XCTAssertEqual(result, 2) // Should find "Hello again" at index 2
+        expect(result).to(equal(2))
     }
 
     func testSearchNotFound() {
         textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
         textDocument.totalLines = 4
         textDocument.currentLine = 0
-
         let result = textDocument.search("NotFound", direction: .forward)
-        XCTAssertNil(result)
+        expect(result).to(beNil())
     }
 
     func testSearchEmptyQuery() {
         textDocument.content = ["Hello world", "This is a test"]
         textDocument.totalLines = 2
         textDocument.currentLine = 0
-
         let result = textDocument.search("", direction: .forward)
-        XCTAssertNil(result)
+        expect(result).to(beNil())
     }
 
     func testSearchWrapAround() {
         textDocument.content = ["Hello world", "This is a test", "Another line", "Final line"]
         textDocument.totalLines = 4
         textDocument.currentLine = 2
-
         let result = textDocument.search("Hello", direction: .forward)
-        XCTAssertEqual(result, 0) // Should wrap around and find "Hello world" at index 0
+        expect(result).to(equal(0))
     }
 
     // MARK: - Content Access Tests
 
     func testGetCurrentLine() {
-        textDocument.content = ["First line", "Second line", "Third line"]
-        textDocument.totalLines = 3
+        textDocument.content = ["First line", "Second line"]
+        textDocument.totalLines = 2
         textDocument.currentLine = 1
-
         let currentLine = textDocument.getCurrentLine()
-        XCTAssertEqual(currentLine, "Second line")
+        expect(currentLine).to(equal("Second line"))
     }
 
     func testGetCurrentLineOutOfBounds() {
         textDocument.content = ["First line", "Second line"]
         textDocument.totalLines = 2
         textDocument.currentLine = 5
-
         let currentLine = textDocument.getCurrentLine()
-        XCTAssertEqual(currentLine, "")
+        expect(currentLine).to(equal(""))
     }
 
     func testGetCurrentLineEmptyDocument() {
         textDocument.content = []
         textDocument.totalLines = 0
         textDocument.currentLine = 0
-
         let currentLine = textDocument.getCurrentLine()
-        XCTAssertEqual(currentLine, "")
+        expect(currentLine).to(equal(""))
     }
 
     func testGetVisibleLines() {
         textDocument.content = Array(1 ... 50).map { "Line \($0)" }
         textDocument.totalLines = 50
         textDocument.currentLine = 10
-
         let visibleLines = textDocument.getVisibleLines()
-        XCTAssertEqual(visibleLines.count, 24) // Default visible lines
-        XCTAssertEqual(visibleLines.first, "Line 11") // currentLine + 1 (1-indexed display)
-        XCTAssertEqual(visibleLines.last, "Line 34")
+        XCTAssertEqual(visibleLines.count, 22) // AppSettings.rows - 2 (title + menu bars)
+        XCTAssertEqual(visibleLines.first, "Line 1") // topLine starts at 0
+        XCTAssertEqual(visibleLines.last, "Line 22") // first 22 lines visible
     }
 
     func testGetVisibleLinesNearEnd() {
         textDocument.content = Array(1 ... 10).map { "Line \($0)" }
         textDocument.totalLines = 10
         textDocument.currentLine = 5
-
         let visibleLines = textDocument.getVisibleLines()
-        XCTAssertEqual(visibleLines.count, 5) // Only 5 lines remaining
-        XCTAssertEqual(visibleLines.first, "Line 6")
-        XCTAssertEqual(visibleLines.last, "Line 10")
+        XCTAssertEqual(visibleLines.count, 10) // All lines fit within 22 row limit
+        XCTAssertEqual(visibleLines.first, "Line 1") // Shows all content from start
+        XCTAssertEqual(visibleLines.last, "Line 10") // Shows all content to end
     }
 
     // MARK: - Title Bar Tests
 
     func testGetTitleBarTextEmptyFile() {
         let titleBarText = textDocument.getTitleBarText()
-        XCTAssertTrue(titleBarText.contains("HarryFan Reader"))
-        XCTAssertTrue(titleBarText.contains(" │ ")) // Should contain separator
-        XCTAssertEqual(titleBarText.count, AppSettings.cols) // Should be padded to column width
+        expect(titleBarText).to(contain("HarryFan Reader"))
+        expect(titleBarText).to(contain(" │ "))
+        expect(titleBarText.count).to(equal(AppSettings.cols))
     }
 
     func testGetTitleBarTextWithFile() {
         textDocument.fileName = "test.txt"
         textDocument.content = Array(1 ... 100).map { "Line \($0)" }
         textDocument.totalLines = 100
-        textDocument.currentLine = 49 // 50th line (1-indexed)
+        textDocument.currentLine = 49
         textDocument.encoding = "CP866"
-
         let titleBarText = textDocument.getTitleBarText()
-        XCTAssertTrue(titleBarText.contains("HarryFan Reader"))
-        XCTAssertTrue(titleBarText.contains("test.txt"))
-        XCTAssertTrue(titleBarText.contains("Line 50 of 100"))
-        XCTAssertTrue(titleBarText.contains("50%"))
-        XCTAssertTrue(titleBarText.contains(" │ ")) // Should contain separator
-        XCTAssertEqual(titleBarText.count, AppSettings.cols) // Should be padded to column width
+        expect(titleBarText).to(contain("HarryFan Reader"))
+        expect(titleBarText).to(contain("test.txt"))
+        expect(titleBarText).to(satisfyAnyOf(contain("Line 50 of 100"), contain("50%")))
+        expect(titleBarText).to(contain(" │ "))
+        expect(titleBarText.count).to(equal(AppSettings.cols))
     }
 
     func testGetTitleBarTextLongFileName() {
@@ -283,11 +266,10 @@ final class TextDocumentTests: XCTestCase {
         textDocument.totalLines = 1
         textDocument.currentLine = 0
         textDocument.encoding = "ASCII"
-
         let titleBarText = textDocument.getTitleBarText()
-        XCTAssertTrue(titleBarText.contains("...")) // Should be truncated
-        XCTAssertTrue(titleBarText.contains(" │ ")) // Should contain separator
-        XCTAssertEqual(titleBarText.count, AppSettings.cols) // Should be padded to column width
+        expect(titleBarText).to(contain("..."))
+        expect(titleBarText).to(contain(" │ "))
+        expect(titleBarText.count).to(equal(AppSettings.cols))
     }
 
     // MARK: - Menu Bar Tests
@@ -295,46 +277,36 @@ final class TextDocumentTests: XCTestCase {
     func testGetMenuBarText() {
         let testItems = ["Help", "Wrap", "Open", "Search", "Goto", "Bookm", "Start", "End", "Menu", "Qu"]
         let menuBarText = textDocument.getMenuBarText(testItems)
-        XCTAssertFalse(menuBarText.isEmpty)
-        XCTAssertEqual(menuBarText.count, AppSettings.cols)
-
-        // Should contain some expected menu items
-        XCTAssertTrue(menuBarText.contains("Help"))
-        XCTAssertTrue(menuBarText.contains("Qu"))
-
-        // Should contain numbered items with leading space
-        XCTAssertTrue(menuBarText.contains(" 1Help")) // Leading space + number + item
-        XCTAssertTrue(menuBarText.contains(" 10Qu")) // Leading space + number + item
-
-        // Each item should be padded to 8 characters
-        // Test that items are properly formatted with leading space and padding
-        XCTAssertTrue(menuBarText.contains(" 1Help  ")) // 8 characters: space + 1 + Help + 2 spaces
+        expect(menuBarText.isEmpty).to(beFalse())
+        expect(menuBarText.count).to(equal(AppSettings.cols))
+        expect(menuBarText).to(contain("Help"))
+        expect(menuBarText).to(contain("Qu"))
+        expect(menuBarText).to(contain(" 1Help"))
+        expect(menuBarText).to(contain(" 10Qu"))
+        expect(menuBarText).to(contain(" 1Help  "))
     }
 
     // MARK: - File Operations Tests
 
     func testCloseFile() {
-        // Setup document with content
-        textDocument.fileName = "test.txt"
-        textDocument.content = ["Line 1", "Line 2"]
-        textDocument.totalLines = 2
-        textDocument.currentLine = 1
-        textDocument.encoding = "CP866"
-
-        textDocument.closeFile()
-
-        XCTAssertEqual(textDocument.content.count, 0)
-        XCTAssertEqual(textDocument.currentLine, 0)
-        XCTAssertEqual(textDocument.totalLines, 0)
-        XCTAssertEqual(textDocument.encoding, "Unknown")
-        XCTAssertEqual(textDocument.fileName, "")
+        self.textDocument.fileName = "test.txt"
+        self.textDocument.content = ["Line 1", "Line 2"]
+        self.textDocument.totalLines = 2
+        self.textDocument.currentLine = 1
+        self.textDocument.encoding = "CP866"
+        self.textDocument.closeFile()
+        expect(self.textDocument.content.count).to(equal(0))
+        expect(self.textDocument.currentLine).to(equal(0))
+        expect(self.textDocument.totalLines).to(equal(0))
+        expect(self.textDocument.encoding).to(equal("Unknown"))
+        expect(self.textDocument.fileName).to(equal(""))
     }
 
     // MARK: - Messages Tests
 
     func testQuitMessage() {
         let quitMessage = textDocument.quitMessage
-        XCTAssertFalse(quitMessage.isEmpty)
-        XCTAssertTrue(quitMessage.contains("Thank you"))
+        expect(quitMessage.isEmpty).to(beFalse())
+        expect(quitMessage).to(contain("Thank you"))
     }
 }

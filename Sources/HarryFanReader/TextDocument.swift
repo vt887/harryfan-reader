@@ -66,10 +66,12 @@ class TextDocument: ObservableObject {
         let appName = AppSettings.appName
         let totalCols = AppSettings.cols
         let emptyFile = fileName.isEmpty
-        // Variant B percent based on bottom visible line
-        let displayRows = AppSettings.rows - 2
-        let bottomLine = min(totalLines == 0 ? 0 : totalLines - 1, topLine + displayRows - 1)
-        let percent = calculatePercent(bottomLine: bottomLine, topLine: topLine, totalLines: totalLines)
+        // Percent based on current cursor line position within total lines
+        let percent: Int = {
+            guard totalLines > 0 else { return 0 }
+            let p = ((Double(currentLine + 1) / Double(totalLines)) * 100.0).rounded()
+            return max(0, min(100, Int(p)))
+        }()
         let space = getPercentSpacing(percent)
         // Updated status text: remove current line number, show total lines only
         let statusText = "Lines: \(totalLines)" + String(repeating: " ", count: space) + "\(percent)%"
@@ -92,7 +94,7 @@ class TextDocument: ObservableObject {
         } else {
             let left = leftPad + appName + separator + displayFileName
             let paddedLeft = left.padding(toLength: totalCols - statusText.count - rightPad.count, withPad: " ", startingAt: 0)
-            title = paddedLeft + statusText
+            title = paddedLeft + statusText + rightPad
         }
         DebugLogger.log("TitleBar result: '\(title)'")
         return title
