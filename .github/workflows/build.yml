@@ -42,6 +42,13 @@ jobs:
   test:
     name: Test on ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: [ "self-hosted", "X64" ]
+          - arch: arm64
+            runner: [ "self-hosted", "ARM64" ]
     needs: build
     steps:
       - name: Test with SwiftPM
