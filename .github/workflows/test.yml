@@ -1,4 +1,4 @@
-name: Build
+name: Test
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - '**'
 
 jobs:
-  build:
+  test:
     runs-on: self-hosted
     steps:
       - name: Checkout repository
@@ -31,4 +31,9 @@ jobs:
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
           swift build --build-tests $SWIFT_FLAGS
+      - name: Test with SwiftPM
+        run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
+          swift test $SWIFT_FLAGS
 
