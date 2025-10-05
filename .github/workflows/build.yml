@@ -7,7 +7,7 @@ on:
 
 jobs:
   build_x86_64:
-    runs-on: self-hosted-x86_64
+    runs-on: ["self-hosted", "X64"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
           swift build --build-tests $SWIFT_FLAGS
 
   build_arm64:
-    runs-on: self-hosted_arm64
+    runs-on: [ "self-hosted", "ARM64" ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
           swift build --build-tests $SWIFT_FLAGS
 
   test_x86_64:
-    runs-on: self-hosted-x86_64
+    runs-on: [ "self-hosted", "X64" ]
     needs: build_x86_64
     steps:
       - name: Test with SwiftPM
@@ -68,7 +68,7 @@ jobs:
           swift test $SWIFT_FLAGS
 
   test_arm64:
-    runs-on: self-hosted-arm64
+    runs-on: [ "self-hosted", "ARM64" ]
     needs: build_arm64
     steps:
       - name: Test with SwiftPM
