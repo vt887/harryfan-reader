@@ -5,7 +5,7 @@
 //  Created by @vt887 on 9/29/25.
 //
 
-@testable import HarryFan_Reader
+@testable import HarryFanReader
 import XCTest
 
 // Unit tests for TextDocument

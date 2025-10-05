@@ -6,7 +6,7 @@
 //
 
 import AppKit
-@testable import HarryFan_Reader
+@testable import HarryFanReader
 import XCTest
 
 // Unit tests for FontManager
@@ -118,8 +118,10 @@ final class FontManagerTests: XCTestCase {
         let customFont = fontManager.createCustomFont()
 
         XCTAssertNotNil(customFont)
-        XCTAssertEqual(customFont.pointSize, fontManager.fontSize)
-        XCTAssertTrue(customFont.isFixedPitch) // Should be monospaced
+        if let customFont = customFont {
+            XCTAssertEqual(customFont.pointSize, fontManager.fontSize)
+            XCTAssertTrue(customFont.isFixedPitch) // Should be monospaced
+        }
     }
 
     func testCreateCustomFontWithDifferentSize() {
@@ -127,7 +129,9 @@ final class FontManagerTests: XCTestCase {
         let customFont = fontManager.createCustomFont()
 
         XCTAssertNotNil(customFont)
-        XCTAssertEqual(customFont.pointSize, 20.0)
+        if let customFont = customFont {
+            XCTAssertEqual(customFont.pointSize, 20.0)
+        }
     }
 
     // MARK: - Font Size Tests

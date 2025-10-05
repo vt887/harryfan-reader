@@ -5,7 +5,7 @@
 //  Created by @vt887 on 9/29/25.
 //
 
-@testable import HarryFan_Reader
+@testable import HarryFanReader
 import XCTest
 
 // Unit tests for BookmarkManager
@@ -183,6 +183,10 @@ final class BookmarkManagerTests: XCTestCase {
     // MARK: - Persistence Tests
 
     func testBookmarkPersistence() {
+        // Clean UserDefaults before test
+        let key = "\(AppSettings.appName)Bookmarks"
+        UserDefaults.standard.removeObject(forKey: key)
+
         // Add bookmarks
         bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Persistent bookmark 1")
         bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "Persistent bookmark 2")
@@ -193,7 +197,13 @@ final class BookmarkManagerTests: XCTestCase {
         let newBookmarkManager = BookmarkManager()
 
         // Verify bookmarks were loaded from persistence
-        XCTAssertEqual(newBookmarkManager.bookmarks.count, 2)
+        let count = newBookmarkManager.bookmarks.count
+        XCTAssertEqual(count, 2, "Expected 2 bookmarks after reload, got \(count)")
+        guard count == 2 else {
+            // Clean up after test
+            UserDefaults.standard.removeObject(forKey: key)
+            return
+        }
 
         let loadedBookmarks = newBookmarkManager.bookmarks.sorted { $0.line < $1.line }
         XCTAssertEqual(loadedBookmarks[0].fileName, "test.txt")
@@ -201,6 +211,9 @@ final class BookmarkManagerTests: XCTestCase {
         XCTAssertEqual(loadedBookmarks[0].description, "Persistent bookmark 1")
         XCTAssertEqual(loadedBookmarks[1].line, 20)
         XCTAssertEqual(loadedBookmarks[1].description, "Persistent bookmark 2")
+
+        // Clean up after test
+        UserDefaults.standard.removeObject(forKey: key)
     }
 
     func testBookmarkRemovalPersistence() {

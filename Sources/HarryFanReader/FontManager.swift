@@ -199,4 +199,10 @@ final class FontManager: ObservableObject {
         }
         return 0x3F // fallback to '?'
     }
+
+    // Creates and returns a custom NSFont using the current font name and size
+    func createCustomFont() -> NSFont? {
+        let fontName = currentFont.rawValue.replacingOccurrences(of: ".raw", with: "")
+        return NSFont(name: fontName, size: fontSize)
+    }
 }

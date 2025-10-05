@@ -5,7 +5,7 @@
 //  Created by @vt887 on 9/29/25.
 //
 
-@testable import HarryFan_Reader
+@testable import HarryFanReader
 import XCTest
 
 // Unit tests for utility functions and enums
@@ -200,11 +200,29 @@ final class UtilityTests: XCTestCase {
     // MARK: - DebugLogger Tests
 
     func testDebugLoggerWhenDebugDisabled() {
+        // Suppress log output during this test
+        let originalStdout = dup(fileno(stdout))
+        let originalStderr = dup(fileno(stderr))
+        let devNull = fopen("/dev/null", "w")
+        fflush(stdout)
+        fflush(stderr)
+        dup2(fileno(devNull), fileno(stdout))
+        dup2(fileno(devNull), fileno(stderr))
+
         // Since debug is false by default, logging should be silent
         // We can't easily test console output, but we can test that the methods don't crash
         DebugLogger.log("Test log message")
         DebugLogger.logError("Test error message")
         DebugLogger.logWarning("Test warning message")
+
+        // Restore stdout and stderr
+        fflush(stdout)
+        fflush(stderr)
+        dup2(originalStdout, fileno(stdout))
+        dup2(originalStderr, fileno(stderr))
+        close(originalStdout)
+        close(originalStderr)
+        fclose(devNull)
 
         // If we get here without crashing, the test passes
         XCTAssertTrue(true)
