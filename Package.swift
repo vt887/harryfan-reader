@@ -1,21 +1,27 @@
 // swift-tools-version: 5.9
 import PackageDescription
 
+let baseName = "HarryFanReader"
+let productName = "HarryFan Reader"
+
 let package = Package(
-    name: "HarryFanReader",
+    name: baseName,
     platforms: [
         .macOS(.v14),
     ],
     products: [
         .executable(
-            name: "HarryFan Reader",
-            targets: ["HarryFan Reader"]
+            name: productName, // HarryFan Reader
+            targets: [baseName],
         ),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/Quick/Nimble.git", from: "12.0.0"),
+        .package(url: "https://github.com/Quick/Quick.git", from: "7.5.0"),
+    ],
     targets: [
         .executableTarget(
-            name: "HarryFan Reader",
+            name: baseName, // HarryFanReader
             dependencies: [],
             path: "Sources/HarryFanReader",
             exclude: [
@@ -26,12 +32,12 @@ let package = Package(
                 .copy("Fonts"),
                 .process("Assets.xcassets"),
                 .process("Preview Content/Preview Assets.xcassets"),
-            ]
+            ],
         ),
         .testTarget(
-            name: "HarryFanReaderTests",
-            dependencies: ["HarryFan Reader"],
-            path: "Tests/HarryFanReaderTests"
+            name: "\(baseName)Tests", // HarryFanReaderTests
+            dependencies: [.target(name: baseName), "Nimble", "Quick"],
+            path: "Tests/HarryFanReaderTests",
         ),
-    ]
+    ],
 )

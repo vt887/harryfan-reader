@@ -44,7 +44,9 @@ class TextDocument: ObservableObject {
             DebugLogger.log("Opening file: \(url.path)")
             fileName = url.lastPathComponent
             originalData = try Data(contentsOf: url)
-            guard let data = originalData else { return }
+            guard let data = originalData else {
+                return
+            }
 
             let decodedString = decodeCP866(from: data)
             let rawLines = cleanLines(splitLines(decodedString))
@@ -64,17 +66,14 @@ class TextDocument: ObservableObject {
         let appName = AppSettings.appName
         let totalCols = AppSettings.cols
         let emptyFile = fileName.isEmpty
-        // Variant B percent based on bottom visible line
-        let displayRows = AppSettings.rows - 2
-        let bottomLine = min(totalLines == 0 ? 0 : totalLines - 1, topLine + displayRows - 1)
+        // Percent based on current cursor line position within total lines
         let percent: Int = {
             guard totalLines > 0 else { return 0 }
-            if bottomLine == totalLines - 1 { return 100 }
-            if topLine == 0 { return 0 }
-            return Int((Double(bottomLine + 1) / Double(totalLines)) * 100.0)
+            let p = ((Double(currentLine + 1) / Double(totalLines)) * 100.0).rounded()
+            return max(0, min(100, Int(p)))
         }()
+        let space = getPercentSpacing(percent)
         // Updated status text: remove current line number, show total lines only
-        let space = percent < 10 ? 3 : (percent < 100 ? 2 : 1) // Dynamic spacing based on percentage
         let statusText = "Lines: \(totalLines)" + String(repeating: " ", count: space) + "\(percent)%"
         let leftPad = " "
         let rightPad = " "
@@ -95,7 +94,7 @@ class TextDocument: ObservableObject {
         } else {
             let left = leftPad + appName + separator + displayFileName
             let paddedLeft = left.padding(toLength: totalCols - statusText.count - rightPad.count, withPad: " ", startingAt: 0)
-            title = paddedLeft + statusText
+            title = paddedLeft + statusText + rightPad
         }
         DebugLogger.log("TitleBar result: '\(title)'")
         return title
@@ -213,7 +212,9 @@ class TextDocument: ObservableObject {
 
     // Reloads the document with new settings
     func reloadWithNewSettings() {
-        guard let data = originalData else { return }
+        guard let data = originalData else {
+            return
+        }
 
         let decodedString = decodeCP866(from: data)
         let rawLines = cleanLines(splitLines(decodedString))
@@ -232,7 +233,9 @@ class TextDocument: ObservableObject {
 
     // Navigates to a specific line in the document
     func gotoLine(_ line: Int) {
-        guard totalLines > 0 else { return }
+        guard totalLines > 0 else {
+            return
+        }
         let target = max(0, min(line - 1, totalLines - 1))
         // Show target line at top (cursor line)
         topLine = target
@@ -240,36 +243,47 @@ class TextDocument: ObservableObject {
     }
 
     // Navigates to the start of the document
-    func gotoStart() { topLine = 0; currentLine = 0 }
+    func gotoStart() {
+        topLine = 0; currentLine = 0
+    }
 
     // Navigates to the end of the document
     func gotoEnd() {
-        guard totalLines > 0 else { return }
+        guard totalLines > 0 else {
+            return
+        }
         let displayRows = AppSettings.rows - 2
+        // Move cursor to the very last line
+        currentLine = totalLines - 1
+        // Show the last page (so that the last line is visible at bottom)
         topLine = max(0, totalLines - displayRows)
-        currentLine = topLine
     }
 
     // Scrolls up one page in the document
     func pageUp() {
-        guard totalLines > 0 else { return }
-        let displayRows = AppSettings.rows - 2
-        topLine = max(0, topLine - displayRows)
-        currentLine = topLine
+        guard totalLines > 0 else {
+            return
+        }
+        let pageStep = max(1, (AppSettings.rows - 2) - 2) // leave 2-line overlap
+        currentLine = max(0, currentLine - pageStep)
+        topLine = currentLine
     }
 
     // Scrolls down one page in the document
     func pageDown() {
-        guard totalLines > 0 else { return }
-        let displayRows = AppSettings.rows - 2
-        let maxTop = max(0, totalLines - displayRows)
-        topLine = min(maxTop, topLine + displayRows)
-        currentLine = topLine
+        guard totalLines > 0 else {
+            return
+        }
+        let pageStep = max(1, (AppSettings.rows - 2) - 2) // leave 2-line overlap
+        currentLine = min(totalLines - 1, currentLine + pageStep)
+        topLine = currentLine
     }
 
     // Scrolls up one line in the document
     func lineUp() {
-        guard totalLines > 0 else { return }
+        guard totalLines > 0 else {
+            return
+        }
         if topLine > 0 {
             topLine -= 1
             currentLine = topLine
@@ -279,7 +293,9 @@ class TextDocument: ObservableObject {
 
     // Scrolls down one line in the document
     func lineDown() {
-        guard totalLines > 0 else { return }
+        guard totalLines > 0 else {
+            return
+        }
         let displayRows = AppSettings.rows - 2
         let bottomLine = min(totalLines - 1, topLine + displayRows - 1)
         if bottomLine < totalLines - 1 {
@@ -291,7 +307,9 @@ class TextDocument: ObservableObject {
 
     // Searches for a query string in the document
     func search(_ query: String, direction: SearchDirection = .forward, caseSensitive: Bool = false) -> Int? {
-        guard !query.isEmpty else { return nil }
+        guard !query.isEmpty else {
+            return nil
+        }
 
         let searchQuery = caseSensitive ? query : query.lowercased()
         let lines = caseSensitive ? content : content.map { $0.lowercased() }
@@ -326,21 +344,40 @@ class TextDocument: ObservableObject {
 
     // Returns the content of the current line
     func getCurrentLine() -> String {
-        guard currentLine >= 0, currentLine < content.count else { return "" }
+        guard currentLine >= 0, currentLine < content.count else {
+            return ""
+        }
         return content[currentLine]
     }
 
     // Visible lines based on topLine (viewport)
     func getVisibleLines(displayRows: Int) -> [String] {
-        guard totalLines > 0 else { return [] }
+        guard totalLines > 0 else {
+            return []
+        }
         let top = min(max(0, topLine), max(0, totalLines - 1))
-        if totalLines <= displayRows { return content }
+        if totalLines <= displayRows {
+            return content
+        }
         let end = min(totalLines, top + displayRows)
         return Array(content[top ..< end])
     }
 
-    func getVisibleLines() -> [String] { getVisibleLines(displayRows: AppSettings.rows - 2) }
+    func getVisibleLines() -> [String] {
+        getVisibleLines(displayRows: AppSettings.rows - 2)
+    }
+
     // Removed obsolete topVisibleLine centering method.
+
+    private func getPercentSpacing(_ percent: Int) -> Int {
+        if percent < 10 {
+            3
+        } else if percent < 100 {
+            2
+        } else {
+            1
+        }
+    }
 }
 
 // Enum for search direction in text document

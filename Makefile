@@ -1,23 +1,24 @@
 # Makefile for Swift project building, linting, and running tasks
-#!/bin/bash -xe
+
+SWIFT_FLAGS=-Xswiftc -sdk -Xswiftc $(shell xcrun --sdk macosx --show-sdk-path) -Xswiftc -no-verify-emitted-module-interface
 
 .PHONY: lint style build run test pre-commit
 
 lint:
-	swiftformat . --swift-version 5.9 -verbose
+	swiftformat . --swift-version 6.2 -verbose
 
 style:
 	swiftlint --fix --format
 	
 build:
-	swift build
+	swift build --build-tests $(SWIFT_FLAGS)
 
 run:
-	swift build && \
+	swift build --build-tests $(SWIFT_FLAGS) && \
 	swift run
 
 test:
-	swift test
+	swift test $(SWIFT_FLAGS)
 
 stat:
 	wc -l Sources/HarryFanReader/*.swift

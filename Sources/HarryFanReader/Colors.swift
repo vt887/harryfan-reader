@@ -9,9 +9,6 @@ import SwiftUI
 
 // Enum for color constants used in the app
 enum Colors {
-    static let scrollLaneColor = Color(red: 0.333, green: 1.0, blue: 0.333) // Bright green
-    static let bookmarkColor = Color(red: 0.8, green: 0.2, blue: 0.2)
-
     // Define colors based on AppTheme
     static var theme: AppTheme {
         AppTheme.theme(for: AppSettings.appearance)
@@ -46,7 +43,7 @@ struct AppTheme {
                 menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
-                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         case .dark:
             AppTheme(
@@ -60,7 +57,7 @@ struct AppTheme {
                 menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.8, green: 0.8, blue: 0.8),
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
-                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         case .blue:
             AppTheme(
@@ -74,7 +71,7 @@ struct AppTheme {
                 menuBarText: .black,
                 bottomMenuForeground: Color(red: 0.9, green: 0.9, blue: 0.9),
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
-                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2) // Dark gray
+                helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
             )
         }
     }

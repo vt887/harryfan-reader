@@ -14,6 +14,7 @@ private struct NotificationsModifier: ViewModifier {
     @EnvironmentObject var fontManager: FontManager
     @EnvironmentObject var bookmarkManager: BookmarkManager
     @EnvironmentObject var recentFilesManager: RecentFilesManager
+    @EnvironmentObject var overlayManager: OverlayManager
     @Binding var showingSearch: Bool
     @Binding var showingBookmarks: Bool
     @Binding var showingFilePicker: Bool
@@ -21,7 +22,15 @@ private struct NotificationsModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         let contentWithWindow = content
-            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in }
+            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
+                if let window = notification.object as? NSWindow {
+                    DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification for window: \(window.title)")
+                    // Show a new overlay layer instead of opening a new window
+                    overlayManager.addOverlay(.custom("Window became key: \(window.title)"))
+                } else {
+                    DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification received")
+                }
+            }
 
         let contentWithFile = contentWithWindow
             .onReceive(NotificationCenter.default.publisher(for: .openFileCommand)) { _ in showingFilePicker = true }

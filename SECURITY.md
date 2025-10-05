@@ -1,21 +1,24 @@
 # Security Policy
 
-## Supported Versions
-
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
-
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you discover a security vulnerability in this project, please report it privately. Do **not** create a public issue. Instead, email the maintainer at the address listed in the repository or use the contact method provided below:
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+- Email: vad.tymoshyk [at] scythify [dot] com
+
+Please include as much detail as possible to help us understand and address the issue quickly.
+
+## Supported Versions
+
+| Version        | Supported          |
+| -------------- | ----------------- |
+| 0.4-alpha      | :white_check_mark: |
+| < 0.4-alpha    | :x:               |
+
+## Response
+
+We aim to respond to security reports within 7 days. After initial assessment, we will work with you to address the issue as quickly as possible.
+
+## Responsible Disclosure
+
+Please do not disclose security issues publicly until they have been addressed and a fix is available. We appreciate your help in keeping this project and its users safe.

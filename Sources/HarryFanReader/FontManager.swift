@@ -57,7 +57,7 @@ final class FontManager: ObservableObject {
         if let fontFiles = try? fm.contentsOfDirectory(
             at: userFontsURL,
             includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles
+            options: .skipsHiddenFiles,
         ) {
             let rawFonts = fontFiles
                 .filter { $0.pathExtension == "raw" }
@@ -120,12 +120,17 @@ final class FontManager: ObservableObject {
                 return url
             }
         #endif
+        if let url = Bundle.module.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
+            return url
+        }
         return Bundle.main.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts")
     }
 
     // Parses raw font data into bitmaps
     private func parseFontData() {
-        guard let data = fontData else { return }
+        guard let data = fontData else {
+            return
+        }
 
         let charHeight = AppSettings.charH
         let charWidth = AppSettings.charW
@@ -195,8 +200,14 @@ final class FontManager: ObservableObject {
         return 0x3F // fallback to '?'
     }
 
-    // Returns system monospaced font as fallback
-    func createCustomFont() -> NSFont {
-        NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+    // Creates and returns a custom NSFont using the current font name and size
+    func createCustomFont() -> NSFont? {
+        let fontName = currentFont.rawValue.replacingOccurrences(of: ".raw", with: "")
+        // Try to create the custom font first
+        if let customFont = NSFont(name: fontName, size: fontSize) {
+            return customFont
+        }
+        // Fall back to system monospaced font if custom font isn't available
+        return NSFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
     }
 }

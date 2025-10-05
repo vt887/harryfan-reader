@@ -20,14 +20,14 @@ enum Messages {
     """
 
     static let helpMessage = """
-    ╔═════════════════════════════════════════════════════════════╗                                                                             ║
-    ║  F1  - Help        Show/hide this help screen               ║
-    ║  F2  - Word Wrap   Toggle word wrapping on/off              ║
-    ║  F3  - Open File   Open a new text file                     ║
-    ║  F7  - Go Start    Jump to the beginning of the file        ║
-    ║  F8  - Go End      Jump to the end of the file              ║
-    ║  F10 - Quit        Exit the application                     ║
-    ╚═════════════════════════════════════════════════════════════╝
+    ╔═══════════════════════════════════════════════════════╗                                                                             ║
+    ║  F1  - Help        Show/hide this help screen         ║
+    ║  F2  - Word Wrap   Toggle word wrapping on/off        ║
+    ║  F3  - Open File   Open a new text file               ║
+    ║  F7  - Go Start    Jump to the beginning of the file  ║
+    ║  F8  - Go End      Jump to the end of the file        ║
+    ║  F10 - Quit        Exit the application               ║
+    ╚═══════════════════════════════════════════════════════╝
     """
 
     static let quitMessage = """
@@ -42,16 +42,17 @@ enum Messages {
 
     // Returns the welcome message centered horizontally and vertically for the current screen size, with version
     static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {
-        // Debug log for ReleaseInfo.version
         DebugLogger.log("ReleaseInfo.version: '\(ReleaseInfo.version)'")
-        // Replace %version% with the actual version from ReleaseInfo
         let versionedMessage = welcomeMessage.replacingOccurrences(of: "%version%", with: ReleaseInfo.version)
         let lines = versionedMessage.components(separatedBy: "\n")
         let centeredLines = lines.map { line in
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            let padding = max(0, (screenWidth - trimmed.count) / 2)
-            let padStr = String(repeating: " ", count: padding)
-            return padStr + trimmed
+            let totalPadding = max(0, screenWidth - trimmed.count)
+            let leftPadding = totalPadding / 2
+            let rightPadding = totalPadding - leftPadding
+            let padLeft = String(repeating: " ", count: leftPadding)
+            let padRight = String(repeating: " ", count: rightPadding)
+            return padLeft + trimmed + padRight
         }
         let totalLines = centeredLines.count
         let verticalPadding = max(0, (screenHeight - totalLines) / 2)

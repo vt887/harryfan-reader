@@ -86,10 +86,27 @@ class BookmarkManager: ObservableObject {
 
     // Load bookmarks from persistent storage
     private func loadBookmarks() {
-        if let data = UserDefaults.standard.data(forKey: "\(AppSettings.appName)Bookmarks"),
-           let loadedBookmarks = try? JSONDecoder().decode([Bookmark].self, from: data)
-        {
-            bookmarks = loadedBookmarks
+        let key = "\(AppSettings.appName)Bookmarks"
+        guard let data = UserDefaults.standard.data(forKey: key) else {
+            bookmarks = []
+            return
         }
+
+        // Primary: decode as a flat array (current format)
+        if let loadedArray = try? JSONDecoder().decode([Bookmark].self, from: data) {
+            bookmarks = loadedArray
+            return
+        }
+
+        // Fallback: decode as a dictionary of fileName -> [Bookmark] (legacy format)
+        if let legacyDict = try? JSONDecoder().decode([String: [Bookmark]].self, from: data) {
+            bookmarks = legacyDict.values.flatMap(\.self)
+            // Migrate to current format by saving as a flat array
+            saveBookmarks()
+            return
+        }
+
+        // If decoding fails, start with empty
+        bookmarks = []
     }
 }

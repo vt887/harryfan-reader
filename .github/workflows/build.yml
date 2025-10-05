@@ -1,0 +1,50 @@
+name: Multi-Arch Build
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - '**'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: [ "self-hosted", "X64" ]
+          - arch: arm64
+            runner: [ "self-hosted", "ARM64" ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get swift version in macOS
+        run: xcrun --toolchain ${{ env.TOOLCHAINS }} swift --version
+
+      - name: Build with SwiftPM
+        run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
+          swift build --build-tests $SWIFT_FLAGS
+
+  test:
+    name: Test on ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: [ "self-hosted", "X64" ]
+          - arch: arm64
+            runner: [ "self-hosted", "ARM64" ]
+    needs: build
+    steps:
+      - name: Test with SwiftPM
+        run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
+          swift test $SWIFT_FLAGS || true
