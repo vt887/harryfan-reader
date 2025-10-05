@@ -1,4 +1,4 @@
-name: Build
+name: Build and Test
 
 on:
   push:
@@ -8,6 +8,33 @@ on:
 jobs:
   build:
     runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - uses: SwiftyLab/setup-swift@latest
+      - name: Get swift version
+        run: swift --version
+      - name: Get swift version in macOS
+        if: runner.os == 'macOS'
+        run: xcrun --toolchain ${{ env.TOOLCHAINS }} swift --version
+      - name: Cache SwiftPM build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .build
+            .swiftpm
+          key: ${{ runner.os }}-swiftpm-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-swiftpm-
+      - name: Build with SwiftPM
+        run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
+          swift build --build-tests $SWIFT_FLAGS
+
+  test:
+    runs-on: self-hosted
+    needs: build
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,9 +53,8 @@ jobs:
           key: ${{ runner.os }}-swiftpm-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
           restore-keys: |
             ${{ runner.os }}-swiftpm-
-      - name: Build with SwiftPM
+      - name: Test with SwiftPM
         run: |
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
-          swift build --build-tests $SWIFT_FLAGS
-
+          swift test $SWIFT_FLAGS
