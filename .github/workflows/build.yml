@@ -11,10 +11,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Set up Swift
-        uses: fwal/setup-swift@v1
-        with:
-          swift-version: '5.9'
+      - uses: SwiftyLab/setup-swift@latest
+      - name: Get swift version
+        run: swift --version
+      - name: Get swift version in macOS
+        if: runner.os == 'macOS'
+        run: xcrun --toolchain ${{ env.TOOLCHAINS }} swift --version # Swift 5.1.0
       - name: Build with SwiftPM
         run: |
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
