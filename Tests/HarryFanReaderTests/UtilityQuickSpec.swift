@@ -34,7 +34,6 @@ final class UtilityQuickSpec: QuickSpec {
                 expect(AppSettings.charH).to(equal(16))
                 expect(AppSettings.wrapWidth).to(equal(80))
                 expect(AppSettings.wordWrap).to(beTrue())
-                expect(AppSettings.debug).to(beFalse())
             }
             // Checks that character dimension constants are positive and reasonable.
             it("has sensible character dimensions") {

@@ -9,7 +9,7 @@
 import Nimble
 import Quick
 
-final class TextDocumentTests: QuickSpec {
+final class TextDocumentQuickSpec: QuickSpec {
     override class func spec() {
         var textDocument: TextDocument!
 
