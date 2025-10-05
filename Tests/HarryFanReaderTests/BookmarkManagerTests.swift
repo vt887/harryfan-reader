@@ -5,278 +5,274 @@
 //  Created by @vt887 on 9/29/25.
 //
 
+import Foundation
 @testable import HarryFanReader
-import XCTest
+import Nimble
+import Quick
 
-// Unit tests for BookmarkManager
-final class BookmarkManagerTests: XCTestCase {
-    var bookmarkManager: BookmarkManager!
-
-    override func setUp() {
-        super.setUp()
-        // Clear any existing bookmarks from UserDefaults for clean testing
+final class BookmarkManagerQuickSpec: QuickSpec {
+    override class func spec() {
+        var bookmarkManager: BookmarkManager!
         let key = "\(AppSettings.appName)Bookmarks"
-        UserDefaults.standard.removeObject(forKey: key)
-        bookmarkManager = BookmarkManager()
-    }
 
-    override func tearDown() {
-        // Clean up UserDefaults after each test
-        let key = "\(AppSettings.appName)Bookmarks"
-        UserDefaults.standard.removeObject(forKey: key)
-        bookmarkManager = nil
-        super.tearDown()
-    }
-
-    // MARK: - Initialization Tests
-
-    func testInitialState() {
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 0)
-    }
-
-    // MARK: - Bookmark Creation Tests
-
-    func testAddBookmark() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Important line")
-
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 1)
-
-        let bookmark = bookmarkManager.bookmarks.first!
-        XCTAssertEqual(bookmark.fileName, "test.txt")
-        XCTAssertEqual(bookmark.line, 10)
-        XCTAssertEqual(bookmark.description, "Important line")
-        XCTAssertNotNil(bookmark.id)
-        XCTAssertNotNil(bookmark.timestamp)
-    }
-
-    func testAddMultipleBookmarks() {
-        bookmarkManager.addBookmark(fileName: "file1.txt", line: 5, description: "First bookmark")
-        bookmarkManager.addBookmark(fileName: "file1.txt", line: 15, description: "Second bookmark")
-        bookmarkManager.addBookmark(fileName: "file2.txt", line: 20, description: "Third bookmark")
-
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 3)
-
-        // Verify each bookmark has unique ID
-        let ids = bookmarkManager.bookmarks.map(\.id)
-        let uniqueIds = Set(ids)
-        XCTAssertEqual(ids.count, uniqueIds.count)
-    }
-
-    // MARK: - Bookmark Removal Tests
-
-    func testRemoveBookmark() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "To be removed")
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "To be kept")
-
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 2)
-
-        let bookmarkToRemove = bookmarkManager.bookmarks.first!
-        bookmarkManager.removeBookmark(bookmarkToRemove)
-
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 1)
-        XCTAssertEqual(bookmarkManager.bookmarks.first?.description, "To be kept")
-    }
-
-    func testRemoveNonexistentBookmark() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Existing bookmark")
-
-        // Create a bookmark that doesn't exist in the manager
-        let nonexistentBookmark = BookmarkManager.Bookmark(fileName: "other.txt", line: 5, description: "Nonexistent")
-
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 1)
-        bookmarkManager.removeBookmark(nonexistentBookmark)
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 1) // Should remain unchanged
-    }
-
-    // MARK: - Bookmark Filtering Tests
-
-    func testGetBookmarksForFile() {
-        bookmarkManager.addBookmark(fileName: "file1.txt", line: 10, description: "File1 bookmark 1")
-        bookmarkManager.addBookmark(fileName: "file2.txt", line: 15, description: "File2 bookmark")
-        bookmarkManager.addBookmark(fileName: "file1.txt", line: 20, description: "File1 bookmark 2")
-
-        let file1Bookmarks = bookmarkManager.getBookmarks(for: "file1.txt")
-        let file2Bookmarks = bookmarkManager.getBookmarks(for: "file2.txt")
-        let nonexistentFileBookmarks = bookmarkManager.getBookmarks(for: "nonexistent.txt")
-
-        XCTAssertEqual(file1Bookmarks.count, 2)
-        XCTAssertEqual(file2Bookmarks.count, 1)
-        XCTAssertEqual(nonexistentFileBookmarks.count, 0)
-
-        XCTAssertTrue(file1Bookmarks.allSatisfy { $0.fileName == "file1.txt" })
-        XCTAssertTrue(file2Bookmarks.allSatisfy { $0.fileName == "file2.txt" })
-    }
-
-    // MARK: - Bookmark Navigation Tests
-
-    func testNextBookmarkAfter() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Bookmark 1")
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 30, description: "Bookmark 2")
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "Bookmark 3")
-        bookmarkManager.addBookmark(fileName: "other.txt", line: 15, description: "Other file bookmark")
-
-        // Test finding next bookmark after line 15
-        let nextBookmark = bookmarkManager.nextBookmark(after: 15, in: "test.txt")
-        XCTAssertNotNil(nextBookmark)
-        XCTAssertEqual(nextBookmark?.line, 20) // Should find the bookmark at line 20
-
-        // Test finding next bookmark after line 25 (should find line 30)
-        let nextAfter25 = bookmarkManager.nextBookmark(after: 25, in: "test.txt")
-        XCTAssertNotNil(nextAfter25)
-        XCTAssertEqual(nextAfter25?.line, 30) // Should find bookmark at line 30
-
-        // Test wrapping to first bookmark when searching after the last bookmark
-        let wrappedBookmark = bookmarkManager.nextBookmark(after: 35, in: "test.txt")
-        XCTAssertNotNil(wrappedBookmark)
-        XCTAssertEqual(wrappedBookmark?.line, 10) // Should wrap to first bookmark
-
-        // Test with no bookmarks in file
-        let noBookmark = bookmarkManager.nextBookmark(after: 5, in: "nonexistent.txt")
-        XCTAssertNil(noBookmark)
-    }
-
-    func testPreviousBookmarkBefore() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Bookmark 1")
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 30, description: "Bookmark 2")
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "Bookmark 3")
-        bookmarkManager.addBookmark(fileName: "other.txt", line: 15, description: "Other file bookmark")
-
-        // Test finding previous bookmark before line 25
-        let prevBookmark = bookmarkManager.previousBookmark(before: 25, in: "test.txt")
-        XCTAssertNotNil(prevBookmark)
-        XCTAssertEqual(prevBookmark?.line, 20) // Should find the bookmark at line 20
-
-        // Test finding previous bookmark before line 5 (should wrap to last)
-        let wrappedBookmark = bookmarkManager.previousBookmark(before: 5, in: "test.txt")
-        XCTAssertNotNil(wrappedBookmark)
-        XCTAssertEqual(wrappedBookmark?.line, 30) // Should wrap to last bookmark
-
-        // Test with no bookmarks in file
-        let noBookmark = bookmarkManager.previousBookmark(before: 25, in: "nonexistent.txt")
-        XCTAssertNil(noBookmark)
-    }
-
-    func testNextBookmarkWithSingleBookmark() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 15, description: "Only bookmark")
-
-        let nextBookmark = bookmarkManager.nextBookmark(after: 10, in: "test.txt")
-        XCTAssertNotNil(nextBookmark)
-        XCTAssertEqual(nextBookmark?.line, 15)
-
-        let wrappedBookmark = bookmarkManager.nextBookmark(after: 20, in: "test.txt")
-        XCTAssertNotNil(wrappedBookmark)
-        XCTAssertEqual(wrappedBookmark?.line, 15) // Should wrap to the same bookmark
-    }
-
-    func testPreviousBookmarkWithSingleBookmark() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 15, description: "Only bookmark")
-
-        let prevBookmark = bookmarkManager.previousBookmark(before: 20, in: "test.txt")
-        XCTAssertNotNil(prevBookmark)
-        XCTAssertEqual(prevBookmark?.line, 15)
-
-        let wrappedBookmark = bookmarkManager.previousBookmark(before: 10, in: "test.txt")
-        XCTAssertNotNil(wrappedBookmark)
-        XCTAssertEqual(wrappedBookmark?.line, 15) // Should wrap to the same bookmark
-    }
-
-    // MARK: - Persistence Tests
-
-    func testBookmarkPersistence() {
-        // Clean UserDefaults before test
-        let key = "\(AppSettings.appName)Bookmarks"
-        UserDefaults.standard.removeObject(forKey: key)
-
-        // Add bookmarks
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Persistent bookmark 1")
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "Persistent bookmark 2")
-
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 2)
-
-        // Create a new bookmark manager (simulating app restart)
-        let newBookmarkManager = BookmarkManager()
-
-        // Verify bookmarks were loaded from persistence
-        let count = newBookmarkManager.bookmarks.count
-        XCTAssertEqual(count, 2, "Expected 2 bookmarks after reload, got \(count)")
-        guard count == 2 else {
-            // Clean up after test
+        beforeEach {
             UserDefaults.standard.removeObject(forKey: key)
-            return
+            bookmarkManager = BookmarkManager()
+        }
+        afterEach {
+            UserDefaults.standard.removeObject(forKey: key)
+            bookmarkManager = nil
         }
 
-        let loadedBookmarks = newBookmarkManager.bookmarks.sorted { $0.line < $1.line }
-        XCTAssertEqual(loadedBookmarks[0].fileName, "test.txt")
-        XCTAssertEqual(loadedBookmarks[0].line, 10)
-        XCTAssertEqual(loadedBookmarks[0].description, "Persistent bookmark 1")
-        XCTAssertEqual(loadedBookmarks[1].line, 20)
-        XCTAssertEqual(loadedBookmarks[1].description, "Persistent bookmark 2")
+        describe("BookmarkManager") {
+            context("initial state") {
+                // Checks that the bookmark manager starts with no bookmarks.
+                it("starts with no bookmarks") {
+                    expect(bookmarkManager.bookmarks.count).to(equal(0))
+                }
+            }
+            context("adding a bookmark") {
+                // Checks that adding a bookmark works and fields are set correctly.
+                it("adds a bookmark correctly") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Important line")
+                    expect(bookmarkManager.bookmarks.count).to(equal(1))
+                    let bookmark = bookmarkManager.bookmarks.first
+                    expect(bookmark?.fileName).to(equal("test.txt"))
+                    expect(bookmark?.line).to(equal(10))
+                    expect(bookmark?.description).to(equal("Important line"))
+                    expect(bookmark?.id).toNot(beNil())
+                    expect(bookmark?.timestamp).toNot(beNil())
+                }
+            }
+            context("adding multiple bookmarks") {
+                // Checks that multiple bookmarks can be added and IDs are unique.
+                it("adds multiple bookmarks correctly") {
+                    bookmarkManager.addBookmark(fileName: "file1.txt", line: 5, description: "First bookmark")
+                    bookmarkManager.addBookmark(fileName: "file1.txt", line: 15, description: "Second bookmark")
+                    bookmarkManager.addBookmark(fileName: "file2.txt", line: 20, description: "Third bookmark")
 
-        // Clean up after test
-        UserDefaults.standard.removeObject(forKey: key)
-    }
+                    expect(bookmarkManager.bookmarks.count).to(equal(3))
 
-    func testBookmarkRemovalPersistence() {
-        // Add bookmarks
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "To be removed")
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "To be kept")
+                    // Verify each bookmark has unique ID
+                    let ids = bookmarkManager.bookmarks.map(\.id)
+                    let uniqueIds = Set(ids)
+                    expect(ids.count).to(equal(uniqueIds.count))
+                }
+            }
+            context("removing a bookmark") {
+                // Checks that removing a bookmark works and only the correct one is removed.
+                it("removes the correct bookmark") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "To be removed")
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "To be kept")
 
-        // Remove one bookmark
-        let bookmarkToRemove = bookmarkManager.bookmarks.first { $0.line == 10 }!
-        bookmarkManager.removeBookmark(bookmarkToRemove)
+                    expect(bookmarkManager.bookmarks.count).to(equal(2))
 
-        // Create a new bookmark manager (simulating app restart)
-        let newBookmarkManager = BookmarkManager()
+                    let bookmarkToRemove = bookmarkManager.bookmarks.first!
+                    bookmarkManager.removeBookmark(bookmarkToRemove)
 
-        // Verify only the remaining bookmark was loaded
-        XCTAssertEqual(newBookmarkManager.bookmarks.count, 1)
-        XCTAssertEqual(newBookmarkManager.bookmarks.first?.line, 20)
-        XCTAssertEqual(newBookmarkManager.bookmarks.first?.description, "To be kept")
-    }
+                    expect(bookmarkManager.bookmarks.count).to(equal(1))
+                    expect(bookmarkManager.bookmarks.first?.description).to(equal("To be kept"))
+                }
+                // Checks that removing a nonexistent bookmark does not affect the list.
+                it("does nothing when removing a nonexistent bookmark") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Existing bookmark")
 
-    // MARK: - Bookmark Model Tests
+                    // Create a bookmark that doesn't exist in the manager
+                    let nonexistentBookmark = BookmarkManager.Bookmark(fileName: "other.txt", line: 5, description: "Nonexistent")
 
-    func testBookmarkInitialization() {
-        let bookmark = BookmarkManager.Bookmark(fileName: "test.txt", line: 42, description: "Test bookmark")
+                    expect(bookmarkManager.bookmarks.count).to(equal(1))
+                    bookmarkManager.removeBookmark(nonexistentBookmark)
+                    expect(bookmarkManager.bookmarks.count).to(equal(1)) // Should remain unchanged
+                }
+            }
+            context("filtering bookmarks") {
+                // Checks that bookmarks can be filtered by file name.
+                it("gets bookmarks for a specific file") {
+                    bookmarkManager.addBookmark(fileName: "file1.txt", line: 10, description: "File1 bookmark 1")
+                    bookmarkManager.addBookmark(fileName: "file2.txt", line: 15, description: "File2 bookmark")
+                    bookmarkManager.addBookmark(fileName: "file1.txt", line: 20, description: "File1 bookmark 2")
 
-        XCTAssertNotNil(bookmark.id)
-        XCTAssertEqual(bookmark.fileName, "test.txt")
-        XCTAssertEqual(bookmark.line, 42)
-        XCTAssertEqual(bookmark.description, "Test bookmark")
-        XCTAssertNotNil(bookmark.timestamp)
+                    let file1Bookmarks = bookmarkManager.getBookmarks(for: "file1.txt")
+                    let file2Bookmarks = bookmarkManager.getBookmarks(for: "file2.txt")
+                    let nonexistentFileBookmarks = bookmarkManager.getBookmarks(for: "nonexistent.txt")
 
-        // Verify timestamp is recent (within last second)
-        let now = Date()
-        XCTAssertLessThan(abs(bookmark.timestamp.timeIntervalSince(now)), 1.0)
-    }
+                    expect(file1Bookmarks.count).to(equal(2))
+                    expect(file2Bookmarks.count).to(equal(1))
+                    expect(nonexistentFileBookmarks.count).to(equal(0))
 
-    func testBookmarkIdentifiability() {
-        let bookmark1 = BookmarkManager.Bookmark(fileName: "test.txt", line: 10, description: "Bookmark 1")
-        let bookmark2 = BookmarkManager.Bookmark(fileName: "test.txt", line: 10, description: "Bookmark 2")
+                    expect(file1Bookmarks.allSatisfy { $0.fileName == "file1.txt" }).to(beTrue())
+                    expect(file2Bookmarks.allSatisfy { $0.fileName == "file2.txt" }).to(beTrue())
+                }
+            }
+            context("navigating bookmarks") {
+                // Checks that nextBookmark finds the correct next bookmark.
+                it("finds the next bookmark correctly") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Bookmark 1")
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 30, description: "Bookmark 2")
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "Bookmark 3")
+                    bookmarkManager.addBookmark(fileName: "other.txt", line: 15, description: "Other file bookmark")
 
-        XCTAssertNotEqual(bookmark1.id, bookmark2.id) // Each bookmark should have unique ID
-    }
+                    // Test finding next bookmark after line 15
+                    let nextBookmark = bookmarkManager.nextBookmark(after: 15, in: "test.txt")
+                    expect(nextBookmark).toNot(beNil())
+                    expect(nextBookmark?.line).to(equal(20)) // Should find the bookmark at line 20
 
-    // MARK: - Edge Cases
+                    // Test finding next bookmark after line 25 (should find line 30)
+                    let nextAfter25 = bookmarkManager.nextBookmark(after: 25, in: "test.txt")
+                    expect(nextAfter25).toNot(beNil())
+                    expect(nextAfter25?.line).to(equal(30)) // Should find bookmark at line 30
 
-    func testBookmarkWithEmptyDescription() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "")
+                    // Test wrapping to first bookmark when searching after the last bookmark
+                    let wrappedBookmark = bookmarkManager.nextBookmark(after: 35, in: "test.txt")
+                    expect(wrappedBookmark).toNot(beNil())
+                    expect(wrappedBookmark?.line).to(equal(10)) // Should wrap to first bookmark
 
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 1)
-        XCTAssertEqual(bookmarkManager.bookmarks.first?.description, "")
-    }
+                    // Test with no bookmarks in file
+                    let noBookmark = bookmarkManager.nextBookmark(after: 5, in: "nonexistent.txt")
+                    expect(noBookmark).to(beNil())
+                }
+                // Checks that previousBookmark finds the correct previous bookmark.
+                it("finds the previous bookmark correctly") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Bookmark 1")
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 30, description: "Bookmark 2")
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "Bookmark 3")
+                    bookmarkManager.addBookmark(fileName: "other.txt", line: 15, description: "Other file bookmark")
 
-    func testBookmarkWithZeroLine() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: 0, description: "First line bookmark")
+                    // Test finding previous bookmark before line 25
+                    let prevBookmark = bookmarkManager.previousBookmark(before: 25, in: "test.txt")
+                    expect(prevBookmark).toNot(beNil())
+                    expect(prevBookmark?.line).to(equal(20)) // Should find the bookmark at line 20
 
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 1)
-        XCTAssertEqual(bookmarkManager.bookmarks.first?.line, 0)
-    }
+                    // Test finding previous bookmark before line 5 (should wrap to last)
+                    let wrappedBookmark = bookmarkManager.previousBookmark(before: 5, in: "test.txt")
+                    expect(wrappedBookmark).toNot(beNil())
+                    expect(wrappedBookmark?.line).to(equal(30)) // Should wrap to last bookmark
 
-    func testBookmarkWithNegativeLine() {
-        bookmarkManager.addBookmark(fileName: "test.txt", line: -5, description: "Negative line bookmark")
+                    // Test with no bookmarks in file
+                    let noBookmark = bookmarkManager.previousBookmark(before: 25, in: "nonexistent.txt")
+                    expect(noBookmark).to(beNil())
+                }
+                // Checks navigation when only one bookmark exists.
+                it("handles single bookmark navigation correctly") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 15, description: "Only bookmark")
 
-        XCTAssertEqual(bookmarkManager.bookmarks.count, 1)
-        XCTAssertEqual(bookmarkManager.bookmarks.first?.line, -5) // Should allow negative lines
+                    let nextBookmark = bookmarkManager.nextBookmark(after: 10, in: "test.txt")
+                    expect(nextBookmark).toNot(beNil())
+                    expect(nextBookmark?.line).to(equal(15))
+
+                    let wrappedBookmark = bookmarkManager.nextBookmark(after: 20, in: "test.txt")
+                    expect(wrappedBookmark).toNot(beNil())
+                    expect(wrappedBookmark?.line).to(equal(15)) // Should wrap to the same bookmark
+
+                    let prevBookmark = bookmarkManager.previousBookmark(before: 20, in: "test.txt")
+                    expect(prevBookmark).toNot(beNil())
+                    expect(prevBookmark?.line).to(equal(15))
+
+                    let wrappedPrevBookmark = bookmarkManager.previousBookmark(before: 10, in: "test.txt")
+                    expect(wrappedPrevBookmark).toNot(beNil())
+                    expect(wrappedPrevBookmark?.line).to(equal(15)) // Should wrap to the same bookmark
+                }
+            }
+            context("persistence") {
+                // Checks that bookmarks persist across sessions.
+                it("persists bookmarks across sessions") {
+                    // Clean UserDefaults before test
+                    let key = "\(AppSettings.appName)Bookmarks"
+                    UserDefaults.standard.removeObject(forKey: key)
+
+                    // Add bookmarks
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "Persistent bookmark 1")
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "Persistent bookmark 2")
+
+                    expect(bookmarkManager.bookmarks.count).to(equal(2))
+
+                    // Create a new bookmark manager (simulating app restart)
+                    let newBookmarkManager = BookmarkManager()
+
+                    // Verify bookmarks were loaded from persistence
+                    let count = newBookmarkManager.bookmarks.count
+                    expect(count).to(equal(2), description: "Expected 2 bookmarks after reload, got \(count)")
+                    guard count == 2 else {
+                        // Clean up after test
+                        UserDefaults.standard.removeObject(forKey: key)
+                        return
+                    }
+
+                    let loadedBookmarks = newBookmarkManager.bookmarks.sorted { $0.line < $1.line }
+                    expect(loadedBookmarks[0].fileName).to(equal("test.txt"))
+                    expect(loadedBookmarks[0].line).to(equal(10))
+                    expect(loadedBookmarks[0].description).to(equal("Persistent bookmark 1"))
+                    expect(loadedBookmarks[1].line).to(equal(20))
+                    expect(loadedBookmarks[1].description).to(equal("Persistent bookmark 2"))
+
+                    // Clean up after test
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
+                // Checks that bookmark removal persists across sessions.
+                it("persists bookmark removal across sessions") {
+                    // Add bookmarks
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "To be removed")
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 20, description: "To be kept")
+
+                    // Remove one bookmark
+                    let bookmarkToRemove = bookmarkManager.bookmarks.first { $0.line == 10 }!
+                    bookmarkManager.removeBookmark(bookmarkToRemove)
+
+                    // Create a new bookmark manager (simulating app restart)
+                    let newBookmarkManager = BookmarkManager()
+
+                    // Verify only the remaining bookmark was loaded
+                    expect(newBookmarkManager.bookmarks.count).to(equal(1))
+                    expect(newBookmarkManager.bookmarks.first?.line).to(equal(20))
+                    expect(newBookmarkManager.bookmarks.first?.description).to(equal("To be kept"))
+                }
+            }
+            context("bookmark model") {
+                // Checks that a bookmark initializes with correct fields.
+                it("initializes correctly") {
+                    let bookmark = BookmarkManager.Bookmark(fileName: "test.txt", line: 42, description: "Test bookmark")
+
+                    expect(bookmark.id).toNot(beNil())
+                    expect(bookmark.fileName).to(equal("test.txt"))
+                    expect(bookmark.line).to(equal(42))
+                    expect(bookmark.description).to(equal("Test bookmark"))
+                    expect(bookmark.timestamp).toNot(beNil())
+
+                    // Verify timestamp is recent (within last second)
+                    let now = Date()
+                    expect(abs(bookmark.timestamp.timeIntervalSince(now))).to(beLessThan(1.0))
+                }
+                // Checks that each bookmark is uniquely identifiable.
+                it("ensures each bookmark is identifiable") {
+                    let bookmark1 = BookmarkManager.Bookmark(fileName: "test.txt", line: 10, description: "Bookmark 1")
+                    let bookmark2 = BookmarkManager.Bookmark(fileName: "test.txt", line: 10, description: "Bookmark 2")
+
+                    expect(bookmark1.id).toNot(equal(bookmark2.id)) // Each bookmark should have unique ID
+                }
+            }
+            context("edge cases") {
+                // Checks that bookmarks with empty descriptions are allowed.
+                it("allows bookmarks with empty descriptions") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 10, description: "")
+
+                    expect(bookmarkManager.bookmarks.count).to(equal(1))
+                    expect(bookmarkManager.bookmarks.first?.description).to(equal(""))
+                }
+                // Checks that bookmarks with zero line number are allowed.
+                it("allows bookmarks with zero line number") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: 0, description: "First line bookmark")
+
+                    expect(bookmarkManager.bookmarks.count).to(equal(1))
+                    expect(bookmarkManager.bookmarks.first?.line).to(equal(0))
+                }
+                // Checks that bookmarks with negative line numbers are allowed.
+                it("allows bookmarks with negative line numbers") {
+                    bookmarkManager.addBookmark(fileName: "test.txt", line: -5, description: "Negative line bookmark")
+
+                    expect(bookmarkManager.bookmarks.count).to(equal(1))
+                    expect(bookmarkManager.bookmarks.first?.line).to(equal(-5)) // Should allow negative lines
+                }
+            }
+        }
     }
 }

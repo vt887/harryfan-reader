@@ -253,8 +253,10 @@ class TextDocument: ObservableObject {
             return
         }
         let displayRows = AppSettings.rows - 2
+        // Move cursor to the very last line
+        currentLine = totalLines - 1
+        // Show the last page (so that the last line is visible at bottom)
         topLine = max(0, totalLines - displayRows)
-        currentLine = topLine
     }
 
     // Scrolls up one page in the document
@@ -262,9 +264,9 @@ class TextDocument: ObservableObject {
         guard totalLines > 0 else {
             return
         }
-        let displayRows = AppSettings.rows - 2
-        topLine = max(0, topLine - displayRows)
-        currentLine = topLine
+        let pageStep = max(1, (AppSettings.rows - 2) - 2) // leave 2-line overlap
+        currentLine = max(0, currentLine - pageStep)
+        topLine = currentLine
     }
 
     // Scrolls down one page in the document
@@ -272,10 +274,9 @@ class TextDocument: ObservableObject {
         guard totalLines > 0 else {
             return
         }
-        let displayRows = AppSettings.rows - 2
-        let maxTop = max(0, totalLines - displayRows)
-        topLine = min(maxTop, topLine + displayRows)
-        currentLine = topLine
+        let pageStep = max(1, (AppSettings.rows - 2) - 2) // leave 2-line overlap
+        currentLine = min(totalLines - 1, currentLine + pageStep)
+        topLine = currentLine
     }
 
     // Scrolls up one line in the document

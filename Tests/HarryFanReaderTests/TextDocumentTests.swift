@@ -6,307 +6,378 @@
 //
 
 @testable import HarryFanReader
-import XCTest
 import Nimble
+import Quick
 
-// Unit tests for TextDocument
-final class TextDocumentTests: XCTestCase {
-    var textDocument: TextDocument!
+final class TextDocumentTests: QuickSpec {
+    override class func spec() {
+        var textDocument: TextDocument!
 
-    override func setUp() {
-        super.setUp()
-        textDocument = TextDocument()
-    }
+        beforeEach {
+            textDocument = TextDocument()
+        }
+        afterEach {
+            textDocument = nil
+        }
 
-    override func tearDown() {
-        textDocument = nil
-        super.tearDown()
-    }
+        describe("TextDocument") {
+            context("initial state") {
+                // Checks that a new TextDocument has correct default values.
+                it("has correct default values") {
+                    expect(textDocument.content.count).to(equal(0))
+                    expect(textDocument.currentLine).to(equal(0))
+                    expect(textDocument.totalLines).to(equal(0))
+                    expect(textDocument.encoding).to(equal("Unknown"))
+                    expect(textDocument.fileName).to(equal(""))
+                    expect(textDocument.removeEmptyLines).to(beTrue())
+                }
+            }
+            context("welcome text") {
+                // Checks that loading the welcome text populates content and sets expected fields.
+                it("loads welcome text") {
+                    textDocument.loadWelcomeText()
+                    expect(textDocument.content.count).to(beGreaterThan(0))
+                    expect(textDocument.totalLines).to(equal(textDocument.content.count))
+                    expect(textDocument.currentLine).to(equal(0))
+                    expect(textDocument.fileName).to(equal(""))
+                    expect(textDocument.encoding).to(equal("Unknown"))
+                    let contentText = textDocument.content.joined(separator: " ")
+                    expect(contentText).to(contain("HarryFan Reader"))
+                    expect(textDocument.totalLines).to(equal(AppSettings.rows - 2))
+                }
+            }
+            context("navigation") {
+                // Checks that gotoLine navigates to the correct line and handles boundaries.
+                it("navigates to a specific line") {
+                    // Setup test content
+                    textDocument.content = ["Line 1", "Line 2", "Line 3", "Line 4", "Line 5"]
+                    textDocument.totalLines = 5
 
-    // MARK: - Initialization Tests
+                    // Test valid line navigation
+                    textDocument.gotoLine(3)
+                    expect(textDocument.currentLine).to(equal(2))
 
-    func testInitialState() {
-        expect(self.textDocument.content.count).to(equal(0))
-        expect(self.textDocument.currentLine).to(equal(0))
-        expect(self.textDocument.totalLines).to(equal(0))
-        expect(self.textDocument.encoding).to(equal("Unknown"))
-        expect(self.textDocument.fileName).to(equal(""))
-        expect(self.textDocument.removeEmptyLines).to(beTrue())
-    }
+                    // Test boundary conditions
+                    textDocument.gotoLine(1)
+                    expect(textDocument.currentLine).to(equal(0))
 
-    // MARK: - Welcome Text Tests
+                    textDocument.gotoLine(10) // Beyond total lines
+                    expect(textDocument.currentLine).to(equal(4)) // Should clamp to last line
 
-    func testLoadWelcomeText() {
-        textDocument.loadWelcomeText()
-        expect(self.textDocument.content.count).to(beGreaterThan(0))
-        expect(self.textDocument.totalLines).to(equal(self.textDocument.content.count))
-        expect(self.textDocument.currentLine).to(equal(0))
-        expect(self.textDocument.fileName).to(equal(""))
-        expect(self.textDocument.encoding).to(equal("Unknown"))
-        let contentText = textDocument.content.joined(separator: " ")
-        expect(contentText).to(contain("HarryFan Reader"))
-        expect(self.textDocument.totalLines).to(equal(AppSettings.rows - 2))
-    }
+                    textDocument.gotoLine(-5) // Negative line
+                    expect(textDocument.currentLine).to(equal(0)) // Should clamp to first line
+                }
 
-    // MARK: - Navigation Tests
+                // Checks that gotoStart moves to the first line.
+                it("navigates to the start") {
+                    textDocument.content = ["Line 1", "Line 2", "Line 3"]
+                    textDocument.totalLines = 3
+                    textDocument.currentLine = 2
 
-    func testGotoLine() {
-        // Setup test content
-        textDocument.content = ["Line 1", "Line 2", "Line 3", "Line 4", "Line 5"]
-        textDocument.totalLines = 5
+                    textDocument.gotoStart()
+                    expect(textDocument.currentLine).to(equal(0))
+                }
 
-        // Test valid line navigation
-        textDocument.gotoLine(3)
-        expect(self.textDocument.currentLine).to(equal(2))
+                // Checks that gotoEnd moves to the last line.
+                it("navigates to the end") {
+                    textDocument.content = ["Line 1", "Line 2", "Line 3"]
+                    textDocument.totalLines = 3
+                    textDocument.currentLine = 0
 
-        // Test boundary conditions
-        textDocument.gotoLine(1)
-        expect(self.textDocument.currentLine).to(equal(0))
+                    textDocument.gotoEnd()
+                    expect(textDocument.currentLine).to(equal(2))
+                }
 
-        textDocument.gotoLine(10) // Beyond total lines
-        expect(self.textDocument.currentLine).to(equal(4)) // Should clamp to last line
+                // Checks that gotoEnd on an empty document does not crash.
+                it("handles empty document when navigating to the end") {
+                    textDocument.content = []
+                    textDocument.totalLines = 0
 
-        textDocument.gotoLine(-5) // Negative line
-        expect(self.textDocument.currentLine).to(equal(0)) // Should clamp to first line
-    }
+                    textDocument.gotoEnd()
+                    expect(textDocument.currentLine).to(equal(0))
+                }
 
-    func testGotoStart() {
-        textDocument.content = ["Line 1", "Line 2", "Line 3"]
-        textDocument.totalLines = 3
-        textDocument.currentLine = 2
+                // Checks that pageUp moves up by a page.
+                it("pages up") {
+                    textDocument.content = Array(1 ... 50).map { "Line \($0)" }
+                    textDocument.totalLines = 50
+                    textDocument.currentLine = 30
 
-        textDocument.gotoStart()
-        expect(self.textDocument.currentLine).to(equal(0))
-    }
+                    textDocument.pageUp()
+                    expect(textDocument.currentLine).to(equal(10))
+                }
 
-    func testGotoEnd() {
-        textDocument.content = ["Line 1", "Line 2", "Line 3"]
-        textDocument.totalLines = 3
-        textDocument.currentLine = 0
+                // Checks that pageUp at the beginning clamps to the first line.
+                it("handles page up at the beginning") {
+                    textDocument.content = Array(1 ... 50).map { "Line \($0)" }
+                    textDocument.totalLines = 50
+                    textDocument.currentLine = 5
 
-        textDocument.gotoEnd()
-        expect(self.textDocument.currentLine).to(equal(2))
-    }
+                    textDocument.pageUp()
+                    expect(textDocument.currentLine).to(equal(0))
+                }
 
-    func testGotoEndWithEmptyDocument() {
-        textDocument.content = []
-        textDocument.totalLines = 0
+                // Checks that pageDown moves down by a page.
+                it("pages down") {
+                    textDocument.content = Array(1 ... 50).map { "Line \($0)" }
+                    textDocument.totalLines = 50
+                    textDocument.currentLine = 10
 
-        textDocument.gotoEnd()
-        expect(self.textDocument.currentLine).to(equal(0))
-    }
+                    textDocument.pageDown()
+                    expect(textDocument.currentLine).to(equal(30))
+                }
 
-    func testPageUp() {
-        textDocument.content = Array(1 ... 50).map { "Line \($0)" }
-        textDocument.totalLines = 50
-        textDocument.currentLine = 30
+                // Checks that pageDown at the end clamps to the last line.
+                it("handles page down at the end") {
+                    textDocument.content = Array(1 ... 50).map { "Line \($0)" }
+                    textDocument.totalLines = 50
+                    textDocument.currentLine = 45
 
-        textDocument.pageUp()
-        expect(self.textDocument.currentLine).to(equal(10))
-    }
+                    textDocument.pageDown()
+                    expect(textDocument.currentLine).to(equal(49))
+                }
+            }
+            context("search") {
+                // Checks that search finds the next matching line forward.
+                it("searches forward") {
+                    textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
+                    textDocument.totalLines = 4
+                    textDocument.currentLine = 0
+                    let result = textDocument.search("Hello", direction: .forward)
+                    expect(result).to(equal(2))
+                }
 
-    func testPageUpAtBeginning() {
-        textDocument.content = Array(1 ... 50).map { "Line \($0)" }
-        textDocument.totalLines = 50
-        textDocument.currentLine = 5
+                // Checks that search forward is case sensitive.
+                it("searches forward case sensitively") {
+                    textDocument.content = ["hello world", "This is a test", "Hello again", "Final line"]
+                    textDocument.totalLines = 4
+                    textDocument.currentLine = 0
+                    let result = textDocument.search("Hello", direction: .forward, caseSensitive: true)
+                    expect(result).to(equal(2))
+                }
 
-        textDocument.pageUp()
-        expect(self.textDocument.currentLine).to(equal(0))
-    }
+                // Checks that search forward is case insensitive.
+                it("searches forward case insensitively") {
+                    textDocument.content = ["hello world", "This is a test", "Hello again", "Final line"]
+                    textDocument.totalLines = 4
+                    textDocument.currentLine = 0
+                    textDocument.currentLine = 2
+                    let result = textDocument.search("Hello", direction: .forward, caseSensitive: false)
+                    expect(result).to(equal(0))
+                }
 
-    func testPageDown() {
-        textDocument.content = Array(1 ... 50).map { "Line \($0)" }
-        textDocument.totalLines = 50
-        textDocument.currentLine = 10
+                // Checks that search finds the previous matching line backward.
+                it("searches backward") {
+                    textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
+                    textDocument.totalLines = 4
+                    textDocument.currentLine = 3
+                    let result = textDocument.search("Hello", direction: .backward)
+                    expect(result).to(equal(2))
+                }
 
-        textDocument.pageDown()
-        expect(self.textDocument.currentLine).to(equal(30))
-    }
+                // Checks that search returns nil if the term is not found.
+                it("returns nil when search term is not found") {
+                    textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
+                    textDocument.totalLines = 4
+                    textDocument.currentLine = 0
+                    let result = textDocument.search("NotFound", direction: .forward)
+                    expect(result).to(beNil())
+                }
 
-    func testPageDownAtEnd() {
-        textDocument.content = Array(1 ... 50).map { "Line \($0)" }
-        textDocument.totalLines = 50
-        textDocument.currentLine = 45
+                // Checks that search returns nil for an empty query.
+                it("returns nil for empty search query") {
+                    textDocument.content = ["Hello world", "This is a test"]
+                    textDocument.totalLines = 2
+                    textDocument.currentLine = 0
+                    let result = textDocument.search("", direction: .forward)
+                    expect(result).to(beNil())
+                }
 
-        textDocument.pageDown()
-        expect(self.textDocument.currentLine).to(equal(49))
-    }
+                // Checks that search wraps around when searching.
+                it("wraps around when searching") {
+                    textDocument.content = ["Hello world", "This is a test", "Another line", "Final line"]
+                    textDocument.totalLines = 4
+                    textDocument.currentLine = 2
+                    let result = textDocument.search("Hello", direction: .forward)
+                    expect(result).to(equal(0))
+                }
+            }
+            context("content access") {
+                // Checks that getCurrentLine returns the correct line.
+                it("gets the current line") {
+                    textDocument.content = ["First line", "Second line"]
+                    textDocument.totalLines = 2
+                    textDocument.currentLine = 1
+                    let currentLine = textDocument.getCurrentLine()
+                    expect(currentLine).to(equal("Second line"))
+                }
 
-    // MARK: - Search Tests
+                // Checks that getCurrentLine returns empty string if out of bounds.
+                it("returns empty string for current line out of bounds") {
+                    textDocument.content = ["First line", "Second line"]
+                    textDocument.totalLines = 2
+                    textDocument.currentLine = 5
+                    let currentLine = textDocument.getCurrentLine()
+                    expect(currentLine).to(equal(""))
+                }
 
-    func testSearchForward() {
-        textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
-        textDocument.totalLines = 4
-        textDocument.currentLine = 0
-        let result = textDocument.search("Hello", direction: .forward)
-        expect(result).to(equal(2))
-    }
+                // Checks that getCurrentLine returns empty string for empty document.
+                it("returns empty string for current line in empty document") {
+                    textDocument.content = []
+                    textDocument.totalLines = 0
+                    textDocument.currentLine = 0
+                    let currentLine = textDocument.getCurrentLine()
+                    expect(currentLine).to(equal(""))
+                }
 
-    func testSearchForwardCaseSensitive() {
-        textDocument.content = ["hello world", "This is a test", "Hello again", "Final line"]
-        textDocument.totalLines = 4
-        textDocument.currentLine = 0
-        let result = textDocument.search("Hello", direction: .forward, caseSensitive: true)
-        expect(result).to(equal(2))
-    }
+                // Checks that getVisibleLines returns the correct visible lines.
+                it("gets visible lines") {
+                    textDocument.content = Array(1 ... 50).map { "Line \($0)" }
+                    textDocument.totalLines = 50
+                    textDocument.currentLine = 10
+                    let visibleLines = textDocument.getVisibleLines()
+                    expect(visibleLines.count).to(equal(22)) // AppSettings.rows - 2 (title + menu bars)
+                    expect(visibleLines.first).to(equal("Line 1")) // topLine starts at 0
+                    expect(visibleLines.last).to(equal("Line 22")) // first 22 lines visible
+                }
 
-    func testSearchForwardCaseInsensitive() {
-        textDocument.content = ["hello world", "This is a test", "Hello again", "Final line"]
-        textDocument.totalLines = 4
-        textDocument.currentLine = 0
-        textDocument.currentLine = 2
-        let result = textDocument.search("Hello", direction: .forward, caseSensitive: false)
-        expect(result).to(equal(0))
-    }
+                // Checks that getVisibleLines near the end returns all lines.
+                it("gets visible lines near the end") {
+                    textDocument.content = Array(1 ... 10).map { "Line \($0)" }
+                    textDocument.totalLines = 10
+                    textDocument.currentLine = 5
+                    let visibleLines = textDocument.getVisibleLines()
+                    expect(visibleLines.count).to(equal(10)) // All lines fit within 22 row limit
+                    expect(visibleLines.first).to(equal("Line 1")) // Shows all content from start
+                    expect(visibleLines.last).to(equal("Line 10")) // Shows all content to end
+                }
+            }
+            context("title bar") {
+                // Checks that getTitleBarText returns correct text for empty file.
+                it("gets title bar text for empty file") {
+                    let titleBarText = textDocument.getTitleBarText()
+                    expect(titleBarText).to(contain("HarryFan Reader"))
+                    expect(titleBarText).to(contain(" │ "))
+                    expect(titleBarText.count).to(equal(AppSettings.cols))
+                }
 
-    func testSearchBackward() {
-        textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
-        textDocument.totalLines = 4
-        textDocument.currentLine = 3
-        let result = textDocument.search("Hello", direction: .backward)
-        expect(result).to(equal(2))
-    }
+                // Checks that getTitleBarText returns correct text with file name.
+                it("gets title bar text with file name") {
+                    textDocument.fileName = "test.txt"
+                    textDocument.content = Array(1 ... 100).map { "Line \($0)" }
+                    textDocument.totalLines = 100
+                    textDocument.currentLine = 49
+                    textDocument.encoding = "CP866"
+                    let titleBarText = textDocument.getTitleBarText()
+                    expect(titleBarText).to(contain("HarryFan Reader"))
+                    expect(titleBarText).to(contain("test.txt"))
+                    expect(titleBarText).to(satisfyAnyOf(contain("Line 50 of 100"), contain("50%")))
+                    expect(titleBarText).to(contain(" │ "))
+                    expect(titleBarText.count).to(equal(AppSettings.cols))
+                }
 
-    func testSearchNotFound() {
-        textDocument.content = ["Hello world", "This is a test", "Hello again", "Final line"]
-        textDocument.totalLines = 4
-        textDocument.currentLine = 0
-        let result = textDocument.search("NotFound", direction: .forward)
-        expect(result).to(beNil())
-    }
+                // Checks that getTitleBarText truncates long file names.
+                it("truncates long file name in title bar") {
+                    textDocument.fileName = "this_is_a_very_long_filename_that_should_be_truncated_in_the_title_bar.txt"
+                    textDocument.content = ["Line 1"]
+                    textDocument.totalLines = 1
+                    textDocument.currentLine = 0
+                    textDocument.encoding = "ASCII"
+                    let titleBarText = textDocument.getTitleBarText()
+                    expect(titleBarText).to(contain("..."))
+                    expect(titleBarText).to(contain(" │ "))
+                    expect(titleBarText.count).to(equal(AppSettings.cols))
+                }
+            }
+            context("menu bar") {
+                // Checks that getMenuBarText returns correct menu bar text.
+                it("gets menu bar text") {
+                    let testItems = ["Help", "Wrap", "Open", "Search", "Goto", "Bookm", "Start", "End", "Menu", "Qu"]
+                    let menuBarText = textDocument.getMenuBarText(testItems)
+                    expect(menuBarText.isEmpty).to(beFalse())
+                    expect(menuBarText.count).to(equal(AppSettings.cols))
+                    expect(menuBarText).to(contain("Help"))
+                    expect(menuBarText).to(contain("Qu"))
+                    expect(menuBarText).to(contain(" 1Help"))
+                    expect(menuBarText).to(contain(" 10Qu"))
+                    expect(menuBarText).to(contain(" 1Help  "))
+                }
+            }
+            context("file operations") {
+                // Checks that closeFile resets the document state.
+                it("closes the file") {
+                    textDocument.fileName = "test.txt"
+                    textDocument.content = ["Line 1", "Line 2"]
+                    textDocument.totalLines = 2
+                    textDocument.currentLine = 1
+                    textDocument.encoding = "CP866"
+                    textDocument.closeFile()
+                    expect(textDocument.content.count).to(equal(0))
+                    expect(textDocument.currentLine).to(equal(0))
+                    expect(textDocument.totalLines).to(equal(0))
+                    expect(textDocument.encoding).to(equal("Unknown"))
+                    expect(textDocument.fileName).to(equal(""))
+                }
+            }
+            context("messages") {
+                // Checks that the quit message is present and contains expected content.
+                it("shows quit message") {
+                    let quitMessage = textDocument.quitMessage
+                    expect(quitMessage.isEmpty).to(beFalse())
+                    expect(quitMessage).to(contain("Thank you"))
+                }
+            }
+        }
 
-    func testSearchEmptyQuery() {
-        textDocument.content = ["Hello world", "This is a test"]
-        textDocument.totalLines = 2
-        textDocument.currentLine = 0
-        let result = textDocument.search("", direction: .forward)
-        expect(result).to(beNil())
-    }
+        describe("TextDocument navigation (QuickSpec)") {
+            var doc: TextDocument!
 
-    func testSearchWrapAround() {
-        textDocument.content = ["Hello world", "This is a test", "Another line", "Final line"]
-        textDocument.totalLines = 4
-        textDocument.currentLine = 2
-        let result = textDocument.search("Hello", direction: .forward)
-        expect(result).to(equal(0))
-    }
+            beforeEach {
+                doc = TextDocument()
+            }
 
-    // MARK: - Content Access Tests
+            context("when paging down") {
+                beforeEach {
+                    doc.content = Array(1 ... 50).map { "Line \($0)" }
+                    doc.totalLines = 50
+                    doc.currentLine = 10
+                }
 
-    func testGetCurrentLine() {
-        textDocument.content = ["First line", "Second line"]
-        textDocument.totalLines = 2
-        textDocument.currentLine = 1
-        let currentLine = textDocument.getCurrentLine()
-        expect(currentLine).to(equal("Second line"))
-    }
+                it("advances by one page with overlap") {
+                    doc.pageDown()
+                    expect(doc.currentLine).to(equal(30)) // rows=24 -> page step 20
+                }
+            }
 
-    func testGetCurrentLineOutOfBounds() {
-        textDocument.content = ["First line", "Second line"]
-        textDocument.totalLines = 2
-        textDocument.currentLine = 5
-        let currentLine = textDocument.getCurrentLine()
-        expect(currentLine).to(equal(""))
-    }
+            context("when going to the end") {
+                beforeEach {
+                    doc.content = ["Line 1", "Line 2", "Line 3"]
+                    doc.totalLines = 3
+                    doc.currentLine = 0
+                }
 
-    func testGetCurrentLineEmptyDocument() {
-        textDocument.content = []
-        textDocument.totalLines = 0
-        textDocument.currentLine = 0
-        let currentLine = textDocument.getCurrentLine()
-        expect(currentLine).to(equal(""))
-    }
+                it("moves the cursor to the last line") {
+                    doc.gotoEnd()
+                    expect(doc.currentLine).to(equal(2))
+                }
+            }
+        }
 
-    func testGetVisibleLines() {
-        textDocument.content = Array(1 ... 50).map { "Line \($0)" }
-        textDocument.totalLines = 50
-        textDocument.currentLine = 10
-        let visibleLines = textDocument.getVisibleLines()
-        XCTAssertEqual(visibleLines.count, 22) // AppSettings.rows - 2 (title + menu bars)
-        XCTAssertEqual(visibleLines.first, "Line 1") // topLine starts at 0
-        XCTAssertEqual(visibleLines.last, "Line 22") // first 22 lines visible
-    }
+        describe("Title bar formatting (QuickSpec)") {
+            it("fits exactly the configured width and shows percent") {
+                let doc = TextDocument()
+                doc.fileName = "test.txt"
+                doc.content = Array(1 ... 100).map { "Line \($0)" }
+                doc.totalLines = 100
+                doc.currentLine = 49 // 50%
 
-    func testGetVisibleLinesNearEnd() {
-        textDocument.content = Array(1 ... 10).map { "Line \($0)" }
-        textDocument.totalLines = 10
-        textDocument.currentLine = 5
-        let visibleLines = textDocument.getVisibleLines()
-        XCTAssertEqual(visibleLines.count, 10) // All lines fit within 22 row limit
-        XCTAssertEqual(visibleLines.first, "Line 1") // Shows all content from start
-        XCTAssertEqual(visibleLines.last, "Line 10") // Shows all content to end
-    }
-
-    // MARK: - Title Bar Tests
-
-    func testGetTitleBarTextEmptyFile() {
-        let titleBarText = textDocument.getTitleBarText()
-        expect(titleBarText).to(contain("HarryFan Reader"))
-        expect(titleBarText).to(contain(" │ "))
-        expect(titleBarText.count).to(equal(AppSettings.cols))
-    }
-
-    func testGetTitleBarTextWithFile() {
-        textDocument.fileName = "test.txt"
-        textDocument.content = Array(1 ... 100).map { "Line \($0)" }
-        textDocument.totalLines = 100
-        textDocument.currentLine = 49
-        textDocument.encoding = "CP866"
-        let titleBarText = textDocument.getTitleBarText()
-        expect(titleBarText).to(contain("HarryFan Reader"))
-        expect(titleBarText).to(contain("test.txt"))
-        expect(titleBarText).to(satisfyAnyOf(contain("Line 50 of 100"), contain("50%")))
-        expect(titleBarText).to(contain(" │ "))
-        expect(titleBarText.count).to(equal(AppSettings.cols))
-    }
-
-    func testGetTitleBarTextLongFileName() {
-        textDocument.fileName = "this_is_a_very_long_filename_that_should_be_truncated_in_the_title_bar.txt"
-        textDocument.content = ["Line 1"]
-        textDocument.totalLines = 1
-        textDocument.currentLine = 0
-        textDocument.encoding = "ASCII"
-        let titleBarText = textDocument.getTitleBarText()
-        expect(titleBarText).to(contain("..."))
-        expect(titleBarText).to(contain(" │ "))
-        expect(titleBarText.count).to(equal(AppSettings.cols))
-    }
-
-    // MARK: - Menu Bar Tests
-
-    func testGetMenuBarText() {
-        let testItems = ["Help", "Wrap", "Open", "Search", "Goto", "Bookm", "Start", "End", "Menu", "Qu"]
-        let menuBarText = textDocument.getMenuBarText(testItems)
-        expect(menuBarText.isEmpty).to(beFalse())
-        expect(menuBarText.count).to(equal(AppSettings.cols))
-        expect(menuBarText).to(contain("Help"))
-        expect(menuBarText).to(contain("Qu"))
-        expect(menuBarText).to(contain(" 1Help"))
-        expect(menuBarText).to(contain(" 10Qu"))
-        expect(menuBarText).to(contain(" 1Help  "))
-    }
-
-    // MARK: - File Operations Tests
-
-    func testCloseFile() {
-        self.textDocument.fileName = "test.txt"
-        self.textDocument.content = ["Line 1", "Line 2"]
-        self.textDocument.totalLines = 2
-        self.textDocument.currentLine = 1
-        self.textDocument.encoding = "CP866"
-        self.textDocument.closeFile()
-        expect(self.textDocument.content.count).to(equal(0))
-        expect(self.textDocument.currentLine).to(equal(0))
-        expect(self.textDocument.totalLines).to(equal(0))
-        expect(self.textDocument.encoding).to(equal("Unknown"))
-        expect(self.textDocument.fileName).to(equal(""))
-    }
-
-    // MARK: - Messages Tests
-
-    func testQuitMessage() {
-        let quitMessage = textDocument.quitMessage
-        expect(quitMessage.isEmpty).to(beFalse())
-        expect(quitMessage).to(contain("Thank you"))
+                let title = doc.getTitleBarText()
+                expect(title.count).to(equal(AppSettings.cols))
+                expect(title).to(contain("HarryFan Reader"))
+                expect(title).to(contain("test.txt"))
+                expect(title).to(satisfyAnyOf(contain("50%")))
+                expect(title).to(contain(" │ "))
+            }
+        }
     }
 }
