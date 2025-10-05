@@ -1,4 +1,4 @@
-name: Build and Test
+name: Multi-Arch Build
 
 on:
   push:
@@ -6,70 +6,43 @@ on:
       - '**'
 
 jobs:
-  build_x86_64:
-    runs-on: ["self-hosted", "X64"]
+  build:
+    name: Build on ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            runner: [ "self-hosted", "X64" ]
+          - arch: arm64
+            runner: [ "self-hosted", "ARM64" ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Get swift version
-        run: swift --version
+
       - name: Get swift version in macOS
-        if: runner.os == 'macOS'
         run: xcrun --toolchain ${{ env.TOOLCHAINS }} swift --version
+
       - name: Cache SwiftPM build
         uses: actions/cache@v4
         with:
           path: |
             .build
             .swiftpm
-          key: ${{ runner.os }}-swiftpm-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
+          key: ${{ matrix.arch }}-swiftpm-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
           restore-keys: |
-            ${{ runner.os }}-swiftpm-
+            ${{ matrix.arch }}-swiftpm-
+
       - name: Build with SwiftPM
         run: |
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
           export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
           swift build --build-tests $SWIFT_FLAGS
 
-  build_arm64:
-    runs-on: [ "self-hosted", "ARM64" ]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - uses: SwiftyLab/setup-swift@latest
-      - name: Get swift version
-        run: swift --version
-      - name: Get swift version in macOS
-        if: runner.os == 'macOS'
-        run: xcrun --toolchain ${{ env.TOOLCHAINS }} swift --version
-      - name: Cache SwiftPM build
-        uses: actions/cache@v4
-        with:
-          path: |
-            .build
-            .swiftpm
-          key: ${{ runner.os }}-swiftpm-${{ hashFiles('**/Package.resolved', '**/Package.swift') }}
-          restore-keys: |
-            ${{ runner.os }}-swiftpm-
-      - name: Build with SwiftPM
-        run: |
-          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
-          swift build --build-tests $SWIFT_FLAGS
-
-  test_x86_64:
-    runs-on: [ "self-hosted", "X64" ]
-    needs: build_x86_64
-    steps:
-      - name: Test with SwiftPM
-        run: |
-          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
-          swift test $SWIFT_FLAGS
-
-  test_arm64:
-    runs-on: [ "self-hosted", "ARM64" ]
-    needs: build_arm64
+  test:
+    name: Test on ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    needs: build
     steps:
       - name: Test with SwiftPM
         run: |
