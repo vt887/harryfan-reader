@@ -8,6 +8,7 @@ on:
   workflow_dispatch: {}
   # Scan mainline branches and report all findings:
   push:
+    branches:
       - '**'
   # Schedule the CI job (this method uses cron syntax):
   schedule:
