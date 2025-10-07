@@ -227,6 +227,7 @@ class TextDocument: ObservableObject {
     // Toggles word wrap and reloads content
     func toggleWordWrap() {
         wordWrap.toggle()
+        AppSettings.wordWrap = wordWrap // sync AppSettings
         DebugLogger.log("Word wrap toggled to: \(wordWrap)")
         reloadWithNewSettings()
     }

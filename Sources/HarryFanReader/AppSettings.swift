@@ -28,7 +28,15 @@ enum AppSettings {
     static let charW = 8
     static let charH = 16
     static let wrapWidth = 80
-    static let wordWrap: Bool = true
+    static var wordWrap: Bool {
+        get { UserDefaults.standard.object(forKey: "wordWrap") as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: "wordWrap") }
+    }
+
+    static var wordWrapLabel: String {
+        wordWrap ? "Unwrap" : "Wrap"
+    }
+
     // Quit confirmation (persisted)
     static var shouldShowQuitMessage: Bool {
         get { UserDefaults.standard.object(forKey: "shouldShowQuitMessage") as? Bool ?? false }

@@ -7,17 +7,20 @@
 
 import SwiftUI
 
-let menuItems = [
-    "Help", "Wrap", "Open", "Search", "Goto",
-    "Bookm", "Start", "End", "Menu", "Quit",
-]
-
 // View for displaying the menu bar in the app
 struct MenuBar: View {
     // Observed document model for the menu bar
     @ObservedObject var document: TextDocument
     // Font manager environment object
     @EnvironmentObject var fontManager: FontManager
+
+    // Computed menu items to reflect current wordWrap state
+    var menuItems: [String] {
+        [
+            "Help", AppSettings.wordWrapLabel, "Open", "Search", "Goto",
+            "Bookm", "Start", "End", "Menu", "Quit",
+        ]
+    }
 
     // Main view body rendering the menu bar
     var body: some View {
