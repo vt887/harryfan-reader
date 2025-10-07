@@ -1,5 +1,7 @@
 # HarryFan Reader - Retro MS-DOS Style Text Viewer from Fidonet era
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/b0e6d38b0e2f474081c62b2868bb3862)](https://app.codacy.com/gh/vt887/harryfan-reader?utm_source=github.com&utm_medium=referral&utm_content=vt887/harryfan-reader&utm_campaign=Badge_Grade)
+
 A nostalgic text viewer for macOS that emulates the classic MS-DOS aesthetic with blue background, white text, and support for CP866 encoding (perfect for Cyrillic text files).
 
 ![MS-DOS background](Files/background.png)
