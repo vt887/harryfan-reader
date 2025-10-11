@@ -42,9 +42,7 @@ struct ContentView: View {
         )
         .background(Colors.theme.background)
         .sheet(isPresented: $showingSearch) {
-            SearchView(isPresented: $showingSearch,
-                       document: document,
-                       lastSearchTerm: $lastSearchTerm)
+            SearchView(isPresented: $showingSearch, document: document, lastSearchTerm: $lastSearchTerm)
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()

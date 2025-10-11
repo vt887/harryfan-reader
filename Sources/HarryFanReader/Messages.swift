@@ -40,6 +40,14 @@ enum Messages {
     ╚══════════════════════════════════════════════════╝
     """
 
+    static let searchMessage = """
+    ╔═════════════════[ Search ]═══════════════════════╗
+    ║  Search for the string                           ║
+    ║  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   ║
+    ╚══════════════════════════════════════════════════╝
+    """
+
+
     // Returns the welcome message centered horizontally and vertically for the current screen size, with version
     static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {
         DebugLogger.log("ReleaseInfo.version: '\(ReleaseInfo.version)'")

@@ -167,19 +167,6 @@ struct SettingsView: View {
                     Toggle("Enable anti-aliasing", isOn: $enableAntiAliasing)
                         .help("Smooth text rendering for better visual quality")
                 }
-
-                Section("About") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("HarryFan Reader")
-                            .font(.headline)
-                        Text("A retro-style text viewer")
-                            .font(.caption)
-                        Text("Supports CP866 encoding and MS-DOS fonts")
-                            .font(.caption)
-                        Text("Version \(ReleaseInfo.version).\(ReleaseInfo.build)")
-                            .font(.caption)
-                    }
-                }
             }
             .formStyle(.grouped)
 
