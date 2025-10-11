@@ -71,6 +71,12 @@ class StatusBarManager: ObservableObject {
         menu.addItem(showHideItem)
         DebugLogger.log("StatusBarManager: Added 'Show HarryFan Reader' menu item")
 
+        // Add About menu item
+        let aboutItem = NSMenuItem(title: "About HarryFan Reader", action: #selector(showAbout), keyEquivalent: "")
+        aboutItem.target = self
+        menu.addItem(aboutItem)
+        DebugLogger.log("StatusBarManager: Added 'About HarryFan Reader' menu item")
+
         menu.addItem(NSMenuItem.separator())
 
         // Quick Actions
@@ -79,10 +85,10 @@ class StatusBarManager: ObservableObject {
         menu.addItem(openItem)
         DebugLogger.log("StatusBarManager: Added 'Open File...' menu item (⌘O)")
 
-        let searchItem = NSMenuItem(title: "Search", action: #selector(showSearch), keyEquivalent: "f")
-        searchItem.target = self
-        menu.addItem(searchItem)
-        DebugLogger.log("StatusBarManager: Added 'Search' menu item (⌘F)")
+        // Remove 'Search' menu item
+        // let searchItem = NSMenuItem(title: "Search", action: #selector(showSearch), keyEquivalent: "f")
+        // menu.addItem(searchItem)
+        // DebugLogger.log("StatusBarManager: Added 'Search' menu item (⌘F)")
 
         menu.addItem(NSMenuItem.separator())
 
@@ -146,13 +152,6 @@ class StatusBarManager: ObservableObject {
         DebugLogger.log("StatusBarManager: Posted openFileCommand notification")
     }
 
-    // Show search
-    @objc private func showSearch() {
-        DebugLogger.log("StatusBarManager: Search menu item clicked")
-        NotificationCenter.default.post(name: .showSearchCommand, object: nil)
-        DebugLogger.log("StatusBarManager: Posted showSearchCommand notification")
-    }
-
     // Show settings
     @objc private func showSettings() {
         DebugLogger.log("StatusBarManager: Settings menu item clicked")
@@ -162,6 +161,12 @@ class StatusBarManager: ObservableObject {
             DebugLogger.log("StatusBarManager: No Settings menu item found. Implement settings window presentation here if needed.")
         }
         DebugLogger.log("StatusBarManager: Sent showPreferencesWindow action")
+    }
+
+    // Add About handler
+    @objc private func showAbout() {
+        DebugLogger.log("StatusBarManager: About menu item clicked")
+        NotificationCenter.default.post(name: .showAboutOverlay, object: nil)
     }
 
     // Quit application
@@ -189,5 +194,5 @@ class StatusBarManager: ObservableObject {
 
 // Extension for notification names
 extension Notification.Name {
-    static let showSearchCommand = Notification.Name("showSearchCommand")
+    static let showAboutOverlay = Notification.Name("showAboutOverlay")
 }

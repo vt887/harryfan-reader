@@ -17,6 +17,7 @@ enum OverlayKind: Equatable {
     case quit
     case custom(String)
     case fileText(String)
+    case about
 
     // Returns the message string associated with each overlay kind.
     // This is used to display the appropriate content in the overlay.
@@ -27,6 +28,7 @@ enum OverlayKind: Equatable {
         case .quit: Messages.quitMessage
         case let .custom(s): s
         case let .fileText(s): s
+        case .about: Messages.aboutMessage
         }
     }
 }

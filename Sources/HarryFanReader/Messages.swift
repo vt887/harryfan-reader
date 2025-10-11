@@ -9,6 +9,16 @@ import Foundation
 
 // Enum for static app messages
 enum Messages {
+static let aboutMessage = """
+    ╔═══════════════════════════════════════════╗
+    ║             HarryFan Reader               ║
+    ║                                           ║
+    ║      Retro MS-DOS Style Text Viewer       ║
+    ║                                           ║
+    ║             Version                       ║
+    ╚═══════════════════════════════════════════╝
+    """
+
     static let welcomeMessage = """
     ╔═══════════════════════════════════════════╗
     ║             HarryFan Reader               ║

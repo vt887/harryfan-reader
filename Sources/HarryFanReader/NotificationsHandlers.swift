@@ -25,8 +25,8 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
                 if let window = notification.object as? NSWindow {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification for window: \(window.title)")
-                    // Show a new overlay layer instead of opening a new window
-                    overlayManager.addOverlay(.custom("Window became key: \(window.title)"))
+                    // Show AboutOverlay instead of separate window
+                    overlayManager.addOverlay(.about)
                 } else {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification received")
                 }
@@ -46,9 +46,6 @@ private struct NotificationsModifier: ViewModifier {
         let contentWithSearch = contentWithFile
             .onReceive(NotificationCenter.default.publisher(for: .openSearchCommand)) { _ in
                 if document.fileName.isEmpty { return }
-                showingSearch = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .showSearchCommand)) { _ in
                 showingSearch = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .findNextCommand)) { _ in
@@ -92,7 +89,12 @@ private struct NotificationsModifier: ViewModifier {
                 }
             }
 
-        return contentWithBookmarks
+        let contentWithAbout = contentWithBookmarks
+            .onReceive(NotificationCenter.default.publisher(for: .showAboutOverlay)) { _ in
+                overlayManager.addOverlay(.about)
+            }
+
+        return contentWithAbout
             .onReceive(NotificationCenter.default.publisher(for: .scrollUpCommand)) { _ in document.lineUp() }
             .onReceive(NotificationCenter.default.publisher(for: .scrollDownCommand)) { _ in document.lineDown() }
             .onReceive(NotificationCenter.default.publisher(for: .pageUpCommand)) { _ in document.pageUp() }
