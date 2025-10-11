@@ -11,17 +11,17 @@ import Foundation
 enum Messages {
 static let aboutMessage = """
     ╔═══════════════════════════════════════════╗
-    ║             HarryFan Reader               ║
+    ║              HarryFan Reader              ║
     ║                                           ║
-    ║      Retro MS-DOS Style Text Viewer       ║
+    ║          Version xxxxxxxxxxxx             ║
     ║                                           ║
-    ║             Version                       ║
+    ║             Press any key...              ║
     ╚═══════════════════════════════════════════╝
     """
 
     static let welcomeMessage = """
     ╔═══════════════════════════════════════════╗
-    ║             HarryFan Reader               ║
+    ║              HarryFan Reader              ║
     ║                                           ║
     ║      Retro MS-DOS Style Text Viewer       ║
     ║                                           ║

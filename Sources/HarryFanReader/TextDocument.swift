@@ -101,13 +101,13 @@ class TextDocument: ObservableObject {
     }
 
     // Returns the formatted menu bar text
-    func getMenuBarText(_ items: [String]) -> String {
+    func getActionBarText(_ items: [String]) -> String {
         let menuBarString = items.enumerated().map { index, item in
             let itemText = " \(index + 1)\(item)" // Add leading space before number
             return itemText.padding(toLength: 8, withPad: " ", startingAt: 0)
         }.joined(separator: "")
         let result = menuBarString.padding(toLength: AppSettings.cols, withPad: " ", startingAt: 0)
-        DebugLogger.log("MenuBar result: '\(result)'")
+        DebugLogger.log("ActionBar result: '\(result)'")
         return result
     }
 

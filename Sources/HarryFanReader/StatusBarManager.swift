@@ -100,6 +100,18 @@ class StatusBarManager: ObservableObject {
 
         menu.addItem(NSMenuItem.separator())
 
+        // View chapter section
+        let viewChapterHeader = NSMenuItem(title: "View chapter", action: nil, keyEquivalent: "")
+        viewChapterHeader.isEnabled = false
+        menu.addItem(viewChapterHeader)
+        // Scale option
+        let scaleItem = NSMenuItem(title: "Scale", action: #selector(scaleChapter), keyEquivalent: "s")
+        scaleItem.target = self
+        menu.addItem(scaleItem)
+        DebugLogger.log("StatusBarManager: Added 'Scale' menu item under 'View chapter'")
+
+        menu.addItem(NSMenuItem.separator())
+
         // Quit
         let quitItem = NSMenuItem(title: "Quit HarryFan Reader", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
@@ -176,6 +188,12 @@ class StatusBarManager: ObservableObject {
         DebugLogger.log("StatusBarManager: App termination requested")
     }
 
+    // Handler for Scale option
+    @objc private func scaleChapter() {
+        DebugLogger.log("StatusBarManager: Scale menu item clicked")
+        NotificationCenter.default.post(name: .scaleChapterCommand, object: nil)
+    }
+
     // Remove status bar item
     private func removeStatusBarItem() {
         if let statusItem {
@@ -195,4 +213,5 @@ class StatusBarManager: ObservableObject {
 // Extension for notification names
 extension Notification.Name {
     static let showAboutOverlay = Notification.Name("showAboutOverlay")
+    static let scaleChapterCommand = Notification.Name("scaleChapterCommand")
 }

@@ -1,27 +1,31 @@
 //
-//  BottomBar.swift
+//  ActionBar.swift
 //  harryfan-reader
 //
 //  Created by @vt887 on 9/25/25.
+//
 
 import SwiftUI
 
-let bottomBarItems = [
-    "Help", "Wrap", "Open", "Search", "Goto",
-    "Bookm", "Start", "End", "Menu", "Quit",
-]
-
-// View for displaying the bottom bar in the app
-struct BottomBar: View {
-    // Observed document model for the bottom bar
+// View for displaying the menu bar in the app
+struct ActionBar: View {
+    // Observed document model for the menu bar
     @ObservedObject var document: TextDocument
     // Font manager environment object
     @EnvironmentObject var fontManager: FontManager
 
-    // Main view body rendering the bottom bar
+    // Computed menu items to reflect current wordWrap state
+    var menuItems: [String] {
+        [
+            "Help", AppSettings.wordWrapLabel, "Open", "Search", "Goto",
+            "Bookm", "Start", "End", "Menu", "Quit",
+        ]
+    }
+
+    // Main view body rendering the menu bar
     var body: some View {
         ScreenView(document: document,
-                   contentToDisplay: document.getMenuBarText(bottomBarItems),
+                   contentToDisplay: document.getActionBarText(menuItems),
                    displayRows: 1,
                    rowOffset: document.rows - 1,
                    backgroundColor: Colors.theme.menuBarBackground,

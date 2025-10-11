@@ -95,7 +95,7 @@ struct ScreenView: View {
     }
 
     // Helper function to handle menu bar digit inversion
-    private func handleMenuBarDigitInversion(_ base: inout ScreenLayer, row: Int, lineChars: [Character], col: inout Int) -> Bool {
+    private func handleActionBarDigitInversion(_ base: inout ScreenLayer, row: Int, lineChars: [Character], col: inout Int) -> Bool {
         // Check if we have a leading space and a valid digit pattern
         guard col > 0, lineChars[col - 1] == " ",
               let (pattern, length) = detectDigitPattern(lineChars, col)
@@ -122,16 +122,16 @@ struct ScreenView: View {
         let lines: [String] = contentToDisplay?.components(separatedBy: .newlines) ?? document.getVisibleLines(displayRows: displayRows)
 
         // Helper: is this the menu bar row?
-        let isMenuBarRow = displayRows == 1 && rowOffset == document.rows - 1
+        let isActionBarRow = displayRows == 1 && rowOffset == document.rows - 1
 
         for (row, line) in lines.prefix(displayRows).enumerated() {
             var col = 0
             let lineChars = Array(line)
             while col < min(lineChars.count, ScreenView.cols) {
                 let char = lineChars[col]
-                if isMenuBarRow {
+                if isActionBarRow {
                     // Handle menu bar digit inversion (1-10 and their leading spaces)
-                    if handleMenuBarDigitInversion(&base, row: row, lineChars: lineChars, col: &col) {
+                    if handleActionBarDigitInversion(&base, row: row, lineChars: lineChars, col: &col) {
                         continue
                     }
                     // Menu bar: normal menu item text

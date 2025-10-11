@@ -29,7 +29,7 @@ enum AppSettings {
     static let charH = 16
     static let wrapWidth = 80
     static var wordWrap: Bool {
-        get { UserDefaults.standard.object(forKey: "wordWrap") as? Bool ?? false }
+        get { UserDefaults.standard.object(forKey: "wordWrap") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "wordWrap") }
     }
 

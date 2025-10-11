@@ -34,7 +34,7 @@ struct ContentView: View {
         VStack(spacing: 0) {
             TitleBar(document: document)
             MainContentScreenView(document: document, recentFilesManager: recentFilesManager, showingFilePicker: $showingFilePicker)
-            BottomBar(document: document)
+            ActionBar(document: document)
         }
         .frame(
             width: CGFloat(AppSettings.cols * AppSettings.charW),

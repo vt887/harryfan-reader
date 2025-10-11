@@ -290,18 +290,18 @@ final class TextDocumentQuickSpec: QuickSpec {
                     expect(titleBarText.count).to(equal(AppSettings.cols))
                 }
             }
-            context("menu bar") {
-                // Checks that getMenuBarText returns correct menu bar text.
-                it("gets menu bar text") {
+            context("action bar") {
+                // Checks that getActionBarText returns correct action bar text.
+                it("gets action bar text") {
                     let testItems = ["Help", "Wrap", "Open", "Search", "Goto", "Bookm", "Start", "End", "Menu", "Qu"]
-                    let menuBarText = textDocument.getMenuBarText(testItems)
-                    expect(menuBarText.isEmpty).to(beFalse())
-                    expect(menuBarText.count).to(equal(AppSettings.cols))
-                    expect(menuBarText).to(contain("Help"))
-                    expect(menuBarText).to(contain("Qu"))
-                    expect(menuBarText).to(contain(" 1Help"))
-                    expect(menuBarText).to(contain(" 10Qu"))
-                    expect(menuBarText).to(contain(" 1Help  "))
+                    let actionBarText = textDocument.getActionBarText(testItems)
+                    expect(actionBarText.isEmpty).to(beFalse())
+                    expect(actionBarText.count).to(equal(AppSettings.cols))
+                    expect(actionBarText).to(contain("Help"))
+                    expect(actionBarText).to(contain("Qu"))
+                    expect(actionBarText).to(contain(" 1Help"))
+                    expect(actionBarText).to(contain(" 10Qu"))
+                    expect(actionBarText).to(contain(" 1Help  "))
                 }
             }
             context("file operations") {
