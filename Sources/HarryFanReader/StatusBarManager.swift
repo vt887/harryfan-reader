@@ -10,23 +10,54 @@ import Foundation
 import SwiftUI
 
 // Manager for the macOS status bar (menu bar) icon
-class StatusBarManager: ObservableObject {
+class StatusBarManager: NSObject, ObservableObject {
     private var statusItem: NSStatusItem?
+    // popover is unused right now but kept for future use
     private var popover: NSPopover?
 
     @Published var isVisible = true
 
-    init() {
+    private var showHideMenuItem: NSMenuItem? // Reference to update title and enabled state
+
+    // Notification observer tokens
+    private var observers: [NSObjectProtocol] = []
+
+    override init() {
+        super.init()
         DebugLogger.log("StatusBarManager: Initializing status bar manager")
+        // Ensure Dock icon remains visible while app runs
+        NSApp.setActivationPolicy(.regular)
+        DebugLogger.log("StatusBarManager: App activation policy set to .regular (Dock icon visible)")
+
         createStatusBarItem()
-        // Ensure the status bar item persists even when app is hidden
-        NSApp.setActivationPolicy(.accessory)
-        DebugLogger.log("StatusBarManager: App activation policy set to accessory")
+
+        // Observe window lifecycle events across the app so menu can be updated
+        let nc = NotificationCenter.default
+        observers.append(nc.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { [weak self] notification in
+            self?.windowWillClose(notification)
+        })
+        observers.append(nc.addObserver(forName: NSWindow.didMiniaturizeNotification, object: nil, queue: .main) { [weak self] notification in
+            self?.windowDidMinimize(notification)
+        })
+        observers.append(nc.addObserver(forName: NSWindow.didDeminiaturizeNotification, object: nil, queue: .main) { [weak self] notification in
+            self?.windowDidDeminiaturize(notification)
+        })
+        observers.append(nc.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { [weak self] notification in
+            self?.windowDidBecomeKey(notification)
+        })
+
+        // Set initial menu state based on current window (if any)
+        updateShowHideMenuState()
     }
 
     deinit {
         DebugLogger.log("StatusBarManager: Deinitializing status bar manager")
-        // Only remove when app is actually terminating
+        // Remove observers and status item
+        let nc = NotificationCenter.default
+        for obs in observers {
+            nc.removeObserver(obs)
+        }
+        observers.removeAll()
         removeStatusBarItem()
     }
 
@@ -40,75 +71,30 @@ class StatusBarManager: ObservableObject {
         DebugLogger.log("StatusBarManager: Creating status bar item")
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
 
-        // Set the icon
         if let button = statusItem?.button {
             DebugLogger.log("StatusBarManager: Setting up status bar button")
-            // You can use a custom icon here or a system icon
-            // For now, using a text-based icon
             button.title = "📖"
             button.toolTip = "HarryFan Reader"
             button.action = #selector(statusBarButtonClicked)
             button.target = self
-            DebugLogger.log("StatusBarManager: Status bar button configured with title '📖' and tooltip 'HarryFan Reader'")
         } else {
             DebugLogger.log("StatusBarManager: ERROR - Failed to get status bar button")
         }
 
-        // Create the menu
-        DebugLogger.log("StatusBarManager: Creating status bar menu")
         createMenu()
         DebugLogger.log("StatusBarManager: Status bar item created successfully")
     }
 
-    // Create the status bar menu
+    // Create the status bar menu (two items: Show/Hide and Quit)
     private func createMenu() {
         DebugLogger.log("StatusBarManager: Building status bar menu")
         let menu = NSMenu()
 
-        // Show/Hide App
-        let showHideItem = NSMenuItem(title: "Show HarryFan Reader", action: #selector(showHideApp), keyEquivalent: "")
+        // Show/Hide menu item - title will be updated dynamically
+        let showHideItem = NSMenuItem(title: "Show", action: #selector(showHideApp), keyEquivalent: "")
         showHideItem.target = self
         menu.addItem(showHideItem)
-        DebugLogger.log("StatusBarManager: Added 'Show HarryFan Reader' menu item")
-
-        // Add About menu item
-        let aboutItem = NSMenuItem(title: "About HarryFan Reader", action: #selector(showAbout), keyEquivalent: "")
-        aboutItem.target = self
-        menu.addItem(aboutItem)
-        DebugLogger.log("StatusBarManager: Added 'About HarryFan Reader' menu item")
-
-        menu.addItem(NSMenuItem.separator())
-
-        // Quick Actions
-        let openItem = NSMenuItem(title: "Open File...", action: #selector(openFile), keyEquivalent: "o")
-        openItem.target = self
-        menu.addItem(openItem)
-        DebugLogger.log("StatusBarManager: Added 'Open File...' menu item (⌘O)")
-
-        // Remove 'Search' menu item
-        // let searchItem = NSMenuItem(title: "Search", action: #selector(showSearch), keyEquivalent: "f")
-        // menu.addItem(searchItem)
-        // DebugLogger.log("StatusBarManager: Added 'Search' menu item (⌘F)")
-
-        menu.addItem(NSMenuItem.separator())
-
-        // Settings
-        let settingsItem = NSMenuItem(title: "Settings...", action: #selector(showSettings), keyEquivalent: ",")
-        settingsItem.target = self
-        menu.addItem(settingsItem)
-        DebugLogger.log("StatusBarManager: Added 'Settings...' menu item (⌘,)")
-
-        menu.addItem(NSMenuItem.separator())
-
-        // View chapter section
-        let viewChapterHeader = NSMenuItem(title: "View chapter", action: nil, keyEquivalent: "")
-        viewChapterHeader.isEnabled = false
-        menu.addItem(viewChapterHeader)
-        // Scale option
-        let scaleItem = NSMenuItem(title: "Scale", action: #selector(scaleChapter), keyEquivalent: "s")
-        scaleItem.target = self
-        menu.addItem(scaleItem)
-        DebugLogger.log("StatusBarManager: Added 'Scale' menu item under 'View chapter'")
+        showHideMenuItem = showHideItem
 
         menu.addItem(NSMenuItem.separator())
 
@@ -116,102 +102,126 @@ class StatusBarManager: ObservableObject {
         let quitItem = NSMenuItem(title: "Quit HarryFan Reader", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
-        DebugLogger.log("StatusBarManager: Added 'Quit HarryFan Reader' menu item (⌘Q)")
 
         statusItem?.menu = menu
-        DebugLogger.log("StatusBarManager: Status bar menu created with \(menu.items.count) items")
+        DebugLogger.log("StatusBarManager: Status bar menu created with Show/Hide and Quit items")
     }
 
-    // Status bar button clicked
+    // Update the Show/Hide menu title based on the main window state
+    private func updateShowHideMenuState() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            // Determine the window to consider as main app window
+            let window = NSApp.mainWindow ?? NSApp.windows.first
+
+            if let w = window {
+                // If window is miniaturized or not visible, show "Show"; otherwise "Hide"
+                if w.isMiniaturized || !w.isVisible {
+                    self.showHideMenuItem?.title = "Show"
+                    self.showHideMenuItem?.isEnabled = true
+                } else {
+                    self.showHideMenuItem?.title = "Hide"
+                    self.showHideMenuItem?.isEnabled = true
+                }
+                DebugLogger.log("StatusBarManager: Updated menu for window (visible: \(w.isVisible), miniaturized: \(w.isMiniaturized)): \(self.showHideMenuItem?.title ?? "nil")")
+            } else {
+                // No window found - default to Show
+                self.showHideMenuItem?.title = "Show"
+                self.showHideMenuItem?.isEnabled = true
+                DebugLogger.log("StatusBarManager: No main window found - menu set to Show")
+            }
+        }
+    }
+
+    // Status bar button clicked - show the main window
     @objc private func statusBarButtonClicked() {
         DebugLogger.log("StatusBarManager: Status bar button clicked")
-        // Always show the app window when status bar icon is clicked
-        if let window = NSApp.windows.first {
-            DebugLogger.log("StatusBarManager: Showing main window and activating app")
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        } else {
-            DebugLogger.log("StatusBarManager: ERROR - No main window found")
+        showMainWindow()
+    }
+
+    // Helper to show the main window (de-miniaturize or make key)
+    private func showMainWindow() {
+        DispatchQueue.main.async {
+            if let w = NSApp.windows.first {
+                if w.isMiniaturized {
+                    DebugLogger.log("StatusBarManager: Deminiaturizing main window")
+                    w.deminiaturize(nil)
+                }
+                DebugLogger.log("StatusBarManager: Making main window key and ordering front")
+                w.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+            } else {
+                DebugLogger.log("StatusBarManager: ERROR - No main window found to show")
+            }
+            self.updateShowHideMenuState()
         }
     }
 
-    // Show/Hide the main app window
+    // Show/Hide the main app window (menu action)
     @objc private func showHideApp() {
-        DebugLogger.log("StatusBarManager: Show/Hide app menu item clicked")
-        guard let window = NSApp.windows.first else {
-            DebugLogger.log("StatusBarManager: ERROR - No main window found for show/hide")
-            return
+        DebugLogger.log("StatusBarManager: Show/Hide menu item clicked")
+        DispatchQueue.main.async {
+            let window = NSApp.mainWindow ?? NSApp.windows.first
+
+            if let w = window {
+                if w.isVisible && !w.isMiniaturized {
+                    DebugLogger.log("StatusBarManager: Hiding main window (order out)")
+                    w.orderOut(nil)
+                    // Keep app active so status bar remains visible
+                    NSApp.activate(ignoringOtherApps: true)
+                } else {
+                    DebugLogger.log("StatusBarManager: Showing main window (make key and order front)")
+                    if w.isMiniaturized { w.deminiaturize(nil) }
+                    w.makeKeyAndOrderFront(nil)
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+            } else {
+                DebugLogger.log("StatusBarManager: ERROR - No main window found for show/hide action")
+            }
+            // Update menu to reflect new state
+            self.updateShowHideMenuState()
         }
-
-        if window.isVisible {
-            DebugLogger.log("StatusBarManager: Hiding main window (keeping status bar icon)")
-            // Ensure the status bar icon remains visible by setting accessory policy
-            NSApp.setActivationPolicy(.accessory)
-            window.orderOut(nil)
-        } else {
-            DebugLogger.log("StatusBarManager: Showing main window and activating app")
-            // Set regular policy to allow window to appear and be focused
-            NSApp.setActivationPolicy(.regular)
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-        }
-    }
-
-    // Open file action
-    @objc private func openFile() {
-        DebugLogger.log("StatusBarManager: Open file menu item clicked")
-        NotificationCenter.default.post(name: .openFileCommand, object: nil)
-        DebugLogger.log("StatusBarManager: Posted openFileCommand notification")
-    }
-
-    // Show settings
-    @objc private func showSettings() {
-        DebugLogger.log("StatusBarManager: Settings menu item clicked")
-        if let menuItem = NSApp.mainMenu?.item(withTitle: "Settings") {
-            NSApp.mainMenu?.performActionForItem(at: menuItem.tag)
-        } else {
-            DebugLogger.log("StatusBarManager: No Settings menu item found. Implement settings window presentation here if needed.")
-        }
-        DebugLogger.log("StatusBarManager: Sent showPreferencesWindow action")
-    }
-
-    // Add About handler
-    @objc private func showAbout() {
-        DebugLogger.log("StatusBarManager: About menu item clicked")
-        NotificationCenter.default.post(name: .showAboutOverlay, object: nil)
     }
 
     // Quit application
     @objc private func quitApp() {
         DebugLogger.log("StatusBarManager: Quit menu item clicked")
         NSApp.terminate(nil)
-        DebugLogger.log("StatusBarManager: App termination requested")
     }
 
-    // Handler for Scale option
-    @objc private func scaleChapter() {
-        DebugLogger.log("StatusBarManager: Scale menu item clicked")
-        NotificationCenter.default.post(name: .scaleChapterCommand, object: nil)
-    }
-
-    // Remove status bar item
+    // Remove status bar item only when app is terminating
     private func removeStatusBarItem() {
-        if let statusItem {
-            DebugLogger.log("StatusBarManager: Removing status bar item")
-            NSStatusBar.system.removeStatusItem(statusItem)
-            self.statusItem = nil
-            DebugLogger.log("StatusBarManager: Status bar item removed successfully")
-        } else {
-            DebugLogger.log("StatusBarManager: No status bar item to remove")
+        if let item = statusItem {
+            DebugLogger.log("StatusBarManager: Removing status bar item (app is terminating)")
+            NSStatusBar.system.removeStatusItem(item)
+            statusItem = nil
         }
     }
 
-    // Status bar icon should always be visible until app exits
-    // No toggle functionality - icon persists until app termination
-}
+    // MARK: - Window notification handlers
 
-// Extension for notification names
-extension Notification.Name {
-    static let showAboutOverlay = Notification.Name("showAboutOverlay")
-    static let scaleChapterCommand = Notification.Name("scaleChapterCommand")
+    private func windowWillClose(_ notification: Notification) {
+        DebugLogger.log("StatusBarManager: windowWillClose received")
+        // Update menu to Show when window is closed
+        updateShowHideMenuState()
+        // Keep app active so status bar icon persists
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func windowDidMinimize(_ notification: Notification) {
+        DebugLogger.log("StatusBarManager: windowDidMinimize received")
+        updateShowHideMenuState()
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func windowDidDeminiaturize(_ notification: Notification) {
+        DebugLogger.log("StatusBarManager: windowDidDeminiaturize received")
+        updateShowHideMenuState()
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func windowDidBecomeKey(_ notification: Notification) {
+        DebugLogger.log("StatusBarManager: windowDidBecomeKey received")
+        updateShowHideMenuState()
+    }
 }

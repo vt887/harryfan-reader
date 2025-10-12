@@ -110,3 +110,7 @@ extension View {
         modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, showingFilePicker: showingFilePicker, lastSearchTerm: lastSearchTerm))
     }
 }
+
+extension Notification.Name {
+    static let showAboutOverlay = Notification.Name("showAboutOverlay")
+}
