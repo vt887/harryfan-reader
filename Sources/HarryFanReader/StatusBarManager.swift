@@ -22,7 +22,11 @@ class StatusBarManager: NSObject, ObservableObject {
     // Notification observer tokens
     private var observers: [NSObjectProtocol] = []
 
-    override init() {
+    // Weak reference to document for quit confirmation
+    weak var document: TextDocument?
+
+    init(document: TextDocument) {
+        self.document = document
         super.init()
         DebugLogger.log("StatusBarManager: Initializing status bar manager")
         // Ensure Dock icon remains visible while app runs
@@ -115,6 +119,8 @@ class StatusBarManager: NSObject, ObservableObject {
 
     // Update the Show/Hide menu title based on the main window state
     private func updateShowHideMenuState() {
+        guard AppSettings.showStatusBarIcon else { return }
+
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             // Determine the window to consider as main app window
@@ -191,8 +197,7 @@ class StatusBarManager: NSObject, ObservableObject {
 
     // Quit application
     @objc private func quitApp() {
-        DebugLogger.log("StatusBarManager: Quit menu item clicked")
-        NSApp.terminate(nil)
+        document?.shouldShowQuitMessage = true
     }
 
     // Remove status bar item only when app is terminating
@@ -242,7 +247,7 @@ class StatusBarManager: NSObject, ObservableObject {
                 DebugLogger.log("StatusBarManager: windowWillClose - closedWindow isMain=\(isMain), otherVisible=\(otherVisible)")
                 if isMain || !otherVisible {
                     DebugLogger.log("StatusBarManager: AppSettings.showStatusBarIcon is false — quitting app on main window close")
-                    NSApp.terminate(nil)
+                    document?.shouldShowQuitMessage = true
                     return
                 } else {
                     DebugLogger.log("StatusBarManager: Not quitting - closed window is not the main/last visible window")

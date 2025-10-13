@@ -25,7 +25,7 @@ struct ActionBar: View {
     // Main view body rendering the menu bar
     var body: some View {
         ScreenView(document: document,
-                   contentToDisplay: document.getActionBarText(menuItems),
+                   contentToDisplay: TextFormatter.getActionBarText(menuItems: menuItems, cols: AppSettings.cols),
                    displayRows: 1,
                    rowOffset: document.rows - 1,
                    backgroundColor: Colors.theme.menuBarBackground,

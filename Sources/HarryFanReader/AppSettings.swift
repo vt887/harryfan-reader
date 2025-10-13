@@ -15,8 +15,9 @@ enum AppAppearance: String, CaseIterable {
     case blue
 }
 
-// Enum for global application settings
-enum AppSettings {
+// Class for global application settings
+class AppSettings {
+    // Constants
     static let appName: String = "HarryFan Reader"
     static let homeDir: String = "~/.harryfan"
     static let fontFileName: String = "ddd.8x16"
@@ -28,6 +29,8 @@ enum AppSettings {
     static let charW = 8
     static let charH = 16
     static let wrapWidth = 80
+
+    // Persisted settings
     static var wordWrap: Bool {
         get { UserDefaults.standard.object(forKey: "wordWrap") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "wordWrap") }

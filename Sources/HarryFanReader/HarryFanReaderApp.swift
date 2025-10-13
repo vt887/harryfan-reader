@@ -38,18 +38,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
-        if !AppSettings.shouldShowQuitMessage {
-            return .terminateNow
-        }
-        // Show a confirmation dialog before quitting
-        let alert = NSAlert()
-        alert.messageText = "Quit \(AppSettings.appName)?"
-        alert.informativeText = "Are you sure you want to quit?"
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "Quit")
-        alert.addButton(withTitle: "Cancel")
-        let response = alert.runModal()
-        return response == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
+        .terminateNow
     }
 }
 
@@ -60,16 +49,22 @@ struct HarryFanReaderApp: App {
     @StateObject private var fontManager = FontManager()
     @StateObject private var bookmarkManager = BookmarkManager()
     @StateObject private var recentFilesManager = RecentFilesManager()
-    @StateObject private var document = TextDocument()
-    @StateObject private var statusBarManager = StatusBarManager()
+    @StateObject private var document: TextDocument
+    @StateObject private var statusBarManager: StatusBarManager
     @StateObject private var overlayManager = OverlayManager()
 
     var windowWidth: CGFloat { CGFloat(AppSettings.cols * AppSettings.charW) }
     var windowHeight: CGFloat { CGFloat(AppSettings.rows * AppSettings.charH) } // Match ScreenView size exactly
 
+    init() {
+        let doc = TextDocument()
+        _document = StateObject(wrappedValue: doc)
+        _statusBarManager = StateObject(wrappedValue: StatusBarManager(document: doc))
+    }
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(document: document)
                 .environmentObject(fontManager)
                 .environmentObject(bookmarkManager)
                 .environmentObject(recentFilesManager)
@@ -89,6 +84,8 @@ struct HarryFanReaderApp: App {
             SettingsView()
                 .environmentObject(fontManager)
                 .environmentObject(document)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
         }
     }
 }

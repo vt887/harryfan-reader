@@ -63,41 +63,7 @@ class TextDocument: ObservableObject {
 
     // Returns the formatted title bar text
     func getTitleBarText() -> String {
-        let appName = AppSettings.appName
-        let totalCols = AppSettings.cols
-        let emptyFile = fileName.isEmpty
-        // Percent based on current cursor line position within total lines
-        let percent: Int = {
-            guard totalLines > 0 else { return 0 }
-            let p = ((Double(currentLine + 1) / Double(totalLines)) * 100.0).rounded()
-            return max(0, min(100, Int(p)))
-        }()
-        let space = getPercentSpacing(percent)
-        // Updated status text: remove current line number, show total lines only
-        let statusText = "Lines: \(totalLines)" + String(repeating: " ", count: space) + "\(percent)%"
-        let leftPad = " "
-        let rightPad = " "
-        let separator = " │ "
-        let minTitleLen = 10
-        var displayFileName = fileName
-        if !emptyFile {
-            let usedWidth = appName.count + separator.count + statusText.count + leftPad.count + rightPad.count
-            let availableWidth = max(minTitleLen, totalCols - usedWidth)
-            if fileName.count > availableWidth {
-                displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
-            }
-        }
-        let title: String
-        if emptyFile {
-            let left = leftPad + appName + separator
-            title = left.padding(toLength: totalCols, withPad: " ", startingAt: 0)
-        } else {
-            let left = leftPad + appName + separator + displayFileName
-            let paddedLeft = left.padding(toLength: totalCols - statusText.count - rightPad.count, withPad: " ", startingAt: 0)
-            title = paddedLeft + statusText + rightPad
-        }
-        DebugLogger.log("TitleBar result: '\(title)'")
-        return title
+        TextFormatter.getTitleBarText(appName: AppSettings.appName, fileName: fileName, totalLines: totalLines, currentLine: currentLine, totalCols: AppSettings.cols)
     }
 
     // Returns the formatted menu bar text
