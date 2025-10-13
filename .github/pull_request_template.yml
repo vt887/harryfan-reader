@@ -1,0 +1,55 @@
+name: "Pull Request Template"
+description: "Structured template for pull requests to ensure all information is provided"
+title: "[PR] "
+labels: ["needs review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Pull Request
+
+        Thank you for contributing! Please fill out the sections below to help reviewers understand your changes.
+
+  - type: input
+    id: description
+    attributes:
+      label: Description of the change
+      description: Summarize what this PR does and why.
+      placeholder: e.g., Fixes bug in authentication module
+
+  - type: input
+    id: related_issue
+    attributes:
+      label: Related Issue
+      description: Reference any related GitHub issues (optional)
+      placeholder: e.g., Fixes #123
+
+  - type: checkboxes
+    id: type_of_change
+    attributes:
+      label: Type of change
+      options:
+        - Bug fix
+        - New feature
+        - Documentation update
+        - Refactor
+        - Other
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - I have followed the project’s code style guidelines
+        - I have tested my changes
+        - I have added or updated documentation if necessary
+        - I have added relevant screenshots or examples (if applicable)
+
+  - type: textarea
+    id: additional_notes
+    attributes:
+      label: Additional Notes (optional)
+      description: Any extra context or information for reviewers.
+      placeholder: e.g., Known limitations, future improvements
