@@ -1,0 +1,53 @@
+name: "🛡️ Code of Conduct Report"
+description: "Report a Code of Conduct or community behavior concern (private submission)"
+title: "[CoC] Incident Report: "
+labels:
+  - "private"
+  - "code-of-conduct"
+assignees:
+  - "community-moderation-team"
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping keep our community safe and respectful.  
+        Your report will be handled **confidentially** by the moderation team.  
+        Please provide as much detail as you feel comfortable sharing.
+
+  - type: input
+    id: reporter_contact
+    attributes:
+      label: Your contact (optional)
+      description: If you’d like a response, please share your email or GitHub handle.
+      placeholder: Optional
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary of the issue
+      description: Briefly describe what happened and who was involved.
+      placeholder: Describe the incident, date/time, and any context.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence (optional)
+      description: Links, screenshots, or other details that might help the moderation team.
+      placeholder: Optional
+
+  - type: textarea
+    id: desired_outcome
+    attributes:
+      label: Desired outcome (optional)
+      placeholder: For example: mediation, warning, temporary ban, permanent ban.
+
+  - type: markdown
+    attributes:
+      value: |
+        🔒 **Privacy Notice:**  
+        Your report will be accessible only to authorized community moderators.  
+        Personal data is handled confidentially and deleted once the case is resolved.  
+        For urgent matters, you can also email [conduct@scythify.com](mailto:conduct@scythify.com).
