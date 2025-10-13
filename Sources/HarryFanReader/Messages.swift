@@ -9,7 +9,7 @@ import Foundation
 
 // Enum for static app messages
 enum Messages {
-static let aboutMessage = """
+    static let aboutMessage = """
     ╔═══════════════════════════════════════════╗
     ║              HarryFan Reader              ║
     ║                                           ║
@@ -56,7 +56,6 @@ static let aboutMessage = """
     ║  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   ║
     ╚══════════════════════════════════════════════════╝
     """
-
 
     // Returns the welcome message centered horizontally and vertically for the current screen size, with version
     static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {

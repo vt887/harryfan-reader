@@ -25,6 +25,7 @@ struct AboutOverlay: View {
         }
         return newLines.joined(separator: "\n")
     }
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.8).edgesIgnoringSafeArea(.all)

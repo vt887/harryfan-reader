@@ -54,4 +54,10 @@ enum AppSettings {
         get { UserDefaults.standard.object(forKey: "debug") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "debug") }
     }
+
+    // Whether to show the Status Bar icon (persisted). Default: false
+    static var showStatusBarIcon: Bool {
+        get { UserDefaults.standard.object(forKey: "showStatusBarIcon") as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: "showStatusBarIcon") }
+    }
 }
