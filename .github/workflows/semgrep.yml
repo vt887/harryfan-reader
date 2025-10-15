@@ -1,3 +1,12 @@
+# Note for maintainers:
+# The static workflow checker used locally may report "Unresolved action/workflow reference"
+# or "Undefined parameter" warnings for actions hosted on GitHub (for example
+# actions/checkout, actions/upload-artifact, github/codeql-action, peter-evans/create-or-update-comment).
+# These are false positives from the local schema validator which doesn't fetch remote
+# action metadata; the workflow is valid and will run correctly on GitHub Actions.
+# If you want to silence those warnings locally, consider pinning actions to specific
+# SHAs or to versions recognized by your local validator.
+
 # Name of this GitHub Actions workflow.
 name: Semgrep CE scan
 
@@ -78,7 +87,7 @@ jobs:
 
       # Upload SARIF to GitHub Code Scanning (adds the findings to the repository's code scanning alerts).
       - name: Upload SARIF to GitHub code scanning
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep-results.sarif
 
