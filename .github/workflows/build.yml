@@ -25,6 +25,23 @@ jobs:
       - name: Get swift version in macOS
         run: xcrun --toolchain ${{ env.TOOLCHAINS }} swift --version
 
+      - name: Count Swift lines by Source/Tests
+        run: |
+          echo "Swift lines by directory:"
+          echo
+          for dir in Sources Tests; do
+            echo
+            if [ -d "$dir" ]; then
+              echo "$dir:"
+              find "$dir" -name '*.swift' -print0 | xargs -0 wc -l || true
+            else
+              echo "$dir: (directory not found)"
+            fi
+          done
+          echo
+          echo "All .swift files:"
+          find . -name '*.swift' -print0 | xargs -0 wc -l || true
+
       - name: Build with SwiftPM
         run: |
           export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
