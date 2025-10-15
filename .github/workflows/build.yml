@@ -8,21 +8,6 @@ on:
       - '**'
 
 jobs:
-  setup-swift:
-    name: Prepare Swift flags
-    runs-on: macos-latest
-    outputs:
-      swift_flags: ${{ steps.set.outputs.swift_flags }}
-    steps:
-      - name: Setup Swift environment
-        id: set
-        run: |
-          SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
-          # Export flags for subsequent steps in this job
-          echo "swift_flags=$SWIFT_FLAGS" >> $GITHUB_OUTPUT
-          echo "sdkroot=$SDKROOT" >> $GITHUB_OUTPUT
-
   count:
     name: Count Swift lines
     runs-on: macos-latest
@@ -79,6 +64,8 @@ jobs:
         env:
           SWIFT_FLAGS: ${{ needs.setup-swift.outputs.swift_flags }}
         run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
           swift build --build-tests $SWIFT_FLAGS
 
   test:
@@ -97,4 +84,6 @@ jobs:
     steps:
       - name: Test with SwiftPM
         run: |
+          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
           swift test $SWIFT_FLAGS || true
