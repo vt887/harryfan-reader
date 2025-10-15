@@ -50,12 +50,9 @@ struct ContentView: View {
         .applyNotifications(document: document,
                             showingBookmarks: $showingBookmarks,
                             showingFilePicker: $showingFilePicker)
-        // Remove alert, use overlay for quit confirmation
-        .onChange(of: document.shouldShowQuitMessage) { _, showQuit in
-            if showQuit {
-                overlayManager.addOverlay(.quit)
-            }
-        }
+        // Quit overlay is handled by MainContentScreenView using centered overlays.
+        // Previously this view added `.quit` to the OverlayManager; that behavior
+        // has moved into MainContentScreenView and is therefore no longer needed here.
     }
 }
 

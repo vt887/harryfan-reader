@@ -173,8 +173,8 @@ class KeyHandler {
             welcomeOverlayId = nil
             DebugLogger.log("Welcome overlay removed (keyCode=\(event.keyCode))")
         }
-         // Always remove help overlay on any key event
-         overlayManager.removeHelpOverlay()
+        // Always remove help overlay on any key event
+        overlayManager.removeHelpOverlay()
 
         // F2 toggles word wrap
         if event.keyCode == KeyCode.f2 {
