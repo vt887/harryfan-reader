@@ -103,13 +103,8 @@ jobs:
           # Compute basic metrics from semgrep JSON when available.
           findings=0
           if [ -f semgrep-results.json ]; then
-            # Use a small python one-liner to count results (avoids requiring jq in container)
-            findings=$(python3 -c "import json,sys
-try:
-    print(len(json.load(open('semgrep-results.json')).get('results', [])))
-except Exception:
-    print(0)
-" 2>/dev/null || echo 0)
+            # Use a compact python one-liner (no embedded newlines) to count results
+            findings=$(python3 -c "import json,sys;print(len(json.load(open('semgrep-results.json')).get('results',[])))" 2>/dev/null || echo 0)
           fi
 
           # Fallbacks / best-effort values
@@ -153,6 +148,23 @@ except Exception:
           }' .github/semgrep/scan-summary-template.md > comment-body.md
 
           echo "Comment body generated at $(pwd)/comment-body.md"
+
+      # Validate the generated comment body is present and non-empty (guard).
+      - name: Validate comment body
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          if [ ! -f comment-body.md ]; then
+            echo "ERROR: comment-body.md not found. Aborting to avoid posting empty comment." >&2
+            exit 1
+          fi
+          if [ ! -s comment-body.md ]; then
+            echo "ERROR: comment-body.md is empty. Aborting to avoid posting empty comment." >&2
+            echo "Contents of semgrep-results.json (first 2000 chars):" >&2
+            head -c 2000 semgrep-results.json || true
+            exit 1
+          fi
+          echo "comment-body.md is present and non-empty; proceeding to post the PR comment."
 
       # Post or update a PR comment with the generated body (only on PRs).
       - name: Post or update PR comment
