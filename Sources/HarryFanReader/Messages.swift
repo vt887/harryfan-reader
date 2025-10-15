@@ -30,7 +30,7 @@ enum Messages {
     """
 
     static let helpMessage = """
-    ╔═══════════════════════════════════════════════════════╗                                                                             ║
+    ╔═══════════════════════════════════════════════════════╗
     ║  F1  - Help        Show/hide this help screen         ║
     ║  F2  - Word Wrap   Toggle word wrapping on/off        ║
     ║  F3  - Open File   Open a new text file               ║

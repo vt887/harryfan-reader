@@ -8,9 +8,59 @@ on:
       - '**'
 
 jobs:
+  setup-swift:
+    name: Prepare Swift flags
+    runs-on: macos-latest
+    outputs:
+      swift_flags: ${{ steps.set.outputs.swift_flags }}
+    steps:
+      - name: Setup Swift environment
+        id: set
+        run: |
+          SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+          SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
+          # Export flags for subsequent steps in this job
+          echo "swift_flags=$SWIFT_FLAGS" >> $GITHUB_OUTPUT
+          echo "sdkroot=$SDKROOT" >> $GITHUB_OUTPUT
+
+  count:
+    name: Count Swift lines
+    runs-on: macos-latest
+    outputs:
+      sources_total: ${{ steps.count.outputs.sources_total }}
+      tests_total: ${{ steps.count.outputs.tests_total }}
+      all_total: ${{ steps.count.outputs.all_total }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Compute Swift line totals
+        id: count
+        run: |
+          # Helper to compute total lines for a directory (0 if missing/no files)
+          get_total() {
+            dir="$1"
+            if [ -d "$dir" ]; then
+              total=$(find "$dir" -name '*.swift' -print0 | xargs -0 wc -l 2>/dev/null | tail -n1 | awk '{print $1}')
+              total=${total:-0}
+            else
+              total=0
+            fi
+            echo "$total"
+          }
+
+          sources_total=$(get_total "Sources")
+          tests_total=$(get_total "Tests")
+
+          # Print numbers so they appear in the Count job logs
+          echo "Swift lines by directory:"
+          echo "Sources: ${sources_total}"
+          echo "Tests:   ${tests_total}"
+
   build:
     name: Build on ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
+    needs: [setup-swift, count]
     strategy:
       matrix:
         include:
@@ -20,37 +70,21 @@ jobs:
             runner: [ "self-hosted", "ARM64" ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Get swift version in macOS
         run: xcrun --toolchain ${{ env.TOOLCHAINS }} swift --version
 
-      - name: Count Swift lines by Source/Tests
-        run: |
-          echo "Swift lines by directory:"
-          echo
-          for dir in Sources Tests; do
-            echo
-            if [ -d "$dir" ]; then
-              echo "$dir:"
-              find "$dir" -name '*.swift' -print0 | xargs -0 wc -l || true
-            else
-              echo "$dir: (directory not found)"
-            fi
-          done
-          echo
-          echo "All .swift files:"
-          find . -name '*.swift' -print0 | xargs -0 wc -l || true
-
       - name: Build with SwiftPM
+        env:
+          SWIFT_FLAGS: ${{ needs.setup-swift.outputs.swift_flags }}
         run: |
-          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
           swift build --build-tests $SWIFT_FLAGS
 
   test:
     name: Test on ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
+    needs: [build, setup-swift]
     strategy:
       matrix:
         include:
@@ -58,10 +92,9 @@ jobs:
             runner: [ "self-hosted", "X64" ]
           - arch: arm64
             runner: [ "self-hosted", "ARM64" ]
-    needs: build
+    env:
+      SWIFT_FLAGS: ${{ needs.setup-swift.outputs.swift_flags }}
     steps:
       - name: Test with SwiftPM
         run: |
-          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
           swift test $SWIFT_FLAGS || true

@@ -15,8 +15,6 @@ enum OverlayKind: Equatable {
     case welcome
     case help
     case quit
-    case custom(String)
-    case fileText(String)
     case about
 
     // Returns the message string associated with each overlay kind.
@@ -26,8 +24,6 @@ enum OverlayKind: Equatable {
         case .welcome: Messages.welcomeMessage
         case .help: Messages.helpMessage
         case .quit: Messages.quitMessage
-        case let .custom(s): s
-        case let .fileText(s): s
         case .about: Messages.aboutMessage
         }
     }
@@ -40,6 +36,7 @@ private func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fg
     let totalLines = lines.count
     let verticalPadding = max(0, (rows - totalLines) / 2)
     for (i, line) in lines.enumerated() {
+        // Trim only for measurement; we already removed common indentation
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         let padding = max(0, (cols - trimmed.count) / 2)
         let startCol = padding
@@ -64,11 +61,12 @@ enum OverlayFactory {
                      fgColor: Color = Colors.theme.foreground) -> ScreenLayer
     {
         let text = kind.message
-        if text == Messages.welcomeMessage || text == Messages.helpMessage || text == Messages.quitMessage {
+        // Use the centeredOverlayLayer for these built-in framed overlays so
+        // box borders and padding are preserved and the entire block is centered.
+        switch kind {
+        case .welcome, .help, .quit, .about:
             return centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
         }
-        // Fallback to existing centering for custom overlays
-        return centeredLayer(message: text, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     // Creates a ScreenLayer with the message centered both vertically and horizontally.
@@ -107,7 +105,7 @@ final class OverlayManager: ObservableObject {
     @Published private(set) var opacity: Double = 1.0
 
     // Adds a new overlay if it is not already present. Use either
-    // `addOverlay(.custom("..."))` or `addOverlay(kind: .fileText(...))`.
+    // `addOverlay(.custom("..."))` to add a custom multi-line overlay.
     func addOverlay(_ kind: OverlayKind) {
         if !overlays.contains(kind) {
             overlays.append(kind)

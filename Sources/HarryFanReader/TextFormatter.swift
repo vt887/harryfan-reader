@@ -19,7 +19,7 @@ class TextFormatter {
         }()
         let space = getPercentSpacing(percent)
         // Updated status text: remove current line number, show total lines only
-        let statusText = "Lines: \(totalLines)" + String(repeating: " ", count: space) + "\(percent)%"
+        let statusText = "Lines: \(totalLines) " + String(repeating: " ", count: space) + "\(percent)%"
         let leftPad = " "
         let rightPad = " "
         let separator = " │ "

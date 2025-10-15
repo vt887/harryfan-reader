@@ -24,7 +24,7 @@ struct MainContentScreenView: View {
     @State private var overlayOpacities: [UUID: Double] = [:] // opacity per overlay for fade animations
     @State private var welcomeOverlayId: UUID? = nil
     @State private var helpOverlayId: UUID? = nil // help overlay tracking
-    @State private var fileTextOverlayId: UUID? = nil // file text overlay tracking
+    @State private var quitOverlayId: UUID? = nil // quit overlay tracking
 
     // Key handler
     @State private var keyHandler: KeyHandler?
@@ -47,18 +47,12 @@ struct MainContentScreenView: View {
         withAnimation(.easeInOut(duration: fadeDuration)) {
             overlayOpacities[id] = 1.0
         }
-        // Set activeOverlay based on kind
-        let activeOverlay: KeyHandler.ActiveOverlay = switch kind {
+        // Set activeOverlay based on kind (no per-kind id tracking here)
+        let activeOverlay: ActiveOverlay = switch kind {
         case .welcome: .welcome
         case .help: .help
         case .quit: .quit
-        case let .custom(msg):
-            if msg == Messages.quitMessage {
-                .quit
-            } else {
-                .custom
-            }
-        default: .custom
+        case .about: .about
         }
         keyHandler?.setActiveOverlay(activeOverlay)
         return id
@@ -150,9 +144,10 @@ struct MainContentScreenView: View {
                                                 removeOverlay: removeOverlay,
                                                 overlayManager: overlayManager,
                                                 recentFilesManager: recentFilesManager)
+                        // set handler's known overlay ids
                         keyHandler?.setWelcomeOverlayId(welcomeOverlayId)
                         keyHandler?.setHelpOverlayId(helpOverlayId)
-                        keyHandler?.setFileTextOverlayId(fileTextOverlayId)
+                        keyHandler?.setQuitOverlayId(quitOverlayId)
                     }
                     .fileImporter(isPresented: $showingFilePicker,
                                   allowedContentTypes: [UTType.plainText],

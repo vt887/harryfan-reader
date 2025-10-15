@@ -8,13 +8,22 @@
 import AppKit
 import Foundation
 
+// Overlay state for key handling (moved to top-level so multiple components can use it)
+enum ActiveOverlay {
+    case none
+    case welcome
+    case help
+    case quit
+    case about
+}
+
 // Class to handle key events for the main content screen
 class KeyHandler {
     private weak var document: TextDocument?
     private var activeOverlay: ActiveOverlay = .none
     private var welcomeOverlayId: UUID?
     private var helpOverlayId: UUID?
-    private var fileTextOverlayId: UUID?
+    private var quitOverlayId: UUID?
     private var overlayLayers: [ScreenLayer]
     private var overlayOpacities: [UUID: Double]
     private var showingFilePicker: Bool
@@ -22,15 +31,6 @@ class KeyHandler {
     private let removeOverlay: (UUID, Double) -> Void
     private let overlayManager: OverlayManager
     private let recentFilesManager: RecentFilesManager
-
-    // Overlay state for key handling
-    enum ActiveOverlay {
-        case none
-        case welcome
-        case help
-        case quit
-        case custom
-    }
 
     init(document: TextDocument,
          overlayLayers: [ScreenLayer],
@@ -53,15 +53,19 @@ class KeyHandler {
 
     // Centralized key codes for clarity / future extension
     private enum KeyCode {
-        static let f1: UInt16 = 122 // Show/Hide help overlay
-        static let f2: UInt16 = 120 // Show file text overlay
-        static let f10: UInt16 = 109
         static let escape: UInt16 = 53
+        static let f1: UInt16 = 122
+        static let f2: UInt16 = 120
         static let f3: UInt16 = 99
-        static let f7: UInt16 = 98 // Jump to start
-        static let f8: UInt16 = 100 // Jump to end
-        static let yKey: UInt16 = 16 // Y key
-        static let nKey: UInt16 = 45 // N key
+        static let f4: UInt16 = 118
+        static let f5: UInt16 = 96
+        static let f6: UInt16 = 97
+        static let f7: UInt16 = 98
+        static let f8: UInt16 = 100
+        static let f9: UInt16 = 101
+        static let f10: UInt16 = 109
+        static let yKey: UInt16 = 16
+        static let nKey: UInt16 = 45
     }
 
     // Unified quit handling for F10 / Esc
@@ -74,25 +78,41 @@ class KeyHandler {
         NSApp.terminate(nil)
     }
 
+    // Helper to cancel and remove the quit overlay
+    private func cancelQuitOverlay(_ reason: String? = nil) {
+        guard let doc = document else { return }
+        DebugLogger.log("Quit overlay: \(reason ?? "cancelled"), cancelling quit dialog.")
+        doc.shouldShowQuitMessage = false
+        activeOverlay = .none
+        // Remove quit overlay layer (if any)
+        if let qId = quitOverlayId {
+            removeOverlay(qId, 0.25)
+            quitOverlayId = nil
+        }
+        // Also remove welcome/help overlays so we restore the previous content screen
+        if let wId = welcomeOverlayId {
+            removeOverlay(wId, 0.25)
+            welcomeOverlayId = nil
+        }
+        if let hId = helpOverlayId {
+            removeOverlay(hId, 0.25)
+            helpOverlayId = nil
+        }
+    }
+
     // Event handler separated for readability & testability
     func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
         guard let document else { return event }
         DebugLogger.log("Key pressed: keyCode=\(event.keyCode), characters='\(event.charactersIgnoringModifiers ?? "")', activeOverlay=\(activeOverlay)")
         switch activeOverlay {
         case .quit:
-            // Accept both uppercase and lowercase Y/N
-            if event.charactersIgnoringModifiers?.lowercased() == "y" {
+            // ESC or 'n' cancels, 'y' confirms quit
+            if event.keyCode == KeyCode.escape || event.charactersIgnoringModifiers?.lowercased() == "n" {
+                let reason = event.keyCode == KeyCode.escape ? "ESC pressed" : "'n' pressed"
+                cancelQuitOverlay(reason)
+            } else if event.charactersIgnoringModifiers?.lowercased() == "y" {
                 DebugLogger.log("Quit overlay: 'y' pressed, terminating app.")
                 NSApp.terminate(nil)
-            } else if event.charactersIgnoringModifiers?.lowercased() == "n" {
-                DebugLogger.log("Quit overlay: 'n' pressed, cancelling quit dialog.")
-                document.shouldShowQuitMessage = false
-                activeOverlay = .none
-                // Remove the quit overlay layer
-                if let quitId = fileTextOverlayId {
-                    removeOverlay(quitId, 0.25)
-                    fileTextOverlayId = nil
-                }
             } else {
                 DebugLogger.log("Quit overlay: ignored key.")
             }
@@ -106,30 +126,42 @@ class KeyHandler {
                 activeOverlay = .none
                 return nil
             }
+            return nil
         case .help:
-            // Dismiss on Escape only
-            if event.keyCode == KeyCode.escape {
+            // Dismiss on Escape or F1
+            if event.keyCode == KeyCode.escape || event.keyCode == KeyCode.f1 {
                 DebugLogger.log("Help overlay: ESC pressed, dismissing overlay.")
                 if let hId = helpOverlayId {
                     removeOverlay(hId, 0.25)
                     helpOverlayId = nil
-                    activeOverlay = .none
                 }
+                activeOverlay = .none
                 return nil
             } else {
                 DebugLogger.log("Help overlay: ignored key.")
                 return nil // Ignore all other keys
             }
-        case .custom:
-            // Dismiss on Escape
+        case .about:
+            // Dismiss on Escape: remove tracked overlays (if any) and clear overlay manager state
             if event.keyCode == KeyCode.escape {
-                DebugLogger.log("Custom overlay: ESC pressed, dismissing all overlays.")
-                overlayLayers.removeAll()
-                overlayOpacities.removeAll()
+                DebugLogger.log("About overlay: ESC pressed, dismissing overlays.")
+                if let hId = helpOverlayId {
+                    removeOverlay(hId, 0.25)
+                    helpOverlayId = nil
+                }
+                if let wId = welcomeOverlayId {
+                    removeOverlay(wId, 0.25)
+                    welcomeOverlayId = nil
+                }
+                if let qId = quitOverlayId {
+                    removeOverlay(qId, 0.25)
+                    quitOverlayId = nil
+                }
+                overlayManager.removeAll()
                 activeOverlay = .none
                 return nil
             } else {
-                DebugLogger.log("Custom overlay: ignored key.")
+                DebugLogger.log("About overlay: ignored key.")
                 return nil // Ignore all other keys
             }
         case .none:
@@ -141,8 +173,8 @@ class KeyHandler {
             welcomeOverlayId = nil
             DebugLogger.log("Welcome overlay removed (keyCode=\(event.keyCode))")
         }
-        // Always remove help overlay on any key event
-        overlayManager.removeHelpOverlay()
+         // Always remove help overlay on any key event
+         overlayManager.removeHelpOverlay()
 
         // F2 toggles word wrap
         if event.keyCode == KeyCode.f2 {
@@ -163,8 +195,9 @@ class KeyHandler {
                     welcomeOverlayId = nil
                     DebugLogger.log("Welcome overlay removed before showing help")
                 }
-                helpOverlayId = addOverlay(.help, 0.25)
-                DebugLogger.log("Help overlay shown (id=\(helpOverlayId!))")
+                let newId = addOverlay(.help, 0.25)
+                helpOverlayId = newId
+                DebugLogger.log("Help overlay shown (id=\(newId))")
             }
             return nil
         }
@@ -174,7 +207,7 @@ class KeyHandler {
             document.shouldShowQuitMessage = true
             // Set the quit overlay and activeOverlay explicitly
             let quitId = addOverlay(.quit, 0.25)
-            fileTextOverlayId = quitId
+            quitOverlayId = quitId
             DebugLogger.log("Quit overlay shown (id=\(quitId))")
             return nil
         case KeyCode.f3:
@@ -201,52 +234,21 @@ class KeyHandler {
                     removeOverlay(wId, 0.25)
                     welcomeOverlayId = nil
                 }
-                helpOverlayId = addOverlay(.help, 0.25)
+                if let qId = quitOverlayId {
+                    removeOverlay(qId, 0.25)
+                    quitOverlayId = nil
+                }
+                let newId = addOverlay(.help, 0.25)
+                helpOverlayId = newId
                 DebugLogger.log("Help overlay shown")
             }
-            return nil
-        case 19: // 2 key
-            DebugLogger.log("2 key pressed - Wrap")
-            document.toggleWordWrap()
-            return nil
-        case 20: // 3 key
-            DebugLogger.log("3 key pressed - Open")
-            showingFilePicker = true
-            return nil
-        case 21: // 4 key
-            DebugLogger.log("4 key pressed - Search")
-            // TODO: Implement search functionality
-            return nil
-        case 22: // 5 key
-            DebugLogger.log("5 key pressed - Goto")
-            // TODO: Implement goto functionality
-            return nil
-        case 23: // 6 key
-            DebugLogger.log("6 key pressed - Bookmark")
-            // TODO: Implement bookmark functionality
-            return nil
-        case 24: // 7 key
-            DebugLogger.log("7 key pressed - Start")
-            document.gotoStart()
-            return nil
-        case 25: // 8 key
-            DebugLogger.log("8 key pressed - End")
-            document.gotoEnd()
-            return nil
-        case 26: // 9 key
-            DebugLogger.log("9 key pressed - Menu")
-            // TODO: Implement menu functionality
-            return nil
-        case 27: // 0 key (for 10)
-            DebugLogger.log("0 key pressed - Quit")
-            handleQuitKey()
             return nil
         default:
             return event
         }
     }
 
-    // Update overlay IDs
+    // Update overlay IDs (used by the view to inform handler of tracked ids)
     func setWelcomeOverlayId(_ id: UUID?) {
         welcomeOverlayId = id
     }
@@ -255,8 +257,8 @@ class KeyHandler {
         helpOverlayId = id
     }
 
-    func setFileTextOverlayId(_ id: UUID?) {
-        fileTextOverlayId = id
+    func setQuitOverlayId(_ id: UUID?) {
+        quitOverlayId = id
     }
 
     func setActiveOverlay(_ overlay: ActiveOverlay) {
