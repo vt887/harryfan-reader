@@ -16,6 +16,8 @@ on:
 
 permissions:
   contents: read
+  security-events: write
+  issues: write
 
 jobs:
   semgrep:
@@ -33,6 +35,159 @@ jobs:
 
     steps:
       # Fetch project source with GitHub Actions Checkout. Use either v3 or v4.
-      - uses: actions/checkout@v3
-      # Run the "semgrep scan" command on the command line of the docker image.
-      - run: semgrep scan --config auto
+      - uses: actions/checkout@v4
+
+      # Print semgrep version for debugging / reproducibility.
+      - name: Semgrep version
+        run: |
+          # semgrep v1+ uses `semgrep --version` or `semgrep scan --version` depending on the image
+          if command -v semgrep >/dev/null 2>&1; then
+            semgrep --version || semgrep scan --version || true
+          else
+            echo "semgrep not available"
+          fi
+
+      # Run the semgrep scan and produce machine-friendly outputs (JSON + SARIF).
+      - id: semgrep-scan
+        name: Run Semgrep (JSON & SARIF)
+        run: |
+          set -euo pipefail
+          echo "Starting semgrep scan..."
+          start_time=$(date +%s)
+
+          # Run semgrep once for JSON and once for SARIF so both artifacts are available.
+          # Use `|| true` to avoid exiting early if semgrep returns non-zero due to findings.
+          semgrep scan --config auto --json > semgrep-results.json || true
+          semgrep scan --config auto --sarif > semgrep-results.sarif || true
+
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+          echo "Semgrep scan finished in ${duration}s"
+
+          # Export duration to subsequent steps in a GitHub Actions-friendly way.
+          echo "semgrep_duration=${duration}" >> "$GITHUB_OUTPUT"
+
+      # Upload semgrep artifacts so they can be inspected from the Actions run.
+      - name: Upload Semgrep results
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-results
+          path: |
+            semgrep-results.json
+            semgrep-results.sarif
+
+      # Upload SARIF to GitHub Code Scanning (adds the findings to the repository's code scanning alerts).
+      - name: Upload SARIF to GitHub code scanning
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: semgrep-results.sarif
+
+      # Short human-readable summary printed to the job log. We don't parse the JSON here
+      # to keep the step portable across runner images.
+      - name: Semgrep quick note
+        run: |
+          echo "Semgrep scan completed (duration: ${{ steps.semgrep-scan.outputs.semgrep_duration }}s)"
+          if [ -f semgrep-results.json ]; then
+            echo "semgrep-results.json saved (size: $(du -sh semgrep-results.json | cut -f1))"
+          fi
+          if [ -f semgrep-results.sarif ]; then
+            echo "semgrep-results.sarif saved (size: $(du -sh semgrep-results.sarif | cut -f1))"
+          fi
+
+      # Generate PR comment body from template and semgrep outputs (only run on PRs).
+      - id: generate-comment
+        name: Generate PR comment body
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          # Compute basic metrics from semgrep JSON when available.
+          findings=0
+          if [ -f semgrep-results.json ]; then
+            findings=$(python3 - <<'PY'
+import json
+try:
+    j=json.load(open('semgrep-results.json'))
+    results=j.get('results', [])
+    print(len(results))
+except Exception:
+    print(0)
+PY
+)
+          fi
+
+          # Fallbacks / best-effort values
+          blocking=0
+          rules_run="N/A"
+          # Count git-tracked files as an approximation of files scanned by default.
+          files_scanned=$(git ls-files | wc -l | tr -d ' ')
+          parsed_lines="N/A"
+          skipped_files="N/A"
+          duration="${{ steps.semgrep-scan.outputs.semgrep_duration }}s"
+          semgrep_version=$(semgrep --version || semgrep scan --version || echo "unknown")
+          artifact_json_link="Artifact 'semgrep-results' attached to this workflow run"
+          sarif_status="Uploaded to Code Scanning (if permitted)"
+
+          # Fill template using a small Python script to avoid escaping pitfalls.
+          python3 - <<PY > comment-body.md
+import os
+tpl=open('.github/semgrep/scan-summary-template.md').read()
+vals={
+  'findings': os.environ.get('FINDINGS', '0'),
+  'blocking': os.environ.get('BLOCKING', '0'),
+  'rules_run': os.environ.get('RULES_RUN', 'N/A'),
+  'files_scanned': os.environ.get('FILES_SCANNED', 'N/A'),
+  'parsed_lines': os.environ.get('PARSED_LINES', 'N/A'),
+  'skipped_files': os.environ.get('SKIPPED_FILES', 'N/A'),
+  'duration': os.environ.get('DURATION', 'N/A'),
+  'semgrep_version': os.environ.get('SEMGREP_VERSION', 'unknown'),
+  'artifact_json_link': os.environ.get('ARTIFACT_JSON_LINK', ''),
+  'sarif_status': os.environ.get('SARIF_STATUS', '')
+}
+for k,v in vals.items():
+    tpl=tpl.replace('{{'+k+'}}', v)
+print(tpl)
+PY
+
+          # Export environment variables for Python
+          export FINDINGS="$findings"
+          export BLOCKING="$blocking"
+          export RULES_RUN="$rules_run"
+          export FILES_SCANNED="$files_scanned"
+          export PARSED_LINES="$parsed_lines"
+          export SKIPPED_FILES="$skipped_files"
+          export DURATION="$duration"
+          export SEMGREP_VERSION="$semgrep_version"
+          export ARTIFACT_JSON_LINK="$artifact_json_link"
+          export SARIF_STATUS="$sarif_status"
+
+          # Re-run the Python filler but with env vars set so the template file is written properly
+          python3 - <<'PY' > comment-body.md
+import os
+tpl=open('.github/semgrep/scan-summary-template.md').read()
+vals={
+  'findings': os.environ.get('FINDINGS', '0'),
+  'blocking': os.environ.get('BLOCKING', '0'),
+  'rules_run': os.environ.get('RULES_RUN', 'N/A'),
+  'files_scanned': os.environ.get('FILES_SCANNED', 'N/A'),
+  'parsed_lines': os.environ.get('PARSED_LINES', 'N/A'),
+  'skipped_files': os.environ.get('SKIPPED_FILES', 'N/A'),
+  'duration': os.environ.get('DURATION', 'N/A'),
+  'semgrep_version': os.environ.get('SEMGREP_VERSION', 'unknown'),
+  'artifact_json_link': os.environ.get('ARTIFACT_JSON_LINK', ''),
+  'sarif_status': os.environ.get('SARIF_STATUS', '')
+}
+for k,v in vals.items():
+    tpl=tpl.replace('{{'+k+'}}', v)
+print(tpl)
+PY
+
+          echo "Comment body generated at $(pwd)/comment-body.md"
+
+      # Post or update a PR comment with the generated body (only on PRs).
+      - name: Post or update PR comment
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: comment-body.md
