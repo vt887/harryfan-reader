@@ -103,16 +103,13 @@ jobs:
           # Compute basic metrics from semgrep JSON when available.
           findings=0
           if [ -f semgrep-results.json ]; then
-            findings=$(python3 - <<'PY'
-import json
+            # Use a small python one-liner to count results (avoids requiring jq in container)
+            findings=$(python3 -c "import json,sys
 try:
-    j=json.load(open('semgrep-results.json'))
-    results=j.get('results', [])
-    print(len(results))
+    print(len(json.load(open('semgrep-results.json')).get('results', [])))
 except Exception:
     print(0)
-PY
-)
+" 2>/dev/null || echo 0)
           fi
 
           # Fallbacks / best-effort values
@@ -127,28 +124,7 @@ PY
           artifact_json_link="Artifact 'semgrep-results' attached to this workflow run"
           sarif_status="Uploaded to Code Scanning (if permitted)"
 
-          # Fill template using a small Python script to avoid escaping pitfalls.
-          python3 - <<PY > comment-body.md
-import os
-tpl=open('.github/semgrep/scan-summary-template.md').read()
-vals={
-  'findings': os.environ.get('FINDINGS', '0'),
-  'blocking': os.environ.get('BLOCKING', '0'),
-  'rules_run': os.environ.get('RULES_RUN', 'N/A'),
-  'files_scanned': os.environ.get('FILES_SCANNED', 'N/A'),
-  'parsed_lines': os.environ.get('PARSED_LINES', 'N/A'),
-  'skipped_files': os.environ.get('SKIPPED_FILES', 'N/A'),
-  'duration': os.environ.get('DURATION', 'N/A'),
-  'semgrep_version': os.environ.get('SEMGREP_VERSION', 'unknown'),
-  'artifact_json_link': os.environ.get('ARTIFACT_JSON_LINK', ''),
-  'sarif_status': os.environ.get('SARIF_STATUS', '')
-}
-for k,v in vals.items():
-    tpl=tpl.replace('{{'+k+'}}', v)
-print(tpl)
-PY
-
-          # Export environment variables for Python
+          # Export environment variables for the filler
           export FINDINGS="$findings"
           export BLOCKING="$blocking"
           export RULES_RUN="$rules_run"
@@ -160,26 +136,21 @@ PY
           export ARTIFACT_JSON_LINK="$artifact_json_link"
           export SARIF_STATUS="$sarif_status"
 
-          # Re-run the Python filler but with env vars set so the template file is written properly
-          python3 - <<'PY' > comment-body.md
-import os
-tpl=open('.github/semgrep/scan-summary-template.md').read()
-vals={
-  'findings': os.environ.get('FINDINGS', '0'),
-  'blocking': os.environ.get('BLOCKING', '0'),
-  'rules_run': os.environ.get('RULES_RUN', 'N/A'),
-  'files_scanned': os.environ.get('FILES_SCANNED', 'N/A'),
-  'parsed_lines': os.environ.get('PARSED_LINES', 'N/A'),
-  'skipped_files': os.environ.get('SKIPPED_FILES', 'N/A'),
-  'duration': os.environ.get('DURATION', 'N/A'),
-  'semgrep_version': os.environ.get('SEMGREP_VERSION', 'unknown'),
-  'artifact_json_link': os.environ.get('ARTIFACT_JSON_LINK', ''),
-  'sarif_status': os.environ.get('SARIF_STATUS', '')
-}
-for k,v in vals.items():
-    tpl=tpl.replace('{{'+k+'}}', v)
-print(tpl)
-PY
+          # Fill the template using awk (safer inside YAML run blocks than heredocs)
+          awk '
+          { l = $0
+            gsub(/{{findings}}/, ENVIRON["FINDINGS"], l)
+            gsub(/{{blocking}}/, ENVIRON["BLOCKING"], l)
+            gsub(/{{rules_run}}/, ENVIRON["RULES_RUN"], l)
+            gsub(/{{files_scanned}}/, ENVIRON["FILES_SCANNED"], l)
+            gsub(/{{parsed_lines}}/, ENVIRON["PARSED_LINES"], l)
+            gsub(/{{skipped_files}}/, ENVIRON["SKIPPED_FILES"], l)
+            gsub(/{{duration}}/, ENVIRON["DURATION"], l)
+            gsub(/{{semgrep_version}}/, ENVIRON["SEMGREP_VERSION"], l)
+            gsub(/{{artifact_json_link}}/, ENVIRON["ARTIFACT_JSON_LINK"], l)
+            gsub(/{{sarif_status}}/, ENVIRON["SARIF_STATUS"], l)
+            print l
+          }' .github/semgrep/scan-summary-template.md > comment-body.md
 
           echo "Comment body generated at $(pwd)/comment-body.md"
 
