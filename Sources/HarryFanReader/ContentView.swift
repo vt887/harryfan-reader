@@ -16,12 +16,10 @@ struct ContentView: View {
     @EnvironmentObject var fontManager: FontManager
     @EnvironmentObject var bookmarkManager: BookmarkManager
     @EnvironmentObject var recentFilesManager: RecentFilesManager
-    @EnvironmentObject var statusBarManager: StatusBarManager
+    @EnvironmentObject var overlayManager: OverlayManager
 
     @State private var showingFilePicker = false
-    @State private var showingSearch = false
     @State private var showingBookmarks = false
-    @State private var lastSearchTerm: String = ""
     @State private var showingSettings = false
     @State private var showingGotoDialog = false
     @State private var gotoLineNumber = ""
@@ -42,9 +40,6 @@ struct ContentView: View {
             height: CGFloat(AppSettings.rows * AppSettings.charH),
         )
         .background(Colors.theme.background)
-        .sheet(isPresented: $showingSearch) {
-            SearchView(isPresented: $showingSearch, document: document, lastSearchTerm: $lastSearchTerm)
-        }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
                 .environmentObject(fontManager)
@@ -53,10 +48,14 @@ struct ContentView: View {
                 .presentationDragIndicator(.visible)
         }
         .applyNotifications(document: document,
-                            showingSearch: $showingSearch,
                             showingBookmarks: $showingBookmarks,
-                            showingFilePicker: $showingFilePicker,
-                            lastSearchTerm: $lastSearchTerm)
+                            showingFilePicker: $showingFilePicker)
+        // Remove alert, use overlay for quit confirmation
+        .onChange(of: document.shouldShowQuitMessage) { _, showQuit in
+            if showQuit {
+                overlayManager.addOverlay(.quit)
+            }
+        }
     }
 }
 

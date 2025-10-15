@@ -11,9 +11,6 @@ import SwiftUI
 // Extension for custom notification names
 extension Notification.Name {
     static let openFileCommand = Notification.Name("AppCommand.openFile")
-    static let openSearchCommand = Notification.Name("AppCommand.openSearch")
-    static let findNextCommand = Notification.Name("AppCommand.findNext")
-    static let findPreviousCommand = Notification.Name("AppCommand.findPrevious")
     static let addBookmarkCommand = Notification.Name("AppCommand.addBookmark")
     static let nextBookmarkCommand = Notification.Name("AppCommand.nextBookmark")
     static let previousBookmarkCommand = Notification.Name("AppCommand.previousBookmark")
@@ -35,46 +32,7 @@ struct AppCommands: Commands {
     @ObservedObject var recentFilesManager: RecentFilesManager
     @ObservedObject var bookmarkManager: BookmarkManager
 
-    // Helper for Bookmarks menu items
-    @ViewBuilder
-    private func bookmarkMenuItems() -> some View {
-        let allBookmarks = bookmarkManager.bookmarks
-        if allBookmarks.isEmpty {
-            Text("No Bookmarks").disabled(true)
-        } else {
-            ForEach(allBookmarks) { bookmark in
-                Button("\(bookmark.fileName): Line \(bookmark.line + 1)") {
-                    NotificationCenter.default.post(
-                        name: .openBookmarkCommand,
-                        object: nil,
-                        userInfo: ["bookmark": bookmark],
-                    )
-                }
-            }
-        }
-    }
-
-    // Helper for Recent Files menu items
-    @ViewBuilder
-    private func recentFilesMenuItems() -> some View {
-        if recentFilesManager.recentFiles.isEmpty {
-            Text("No Recent Files").disabled(true)
-        } else {
-            ForEach(recentFilesManager.recentFiles) { file in
-                Button(file.displayName) {
-                    NotificationCenter.default.post(
-                        name: .openRecentFileCommand,
-                        object: nil,
-                        userInfo: ["url": file.url],
-                    )
-                }
-            }
-            Divider()
-            Button("Clear Recent") {
-                NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil)
-            }
-        }
-    }
+    // Note: Bookmark and Recent Files menu items are generated inline in the Commands body to avoid parsing issues
 
     var body: some Commands {
         Group {
@@ -85,29 +43,20 @@ struct AppCommands: Commands {
                 .keyboardShortcut("o", modifiers: .command)
 
                 Menu("Recent Files") {
-                    recentFilesMenuItems()
+                    if recentFilesManager.recentFiles.isEmpty {
+                        Text("No Recent Files").disabled(true)
+                    } else {
+                        ForEach(recentFilesManager.recentFiles.indices, id: \.self) { idx in
+                            Button(recentFilesManager.recentFiles[idx].displayName) {
+                                NotificationCenter.default.post(name: .openRecentFileCommand, object: nil, userInfo: ["url": recentFilesManager.recentFiles[idx].url])
+                            }
+                        }
+                        Divider()
+                        Button("Clear Recent") { NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil) }
+                    }
                 }
             }
-            CommandGroup(replacing: .appTermination) {
-                Button("Quit") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .keyboardShortcut("q")
-            }
-            CommandMenu("Search") {
-                Button("Find…") {
-                    NotificationCenter.default.post(name: .openSearchCommand, object: nil)
-                }
-                .keyboardShortcut("f", modifiers: .command)
-                Button("Find Next") {
-                    NotificationCenter.default.post(name: .findNextCommand, object: nil)
-                }
-                .keyboardShortcut("g", modifiers: .command)
-                Button("Find Previous") {
-                    NotificationCenter.default.post(name: .findPreviousCommand, object: nil)
-                }
-                .keyboardShortcut("g", modifiers: [.command, .shift])
-            }
+
             CommandMenu("Bookmarks") {
                 Button("Add Bookmark") {
                     NotificationCenter.default.post(name: .addBookmarkCommand, object: nil)
@@ -117,7 +66,15 @@ struct AppCommands: Commands {
                 Divider()
 
                 Menu("Bookmarks") {
-                    bookmarkMenuItems()
+                    if bookmarkManager.bookmarks.isEmpty {
+                        Text("No Bookmarks").disabled(true)
+                    } else {
+                        ForEach(bookmarkManager.bookmarks.indices, id: \.self) { idx in
+                            Button("\(bookmarkManager.bookmarks[idx].fileName): Line \(bookmarkManager.bookmarks[idx].line + 1)") {
+                                NotificationCenter.default.post(name: .openBookmarkCommand, object: nil, userInfo: ["bookmark": bookmarkManager.bookmarks[idx]])
+                            }
+                        }
+                    }
                 }
             }
             CommandMenu("Navigation") {

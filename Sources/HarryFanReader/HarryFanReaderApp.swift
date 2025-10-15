@@ -33,8 +33,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
-        // Keep the app running (and status bar icon visible) when window is closed
-        false
+        // Keep the app running when window is closed
+        true
     }
 
     func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
@@ -50,7 +50,6 @@ struct HarryFanReaderApp: App {
     @StateObject private var bookmarkManager = BookmarkManager()
     @StateObject private var recentFilesManager = RecentFilesManager()
     @StateObject private var document: TextDocument
-    @StateObject private var statusBarManager: StatusBarManager
     @StateObject private var overlayManager = OverlayManager()
 
     var windowWidth: CGFloat { CGFloat(AppSettings.cols * AppSettings.charW) }
@@ -59,7 +58,6 @@ struct HarryFanReaderApp: App {
     init() {
         let doc = TextDocument()
         _document = StateObject(wrappedValue: doc)
-        _statusBarManager = StateObject(wrappedValue: StatusBarManager(document: doc))
     }
 
     var body: some Scene {
@@ -68,7 +66,6 @@ struct HarryFanReaderApp: App {
                 .environmentObject(fontManager)
                 .environmentObject(bookmarkManager)
                 .environmentObject(recentFilesManager)
-                .environmentObject(statusBarManager)
                 .environmentObject(overlayManager)
                 .frame(minWidth: windowWidth, minHeight: windowHeight)
                 .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings

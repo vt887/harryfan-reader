@@ -15,17 +15,14 @@ private struct NotificationsModifier: ViewModifier {
     @EnvironmentObject var bookmarkManager: BookmarkManager
     @EnvironmentObject var recentFilesManager: RecentFilesManager
     @EnvironmentObject var overlayManager: OverlayManager
-    @Binding var showingSearch: Bool
     @Binding var showingBookmarks: Bool
     @Binding var showingFilePicker: Bool
-    @Binding var lastSearchTerm: String
 
     func body(content: Content) -> some View {
         let contentWithWindow = content
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
                 if let window = notification.object as? NSWindow {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification for window: \(window.title)")
-                    // Show AboutOverlay instead of separate window
                     overlayManager.addOverlay(.about)
                 } else {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification received")
@@ -43,25 +40,7 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .clearRecentFilesCommand)) { _ in recentFilesManager.clearRecentFiles() }
             .onReceive(NotificationCenter.default.publisher(for: .toggleWordWrapCommand)) { _ in document.toggleWordWrap() }
 
-        let contentWithSearch = contentWithFile
-            .onReceive(NotificationCenter.default.publisher(for: .openSearchCommand)) { _ in
-                if document.fileName.isEmpty { return }
-                showingSearch = true
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .findNextCommand)) { _ in
-                guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
-                if let idx = document.search(lastSearchTerm, direction: .forward) {
-                    document.gotoLine(idx + 1)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .findPreviousCommand)) { _ in
-                guard !lastSearchTerm.isEmpty else { showingSearch = true; return }
-                if let idx = document.search(lastSearchTerm, direction: .backward) {
-                    document.gotoLine(idx + 1)
-                }
-            }
-
-        let contentWithBookmarks = contentWithSearch
+        let contentWithBookmarks = contentWithFile
             .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in
                 guard !document.fileName.isEmpty else { return }
                 let desc = document.getCurrentLine()
@@ -106,8 +85,8 @@ private struct NotificationsModifier: ViewModifier {
 
 // Extension to apply notification handling to any view
 extension View {
-    func applyNotifications(document: TextDocument, showingSearch: Binding<Bool>, showingBookmarks: Binding<Bool>, showingFilePicker: Binding<Bool>, lastSearchTerm: Binding<String>) -> some View {
-        modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, showingFilePicker: showingFilePicker, lastSearchTerm: lastSearchTerm))
+    func applyNotifications(document: TextDocument, showingBookmarks: Binding<Bool>, showingFilePicker: Binding<Bool>) -> some View {
+        modifier(NotificationsModifier(document: document, showingBookmarks: showingBookmarks, showingFilePicker: showingFilePicker))
     }
 }
 
