@@ -18,7 +18,7 @@ final class OverlayManagerQuickSpec: QuickSpec {
                 expect(manager.overlays).to(contain(.help))
                 // adding again should not duplicate
                 manager.addOverlay(.help)
-                expect(manager.overlays.filter { $0 == .help }.count).to(equal(1))
+                expect(manager.overlays.count(where: { $0 == .help })).to(equal(1))
             }
 
             it("removes overlays correctly") {
@@ -59,4 +59,3 @@ final class OverlayManagerQuickSpec: QuickSpec {
         }
     }
 }
-

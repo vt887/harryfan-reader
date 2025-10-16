@@ -1,5 +1,9 @@
-// HelpOverlay.swift
-// Generated: separated help overlay into its own file
+//
+//  HelpOverlay.swift
+//  harryfan-reader
+//
+//  Created by @vt887 on 10/15/25.
+//
 
 import SwiftUI
 
@@ -27,7 +31,7 @@ extension OverlayFactory {
     }
 
     /// Action bar items to show when the Help overlay is active
-    static func helpActionBarItems(cols: Int = Settings.cols) -> [String] {
+    static func helpActionBarItems(cols _: Int = Settings.cols) -> [String] {
         [
             "Help", Settings.wordWrapLabel, "Open", "Search", "Goto",
             "Bookm", "Start", "End", "Menu", "Quit",
@@ -41,7 +45,7 @@ func helpActionBarItems(cols: Int = Settings.cols) -> [String] {
 }
 
 // Top-level helper struct to expose per-overlay ActionBar items
-struct HelpOverlay {
+enum HelpOverlay {
     static func actionBarItems(cols: Int = Settings.cols) -> [String] {
         OverlayFactory.helpActionBarItems(cols: cols)
     }

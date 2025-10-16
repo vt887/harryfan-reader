@@ -13,7 +13,7 @@ final class OverlayFactoryActionBarQuickSpec: QuickSpec {
     override class func spec() {
         describe("OverlayFactory action bar items") {
             it("returns per-overlay actionBarItems for all kinds") {
-                let kinds: [OverlayKind] = [.help, .welcome, .quit, .about]
+                let kinds: [OverlayKind] = [.help, .welcome, .quit, .about, .search, .goto, .menu]
                 for kind in kinds {
                     let fromFactory = OverlayFactory.actionBarItems(for: kind)
                     switch kind {
@@ -25,6 +25,12 @@ final class OverlayFactoryActionBarQuickSpec: QuickSpec {
                         expect(fromFactory).to(equal(QuitOverlay.actionBarItems()))
                     case .about:
                         expect(fromFactory).to(equal(AboutOverlay.actionBarItems()))
+                    case .search:
+                        expect(fromFactory).to(equal(SearchOverlay.actionBarItems()))
+                    case .goto:
+                        expect(fromFactory).to(equal(GotoOverlay.actionBarItems()))
+                    case .menu:
+                        expect(fromFactory).to(equal(MenuOverlay.actionBarItems()))
                     }
                 }
             }
@@ -66,4 +72,3 @@ final class OverlayFactoryActionBarQuickSpec: QuickSpec {
         }
     }
 }
-

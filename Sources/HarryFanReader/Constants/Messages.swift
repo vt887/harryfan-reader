@@ -57,6 +57,22 @@ enum Messages {
     ╚══════════════════════════════════════════════════╝
     """
 
+    static let gotoMessage = """
+    ╔═════════════════[ Search ]═══════════════════════╗
+    ║  Go to the line                                  ║
+    ║  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   ║
+    ╚══════════════════════════════════════════════════╝
+    """
+
+    static let menuMessage = """
+    ╔══════════════════════════════════════════════════╗
+    ║                  Main Menu                       ║
+    ║                                                  ║
+    ║  Open File          F3                           ║
+    ║  Search             F4                           ║
+    ╚══════════════════════════════════════════════════╝
+    """
+
     // Returns the welcome message centered horizontally and vertically for the current screen size, with version
     static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {
         DebugLogger.log("ReleaseInfo.version: '\(ReleaseInfo.version)'")

@@ -24,6 +24,9 @@ struct MainContentScreenView: View {
     @State private var overlayOpacities: [UUID: Double] = [:] // opacity per overlay for fade animations
     @State private var welcomeOverlayId: UUID? = nil
     @State private var helpOverlayId: UUID? = nil // help overlay tracking
+    @State private var searchOverlayId: UUID? = nil // search overlay tracking
+    @State private var menuOverlayId: UUID? = nil // menu overlay tracking
+    @State private var gotoOverlayId: UUID? = nil // goto overlay tracking
     @State private var quitOverlayId: UUID? = nil // quit overlay tracking
     // Track overlay kinds received from OverlayManager to react to programmatic changes
     @State private var observedOverlayKinds: [OverlayKind] = []
@@ -56,14 +59,8 @@ struct MainContentScreenView: View {
         withAnimation(.easeInOut(duration: fadeDuration)) {
             overlayOpacities[id] = 1.0
         }
-        // Set activeOverlay based on kind (no per-kind id tracking here)
-        let activeOverlay: ActiveOverlay = switch kind {
-        case .welcome: .welcome
-        case .help: .help
-        case .quit: .quit
-        case .about: .about
-        }
-        keyHandler?.setActiveOverlay(activeOverlay)
+        // Set activeOverlay based on kind using centralized mapping
+        keyHandler?.setActiveOverlay(kind.activeOverlay)
         return id
     }
 
@@ -84,6 +81,18 @@ struct MainContentScreenView: View {
             if id == welcomeOverlayId {
                 welcomeOverlayId = nil
                 keyHandler?.setWelcomeOverlayId(nil)
+            }
+            if id == searchOverlayId {
+                searchOverlayId = nil
+                keyHandler?.setSearchOverlayId(nil)
+            }
+            if id == menuOverlayId {
+                menuOverlayId = nil
+                keyHandler?.setMenuOverlayId(nil)
+            }
+            if id == gotoOverlayId {
+                gotoOverlayId = nil
+                keyHandler?.setGotoOverlayId(nil)
             }
             if id == quitOverlayId {
                 quitOverlayId = nil
@@ -168,6 +177,9 @@ struct MainContentScreenView: View {
                     // set handler's known overlay ids
                     keyHandler?.setWelcomeOverlayId(welcomeOverlayId)
                     keyHandler?.setHelpOverlayId(helpOverlayId)
+                    keyHandler?.setSearchOverlayId(searchOverlayId)
+                    keyHandler?.setMenuOverlayId(menuOverlayId)
+                    keyHandler?.setGotoOverlayId(gotoOverlayId)
                     keyHandler?.setQuitOverlayId(quitOverlayId)
                     // If we've just created a welcome overlay, mark it as the active overlay
                     // and make it temporarily non-dismissable to avoid accidental dismissal
@@ -255,9 +267,9 @@ struct MainContentScreenView: View {
                         if let existing = overlayLayers.first(where: { layer in
                             let rows = layer.grid.count
                             let cols = layer.grid.first?.count ?? 0
-                            for r in 0..<rows {
+                            for r in 0 ..< rows {
                                 var rowStr = ""
-                                for c in 0..<cols {
+                                for c in 0 ..< cols {
                                     rowStr.append(layer[r, c].char)
                                 }
                                 if rowStr.trimmingCharacters(in: .whitespaces).contains(helpFirstLine) { return true }
@@ -291,9 +303,9 @@ struct MainContentScreenView: View {
                             guard !aboutFirstLine.isEmpty else { return false }
                             let rows = layer.grid.count
                             let cols = layer.grid.first?.count ?? 0
-                            for r in 0..<rows {
+                            for r in 0 ..< rows {
                                 var rowStr = ""
-                                for c in 0..<cols {
+                                for c in 0 ..< cols {
                                     rowStr.append(layer[r, c].char)
                                 }
                                 if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) { return true }

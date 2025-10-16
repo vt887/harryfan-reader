@@ -30,7 +30,7 @@ final class KeyCodesQuickSpec: QuickSpec {
                 let values: [UInt16] = [
                     KeyCode.escape, KeyCode.f1, KeyCode.f2, KeyCode.f3, KeyCode.f4,
                     KeyCode.f5, KeyCode.f6, KeyCode.f7, KeyCode.f8, KeyCode.f9, KeyCode.f10,
-                    KeyCode.yKey, KeyCode.nKey
+                    KeyCode.yKey, KeyCode.nKey,
                 ]
                 let unique = Set(values)
                 expect(unique.count).to(equal(values.count))

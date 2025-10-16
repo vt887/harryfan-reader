@@ -1,4 +1,3 @@
-// filepath: /Users/vadymtymoshyk/MyPetProjects/harryfan-reader/Sources/HarryFanReader/App/AppCommands.swift
 //
 //  AppCommands.swift
 //  harryfan-reader
@@ -109,4 +108,3 @@ struct AppCommands: Commands {
         }
     }
 }
-

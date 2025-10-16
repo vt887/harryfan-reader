@@ -5,8 +5,8 @@
 //  Created by @vt887 on 9/1/25.
 //
 
-import SwiftUI
 import AppKit
+import SwiftUI
 
 // Represents a single cell in the screen grid
 struct ScreenCell {
@@ -59,7 +59,7 @@ struct ScreenView: View {
 
     // Optional tap handler that receives (col, row, isSecondary)
     // isSecondary == true means the click was a secondary (right) mouse click
-    var tapHandler: ((Int, Int, Bool) -> Void)? = nil
+    var tapHandler: ((Int, Int, Bool) -> Void)?
 
     // Number of columns in the screen (from Settings)
     static let cols = Settings.cols
@@ -74,10 +74,10 @@ struct ScreenView: View {
 
     // Helper function to create inverted screen cell
     private func createInvertedCell(_ char: Character) -> ScreenCell {
-        return ScreenCell(
+        ScreenCell(
             char: char,
             fgColor: Colors.theme.titleBarBackground,
-            bgColor: Colors.theme.menuBarForeground
+            bgColor: Colors.theme.menuBarForeground,
         )
     }
 
@@ -215,8 +215,7 @@ struct ScreenView: View {
                     let row = Int(y / CGFloat(ScreenView.charH))
                     // Treat DragGesture taps as primary (not secondary)
                     tapHandler?(col, row, false)
-                }
-            )
+                })
             // Add an NSViewRepresentable on top of the Canvas to capture primary and secondary mouse clicks
             .overlay(
                 MouseEventCatcher { localPoint, isSecondary in
@@ -230,7 +229,7 @@ struct ScreenView: View {
                     tapHandler?(col, row, isSecondary)
                 }
                 .frame(width: idealSize.width, height: idealSize.height)
-                .offset(x: offsetX, y: 0)
+                .offset(x: offsetX, y: 0),
             )
             .accessibilityHidden(true) // no cursor or focus ring
         }
@@ -300,7 +299,7 @@ private struct MouseEventCatcher: NSViewRepresentable {
     // localPoint is in the view's coordinate space (origin at top-left of the catcher view)
     var handler: (CGPoint, Bool) -> Void
 
-    func makeNSView(context: Context) -> MouseCatcherView {
+    func makeNSView(context _: Context) -> MouseCatcherView {
         let v = MouseCatcherView()
         v.handler = handler
         v.wantsLayer = true
@@ -309,7 +308,7 @@ private struct MouseEventCatcher: NSViewRepresentable {
         return v
     }
 
-    func updateNSView(_ nsView: MouseCatcherView, context: Context) {
+    func updateNSView(_ nsView: MouseCatcherView, context _: Context) {
         // no-op; handler may be updated by re-creating the representable
         nsView.handler = handler
     }

@@ -1,5 +1,9 @@
-// QuitOverlay.swift
-// Generated: separated quit overlay into its own file
+//
+//  QuitOverlay.swift
+//  harryfan-reader
+//
+//  Created by @vt887 on 10/15/25.
+//
 
 import SwiftUI
 
@@ -27,10 +31,10 @@ extension OverlayFactory {
     }
 
     /// Action bar items to show when the Quit overlay is active
-    static func quitActionBarItems(cols: Int = Settings.cols) -> [String] {
+    static func quitActionBarItems(cols _: Int = Settings.cols) -> [String] {
         [
-            "Help", Settings.wordWrapLabel, "Open", "Search", "Goto",
-            "Bookm", "Start", "End", "Menu", "Quit",
+            "", "", "", "", "",
+            "", "", "", "", "Quit",
         ]
     }
 }
@@ -41,7 +45,7 @@ func quitActionBarItems(cols: Int = Settings.cols) -> [String] {
 }
 
 // Top-level helper struct to expose per-overlay ActionBar items
-struct QuitOverlay {
+enum QuitOverlay {
     static func actionBarItems(cols: Int = Settings.cols) -> [String] {
         OverlayFactory.quitActionBarItems(cols: cols)
     }

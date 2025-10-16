@@ -11,20 +11,78 @@ import SwiftUI
 // OverlayKind defines the different types of overlays
 // that can be displayed in the application, such as
 // welcome, help, custom messages, or file text previews.
-enum OverlayKind: Equatable {
+enum OverlayKind: Int, CaseIterable {
+    case welcome = 0
+    case help
+    case quit
+    case about
+    case search
+    case goto
+    case menu
+
+    // Returns the message string associated with each overlay kind.
+    // Implemented via a static array indexed by the enum's rawValue to avoid
+    // dictionary hashing and to make lookups predictable and allocation-free.
+    var message: String {
+        let idx = rawValue
+        precondition(idx >= 0 && idx < Self._messages.count, "OverlayKind message index out of range")
+        return Self._messages[idx]
+    }
+
+    // Internal static mapping from OverlayKind index to its message string.
+    // The order here must match the enum case order above.
+    private static let _messages: [String] = [
+        Messages.welcomeMessage,
+        Messages.helpMessage,
+        Messages.quitMessage,
+        Messages.aboutMessage,
+        Messages.searchMessage,
+        Messages.gotoMessage,
+        Messages.menuMessage,
+    ]
+}
+
+// Map an OverlayKind to its corresponding ActiveOverlay value.
+extension OverlayKind {
+    var activeOverlay: ActiveOverlay {
+        switch self {
+        case .welcome: .welcome
+        case .help: .help
+        case .quit: .quit
+        case .about: .about
+        case .search: .search
+        case .goto: .goto
+        case .menu: .menu
+        }
+    }
+}
+
+// Centralized representation of the active overlay state used
+// by the key handling and view code. This keeps overlay names
+// and mappings in one place so they can't drift apart.
+enum ActiveOverlay: Equatable {
+    case none
     case welcome
     case help
     case quit
     case about
+    case search
+    case goto
+    case menu
+}
 
-    // Returns the message string associated with each overlay kind.
-    // This is used to display the appropriate content in the overlay.
-    var message: String {
+// Map an ActiveOverlay back to an optional OverlayKind (none -> nil).
+extension ActiveOverlay {
+    var overlayKind: OverlayKind? {
         switch self {
-        case .welcome: Messages.welcomeMessage
-        case .help: Messages.helpMessage
-        case .quit: Messages.quitMessage
-        case .about: Messages.aboutMessage
+        case .none: nil
+        case .welcome: .welcome
+        case .help: .help
+        case .quit: .quit
+        case .about: .about
+        case .search: .search
+        case .goto: .goto
+        case .menu: .menu
         }
     }
 }
@@ -69,39 +127,20 @@ enum OverlayFactory {
     static func actionBarItems(for kind: OverlayKind) -> [String] {
         switch kind {
         case .help:
-            return HelpOverlay.actionBarItems()
+            HelpOverlay.actionBarItems()
         case .welcome:
-            return WelcomeOverlay.actionBarItems()
+            WelcomeOverlay.actionBarItems()
         case .quit:
-            return QuitOverlay.actionBarItems()
+            QuitOverlay.actionBarItems()
         case .about:
-            return AboutOverlay.actionBarItems()
+            AboutOverlay.actionBarItems()
+        case .search:
+            SearchOverlay.actionBarItems()
+        case .goto:
+            GotoOverlay.actionBarItems()
+        case .menu:
+            MenuOverlay.actionBarItems()
         }
-    }
-
-    // Creates a ScreenLayer with the message centered both vertically and horizontally.
-    // Each character is placed in the correct position, and the foreground color is applied.
-    private static func centeredLayer(message: String,
-                                      rows: Int,
-                                      cols: Int,
-                                      fgColor: Color) -> ScreenLayer
-    {
-        var layer = ScreenLayer(rows: rows, cols: cols)
-        let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
-        let totalLines = lines.count
-        let verticalPadding = max(0, (rows - totalLines) / 2)
-        for (i, line) in lines.enumerated() {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            let padding = max(0, (cols - trimmed.count) / 2)
-            for (j, char) in trimmed.enumerated() {
-                let row = verticalPadding + i
-                let col = padding + j
-                if row < rows, col < cols {
-                    layer[row, col] = ScreenCell(char: char, fgColor: fgColor, bgColor: nil)
-                }
-            }
-        }
-        return layer
     }
 }
 

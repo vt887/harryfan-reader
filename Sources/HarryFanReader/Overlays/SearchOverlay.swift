@@ -1,17 +1,16 @@
 //
-//  WelcomeOverlay.swift
-//  harryfan-reader
+// SearchOverlay.swift
+// harryfan-reader
 //
-//  Created by @vt887 on 10/15/25.
-//
+// Created by automated refactor on 10/16/25.
 
 import SwiftUI
 
 extension OverlayFactory {
-    /// Create a centered welcome overlay ScreenLayer
-    static func makeWelcomeOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    /// Create a centered search overlay ScreenLayer
+    static func makeSearchOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
         var layer = ScreenLayer(rows: rows, cols: cols)
-        let message = Messages.welcomeMessage
+        let message = Messages.searchMessage
         let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         let totalLines = lines.count
         let verticalPadding = max(0, (rows - totalLines) / 2)
@@ -30,23 +29,23 @@ extension OverlayFactory {
         return layer
     }
 
-    /// Action bar items to show when the Welcome overlay is active
-    static func welcomeActionBarItems(cols _: Int = Settings.cols) -> [String] {
+    /// Action bar items to show when the Search overlay is active
+    static func searchActionBarItems(cols _: Int = Settings.cols) -> [String] {
+        // Provide sensible search-related items; keep 10 slots for layout parity
         [
-            "Help", Settings.wordWrapLabel, "Open", "Search", "Goto",
-            "Bookm", "Start", "End", "Menu", "Quit",
+            "Close", "Prev", "Next", "Case", "Regexp", "Find", "Replace", "Menu", "Open", "Quit",
         ]
     }
 }
 
 // Top-level wrapper function for use by other modules
-func welcomeActionBarItems(cols: Int = Settings.cols) -> [String] {
-    OverlayFactory.welcomeActionBarItems(cols: cols)
+func searchActionBarItems(cols: Int = Settings.cols) -> [String] {
+    OverlayFactory.searchActionBarItems(cols: cols)
 }
 
 // Top-level helper struct to expose per-overlay ActionBar items
-enum WelcomeOverlay {
+enum SearchOverlay {
     static func actionBarItems(cols: Int = Settings.cols) -> [String] {
-        OverlayFactory.welcomeActionBarItems(cols: cols)
+        OverlayFactory.searchActionBarItems(cols: cols)
     }
 }
