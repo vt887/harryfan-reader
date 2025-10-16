@@ -25,7 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Enable anti-aliasing for all windows (if enabled in settings)
         NSWindow.allowsAutomaticWindowTabbing = false
-        if AppSettings.enableAntiAliasing {
+        if Settings.enableAntiAliasing {
             if let window = NSApp.windows.first {
                 window.contentView?.layer?.contentsScale = NSScreen.main?.backingScaleFactor ?? 2.0
             }
@@ -52,8 +52,8 @@ struct HarryFanReaderApp: App {
     @StateObject private var document: TextDocument
     @StateObject private var overlayManager = OverlayManager()
 
-    var windowWidth: CGFloat { CGFloat(AppSettings.cols * AppSettings.charW) }
-    var windowHeight: CGFloat { CGFloat(AppSettings.rows * AppSettings.charH) } // Match ScreenView size exactly
+    var windowWidth: CGFloat { CGFloat(Settings.cols * Settings.charW) }
+    var windowHeight: CGFloat { CGFloat(Settings.rows * Settings.charH) } // Match ScreenView size exactly
 
     init() {
         let doc = TextDocument()
@@ -68,7 +68,7 @@ struct HarryFanReaderApp: App {
                 .environmentObject(recentFilesManager)
                 .environmentObject(overlayManager)
                 .frame(minWidth: windowWidth, minHeight: windowHeight)
-                .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings
+                .colorScheme(Settings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on Settings
         }
         .windowStyle(.titleBar)
         .defaultSize(width: windowWidth, height: windowHeight)
@@ -77,7 +77,7 @@ struct HarryFanReaderApp: App {
             AppCommands(recentFilesManager: recentFilesManager, bookmarkManager: bookmarkManager)
         }
 
-        Settings {
+        SwiftUI.Settings {
             SettingsView()
                 .environmentObject(fontManager)
                 .environmentObject(document)

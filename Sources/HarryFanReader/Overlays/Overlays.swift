@@ -56,8 +56,8 @@ private func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fg
 // for any given overlay kind, with customizable appearance.
 enum OverlayFactory {
     static func make(kind: OverlayKind,
-                     rows: Int = AppSettings.rows - 2,
-                     cols: Int = AppSettings.cols,
+                     rows: Int = Settings.rows - 2,
+                     cols: Int = Settings.cols,
                      fgColor: Color = Colors.theme.foreground) -> ScreenLayer
     {
         // Default behavior: use centeredOverlayLayer built from the overlay's message

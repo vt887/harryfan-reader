@@ -20,7 +20,7 @@ struct ScreenLayer: Identifiable {
     let id = UUID()
     var grid: [[ScreenCell]] // [row][col], 24x80
 
-    init(rows: Int = AppSettings.rows, cols: Int = AppSettings.cols) {
+    init(rows: Int = Settings.rows, cols: Int = Settings.cols) {
         grid = []
         for _ in 0 ..< rows {
             var rowArray: [ScreenCell] = []
@@ -61,12 +61,12 @@ struct ScreenView: View {
     // isSecondary == true means the click was a secondary (right) mouse click
     var tapHandler: ((Int, Int, Bool) -> Void)? = nil
 
-    // Number of columns in the screen (from AppSettings)
-    static let cols = AppSettings.cols
-    // Character width in pixels (from AppSettings)
-    static let charW = AppSettings.charW
-    // Character height in pixels (from AppSettings)
-    static let charH = AppSettings.charH
+    // Number of columns in the screen (from Settings)
+    static let cols = Settings.cols
+    // Character width in pixels (from Settings)
+    static let charW = Settings.charW
+    // Character height in pixels (from Settings)
+    static let charH = Settings.charH
 
     // Only overlay layers are stored in @State, now passed as a Binding
     @Binding var overlayLayers: [ScreenLayer]
@@ -182,7 +182,7 @@ struct ScreenView: View {
             let offsetX = (geo.size.width - idealSize.width) / 2.0
             Canvas { context, size in
                 // Conditionally enable anti-aliasing for smoother text rendering
-                if AppSettings.enableAntiAliasing {
+                if Settings.enableAntiAliasing {
                     // Anti-aliasing: no-op here (CGContext tweaking removed for compatibility)
                 }
 
@@ -261,7 +261,7 @@ struct ScreenView: View {
             context.fill(Path(rect), with: .color(bg))
         }
 
-        if AppSettings.enableAntiAliasing {
+        if Settings.enableAntiAliasing {
             // Draw with anti-aliasing for smoother text
             for rowIndex in 0 ..< ScreenView.charH {
                 for columnIndex in 0 ..< ScreenView.charW {

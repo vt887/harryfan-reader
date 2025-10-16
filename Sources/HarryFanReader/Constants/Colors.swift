@@ -11,7 +11,7 @@ import SwiftUI
 enum Colors {
     // Define colors based on AppTheme
     static var theme: AppTheme {
-        AppTheme.theme(for: AppSettings.appearance)
+        AppTheme.theme(for: Settings.appearance)
     }
 }
 

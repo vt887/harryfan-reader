@@ -47,7 +47,7 @@ struct MainContentScreenView: View {
     }
 
     private func addOverlay(kind: OverlayKind, fadeDuration: Double = 0.25) -> UUID {
-        let layer = OverlayFactory.make(kind: kind, rows: AppSettings.rows - 2, cols: AppSettings.cols)
+        let layer = OverlayFactory.make(kind: kind, rows: Settings.rows - 2, cols: Settings.cols)
         let id = layer.id
         DebugLogger.log("addOverlay: kind=\(kind) id=\(id)")
         overlayLayers.append(layer)
@@ -96,7 +96,7 @@ struct MainContentScreenView: View {
 
     // Unified quit handling for F10 / Esc
     private func handleQuitKey() {
-        if AppSettings.shouldShowQuitMessage, !document.shouldShowQuitMessage {
+        if Settings.shouldShowQuitMessage, !document.shouldShowQuitMessage {
             document.shouldShowQuitMessage = true
             return
         }
@@ -143,9 +143,9 @@ struct MainContentScreenView: View {
             // Always render the screen with overlayLayers and let overlays (welcome/help/about/quit)
             // be displayed using the OverlayFactory (centered). This aligns the quit overlay
             // with the welcome overlay which is also produced by the OverlayFactory.
-            ScreenView(document: document, displayRows: AppSettings.rows - 2, rowOffset: 1, overlayLayers: $overlayLayers, overlayOpacities: $overlayOpacities)
+            ScreenView(document: document, displayRows: Settings.rows - 2, rowOffset: 1, overlayLayers: $overlayLayers, overlayOpacities: $overlayOpacities)
                 .environmentObject(fontManager)
-                .frame(height: CGFloat(AppSettings.rows - 2) * CGFloat(ScreenView.charH))
+                .frame(height: CGFloat(Settings.rows - 2) * CGFloat(ScreenView.charH))
                 .onAppear {
                     if document.fileName.isEmpty, document.totalLines == 0 {
                         DebugLogger.log("Skipping loadWelcomeText; using overlay only")

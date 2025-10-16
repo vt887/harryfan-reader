@@ -54,7 +54,7 @@ class KeyHandler {
     // Unified quit handling for F10 / Esc
     private func handleQuitKey() {
         guard let document else { return }
-        if AppSettings.shouldShowQuitMessage, !document.shouldShowQuitMessage {
+        if Settings.shouldShowQuitMessage, !document.shouldShowQuitMessage {
             document.shouldShowQuitMessage = true
             return
         }

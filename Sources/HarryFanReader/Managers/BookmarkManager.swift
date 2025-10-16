@@ -80,13 +80,13 @@ class BookmarkManager: ObservableObject {
     // Save bookmarks to persistent storage
     private func saveBookmarks() {
         if let data = try? JSONEncoder().encode(bookmarks) {
-            UserDefaults.standard.set(data, forKey: "\(AppSettings.appName)Bookmarks")
+            UserDefaults.standard.set(data, forKey: "\(Settings.appName)Bookmarks")
         }
     }
 
     // Load bookmarks from persistent storage
     private func loadBookmarks() {
-        let key = "\(AppSettings.appName)Bookmarks"
+        let key = "\(Settings.appName)Bookmarks"
         guard let data = UserDefaults.standard.data(forKey: key) else {
             bookmarks = []
             return

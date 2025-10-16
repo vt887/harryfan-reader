@@ -15,7 +15,7 @@ final class UtilityQuickSpec: QuickSpec {
     // Main entry point for all utility-related tests
     override class func spec() {
         specSearchDirectionEnum() // Tests for SearchDirection enum
-        specAppSettings() // Tests for AppSettings constants
+        specSettings() // Tests for Settings constants
         specAppAppearanceEnum() // Tests for AppAppearance enum
         specMessages() // Tests for Messages static content
         specUnicodePoints() // Tests for unicodePoints mapping
@@ -37,9 +37,9 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for AppSettings: constants and dimensions
-    private class func specAppSettings() {
-        describe("AppSettings") {
+    // Tests for Settings: constants and dimensions
+    private class func specSettings() {
+        describe("Settings") {
             // Use UserDefaults to control persisted settings for deterministic tests
             var originalWordWrap: Any?
             var originalShouldShowQuitMessage: Any?
@@ -73,26 +73,26 @@ final class UtilityQuickSpec: QuickSpec {
                 }
             }
 
-            // Checks that AppSettings constants have expected values (app name, home dir, font, etc).
+            // Checks that Settings constants have expected values (app name, home dir, font, etc).
             it("has correct constants") {
-                expect(AppSettings.appName).to(equal("HarryFan Reader"))
-                expect(AppSettings.homeDir).to(equal("~/.harryfan"))
-                expect(AppSettings.defaultFontFileName).to(equal("vdu.8x16"))
-                expect(AppSettings.appearance).to(equal(.blue))
-                expect(AppSettings.cols).to(equal(80))
-                expect(AppSettings.rows).to(equal(24))
-                expect(AppSettings.charW).to(equal(8))
-                expect(AppSettings.charH).to(equal(16))
-                expect(AppSettings.wrapWidth).to(equal(80))
-                expect(AppSettings.wordWrap).to(beTrue())
+                expect(Settings.appName).to(equal("HarryFan Reader"))
+                expect(Settings.homeDir).to(equal("~/.harryfan"))
+                expect(Settings.defaultFontFileName).to(equal("vdu.8x16"))
+                expect(Settings.appearance).to(equal(.blue))
+                expect(Settings.cols).to(equal(80))
+                expect(Settings.rows).to(equal(24))
+                expect(Settings.charW).to(equal(8))
+                expect(Settings.charH).to(equal(16))
+                expect(Settings.wrapWidth).to(equal(80))
+                expect(Settings.wordWrap).to(beTrue())
             }
             // Checks that character dimension constants are positive and reasonable.
             it("has sensible character dimensions") {
-                expect(AppSettings.charW).to(beGreaterThan(0))
-                expect(AppSettings.charH).to(beGreaterThan(0))
-                expect(AppSettings.cols).to(beGreaterThan(0))
-                expect(AppSettings.rows).to(beGreaterThan(0))
-                expect(AppSettings.wrapWidth).to(beGreaterThan(0))
+                expect(Settings.charW).to(beGreaterThan(0))
+                expect(Settings.charH).to(beGreaterThan(0))
+                expect(Settings.cols).to(beGreaterThan(0))
+                expect(Settings.rows).to(beGreaterThan(0))
+                expect(Settings.wrapWidth).to(beGreaterThan(0))
             }
         }
     }
@@ -267,7 +267,7 @@ final class UtilityQuickSpec: QuickSpec {
         describe("Integration") {
             // Checks that character dimensions are consistent with font expectations (bitmap size).
             it("checks app settings and unicode points consistency") {
-                let expectedBitmapSize = AppSettings.charW * AppSettings.charH
+                let expectedBitmapSize = Settings.charW * Settings.charH
                 expect(expectedBitmapSize).to(equal(128)) // 8 * 16 = 128 bits per character
             }
             // Checks that messages fit within the expected column width (no overflow).
@@ -281,8 +281,8 @@ final class UtilityQuickSpec: QuickSpec {
                         .replacingOccurrences(of: "║", with: "")
                         .trimmingCharacters(in: .whitespaces)
                     if !contentLine.isEmpty {
-                        let checkedLine = contentLine.count > AppSettings.cols ? String(contentLine.prefix(AppSettings.cols)) : contentLine
-                        expect(checkedLine.count).to(beLessThanOrEqualTo(AppSettings.cols), description: "Line too long: \(contentLine)")
+                        let checkedLine = contentLine.count > Settings.cols ? String(contentLine.prefix(Settings.cols)) : contentLine
+                        expect(checkedLine.count).to(beLessThanOrEqualTo(Settings.cols), description: "Line too long: \(contentLine)")
                     }
                 }
             }

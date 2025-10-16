@@ -30,7 +30,7 @@ class SettingsViewModel: ObservableObject {
         let currentRemoveEmptyLines = document.removeEmptyLines
         let currentWordWrap = document.wordWrap
         let currentWrapWidth = Double(document.wrapWidth)
-        let currentEnableAntiAliasing = AppSettings.enableAntiAliasing
+        let currentEnableAntiAliasing = Settings.enableAntiAliasing
 
         selectedFont = currentFont
         fontSize = currentFontSize
@@ -55,7 +55,7 @@ class SettingsViewModel: ObservableObject {
         document.removeEmptyLines = removeEmptyLines
         document.wordWrap = wordWrap
         document.wrapWidth = Int(wrapWidth)
-        AppSettings.enableAntiAliasing = enableAntiAliasing
+        Settings.enableAntiAliasing = enableAntiAliasing
         document.reloadWithNewSettings()
     }
 

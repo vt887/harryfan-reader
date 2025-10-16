@@ -1,8 +1,8 @@
 //
-//  AppSettings.swift
+//  Settings.swift
 //  harryfan-reader
 //
-//  Created by @vt887 on 9/28/25.
+//  Created by automated-refactor on 10/16/25.
 //
 
 import Foundation
@@ -16,7 +16,7 @@ enum AppAppearance: String, CaseIterable {
 }
 
 // Class for global application settings
-class AppSettings {
+class Settings {
     // Constants
     static let appName: String = "HarryFan Reader"
     static let homeDir: String = "~/.harryfan"
@@ -64,3 +64,4 @@ class AppSettings {
         set { UserDefaults.standard.set(newValue, forKey: "showStatusBarIcon") }
     }
 }
+

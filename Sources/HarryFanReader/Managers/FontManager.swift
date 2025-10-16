@@ -33,8 +33,8 @@ final class FontManager: ObservableObject {
 
     // Initializes FontManager and loads initial font
     init() {
-        let initialFont = MSDOSFont(rawValue: AppSettings.fontFileName)
-            ?? MSDOSFont(rawValue: AppSettings.defaultFontFileName)
+        let initialFont = MSDOSFont(rawValue: Settings.fontFileName)
+            ?? MSDOSFont(rawValue: Settings.defaultFontFileName)
             ?? .vdu8x16
         currentFont = initialFont
 
@@ -44,7 +44,7 @@ final class FontManager: ObservableObject {
 
     // Returns URL to user's fonts directory
     private func getUserFontsURL() -> URL {
-        let expandedHome = (AppSettings.homeDir as NSString).expandingTildeInPath
+        let expandedHome = (Settings.homeDir as NSString).expandingTildeInPath
         let homeDirURL = URL(fileURLWithPath: expandedHome)
         return homeDirURL.appendingPathComponent("fonts")
     }
@@ -64,21 +64,21 @@ final class FontManager: ObservableObject {
                 .map { $0.deletingPathExtension().lastPathComponent }
 
             availableFonts = rawFonts.isEmpty
-                ? [AppSettings.defaultFontFileName]
+                ? [Settings.defaultFontFileName]
                 : rawFonts
         } else {
-            availableFonts = [AppSettings.defaultFontFileName]
+            availableFonts = [Settings.defaultFontFileName]
         }
     }
 
     // Loads font data from file
     private func loadFont() {
-        var effectiveFont = AppSettings.fontFileName
+        var effectiveFont = Settings.fontFileName
         var fontURL = findFontURL(for: effectiveFont)
 
         if fontURL == nil {
-            DebugLogger.logWarning("\(effectiveFont).raw not found. Falling back to default: \(AppSettings.defaultFontFileName).raw")
-            effectiveFont = AppSettings.defaultFontFileName
+            DebugLogger.logWarning("\(effectiveFont).raw not found. Falling back to default: \(Settings.defaultFontFileName).raw")
+            effectiveFont = Settings.defaultFontFileName
             fontURL = findFontURL(for: effectiveFont)
         }
 
@@ -112,18 +112,18 @@ final class FontManager: ObservableObject {
         if fm.fileExists(atPath: userFontURL.path) { return userFontURL }
 
         // 2. Fallbacks: default font
-        let defaultUserFont = userFontsURL.appendingPathComponent("\(AppSettings.defaultFontFileName).raw")
+        let defaultUserFont = userFontsURL.appendingPathComponent("\(Settings.defaultFontFileName).raw")
         if fm.fileExists(atPath: defaultUserFont.path) { return defaultUserFont }
 
         #if SWIFT_PACKAGE
-            if let url = Bundle.module.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
+            if let url = Bundle.module.url(forResource: Settings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
                 return url
             }
         #endif
-        if let url = Bundle.module.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
+        if let url = Bundle.module.url(forResource: Settings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
             return url
         }
-        return Bundle.main.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts")
+        return Bundle.main.url(forResource: Settings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts")
     }
 
     // Parses raw font data into bitmaps
@@ -132,8 +132,8 @@ final class FontManager: ObservableObject {
             return
         }
 
-        let charHeight = AppSettings.charH
-        let charWidth = AppSettings.charW
+        let charHeight = Settings.charH
+        let charWidth = Settings.charW
         let numChars = 256
         let expectedBytes = numChars * charHeight
         let headerSize = max(0, data.count - expectedBytes)
@@ -178,7 +178,7 @@ final class FontManager: ObservableObject {
 
     // Generates fallback glyph bitmap
     private static func makeFallbackGlyph() -> [Bool] {
-        let width = AppSettings.charW, height = AppSettings.charH
+        let width = Settings.charW, height = Settings.charH
         var bitmap: [Bool] = []
         for row in 0 ..< height {
             for col in 0 ..< width {

@@ -16,10 +16,10 @@ class TextDocument: ObservableObject {
     @Published var encoding: String = "Unknown"
     @Published var fileName: String = ""
     @Published var removeEmptyLines: Bool = true
-    @Published var wordWrap: Bool = AppSettings.wordWrap
-    @Published var wrapWidth: Int = AppSettings.wrapWidth
-    @Published var shouldShowQuitMessage: Bool = AppSettings.shouldShowQuitMessage
-    @Published var rows: Int = AppSettings.rows
+    @Published var wordWrap: Bool = Settings.wordWrap
+    @Published var wrapWidth: Int = Settings.wrapWidth
+    @Published var shouldShowQuitMessage: Bool = Settings.shouldShowQuitMessage
+    @Published var rows: Int = Settings.rows
     // Top visible line of viewport
     @Published var topLine: Int = 0
     // Fixed cursor row (highlight). For now we keep it at 0 (top of viewport)
@@ -32,7 +32,7 @@ class TextDocument: ObservableObject {
 
     // Loads the welcome text into the document
     func loadWelcomeText() {
-        content = splitLines(Messages.centeredWelcomeMessage(screenWidth: AppSettings.cols, screenHeight: AppSettings.rows - 2))
+        content = splitLines(Messages.centeredWelcomeMessage(screenWidth: Settings.cols, screenHeight: Settings.rows - 2))
         totalLines = content.count
         topLine = 0
         currentLine = 0
@@ -63,7 +63,7 @@ class TextDocument: ObservableObject {
 
     // Returns the formatted title bar text
     func getTitleBarText() -> String {
-        TextFormatter.getTitleBarText(appName: AppSettings.appName, fileName: fileName, totalLines: totalLines, currentLine: currentLine, totalCols: AppSettings.cols)
+        TextFormatter.getTitleBarText(appName: Settings.appName, fileName: fileName, totalLines: totalLines, currentLine: currentLine, totalCols: Settings.cols)
     }
 
     // Returns the formatted menu bar text
@@ -72,7 +72,7 @@ class TextDocument: ObservableObject {
             let itemText = " \(index + 1)\(item)" // Add leading space before number
             return itemText.padding(toLength: 8, withPad: " ", startingAt: 0)
         }.joined(separator: "")
-        let result = menuBarString.padding(toLength: AppSettings.cols, withPad: " ", startingAt: 0)
+        let result = menuBarString.padding(toLength: Settings.cols, withPad: " ", startingAt: 0)
         DebugLogger.log("ActionBar result: '\(result)'")
         return result
     }
@@ -193,7 +193,7 @@ class TextDocument: ObservableObject {
     // Toggles word wrap and reloads content
     func toggleWordWrap() {
         wordWrap.toggle()
-        AppSettings.wordWrap = wordWrap // sync AppSettings
+        Settings.wordWrap = wordWrap // sync Settings
         DebugLogger.log("Word wrap toggled to: \(wordWrap)")
         reloadWithNewSettings()
     }
@@ -219,7 +219,7 @@ class TextDocument: ObservableObject {
         guard totalLines > 0 else {
             return
         }
-        let displayRows = AppSettings.rows - 2
+        let displayRows = Settings.rows - 2
         // Move cursor to the very last line
         currentLine = totalLines - 1
         // Show the last page (so that the last line is visible at bottom)
@@ -231,7 +231,7 @@ class TextDocument: ObservableObject {
         guard totalLines > 0 else {
             return
         }
-        let pageStep = max(1, (AppSettings.rows - 2) - 2) // leave 2-line overlap
+        let pageStep = max(1, (Settings.rows - 2) - 2) // leave 2-line overlap
         currentLine = max(0, currentLine - pageStep)
         topLine = currentLine
     }
@@ -241,7 +241,7 @@ class TextDocument: ObservableObject {
         guard totalLines > 0 else {
             return
         }
-        let pageStep = max(1, (AppSettings.rows - 2) - 2) // leave 2-line overlap
+        let pageStep = max(1, (Settings.rows - 2) - 2) // leave 2-line overlap
         currentLine = min(totalLines - 1, currentLine + pageStep)
         topLine = currentLine
     }
@@ -263,7 +263,7 @@ class TextDocument: ObservableObject {
         guard totalLines > 0 else {
             return
         }
-        let displayRows = AppSettings.rows - 2
+        let displayRows = Settings.rows - 2
         let bottomLine = min(totalLines - 1, topLine + displayRows - 1)
         if bottomLine < totalLines - 1 {
             topLine += 1
@@ -331,7 +331,7 @@ class TextDocument: ObservableObject {
     }
 
     func getVisibleLines() -> [String] {
-        getVisibleLines(displayRows: AppSettings.rows - 2)
+        getVisibleLines(displayRows: Settings.rows - 2)
     }
 
     // Removed obsolete topVisibleLine centering method.

@@ -169,7 +169,7 @@ struct SettingsView: View {
             viewModel.removeEmptyLines = document.removeEmptyLines
             viewModel.wordWrap = document.wordWrap
             viewModel.wrapWidth = Double(document.wrapWidth)
-            viewModel.enableAntiAliasing = AppSettings.enableAntiAliasing
+            viewModel.enableAntiAliasing = Settings.enableAntiAliasing
         }
     }
 }

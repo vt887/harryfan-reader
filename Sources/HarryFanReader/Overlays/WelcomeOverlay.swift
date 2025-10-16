@@ -1,13 +1,13 @@
-// AboutOverlay.swift
-// Generated: separated about overlay into its own file
+// WelcomeOverlay.swift
+// Generated: separated welcome overlay into its own file
 
 import SwiftUI
 
 extension OverlayFactory {
-    /// Create a centered about overlay ScreenLayer
-    static func makeAboutOverlay(rows: Int = AppSettings.rows - 2, cols: Int = AppSettings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    /// Create a centered welcome overlay ScreenLayer
+    static func makeWelcomeOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
         var layer = ScreenLayer(rows: rows, cols: cols)
-        let message = Messages.aboutMessage
+        let message = Messages.welcomeMessage
         let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         let totalLines = lines.count
         let verticalPadding = max(0, (rows - totalLines) / 2)
@@ -26,23 +26,23 @@ extension OverlayFactory {
         return layer
     }
 
-    /// Action bar items to show when the About overlay is active
-    static func aboutActionBarItems(cols: Int = AppSettings.cols) -> [String] {
+    /// Action bar items to show when the Welcome overlay is active
+    static func welcomeActionBarItems(cols: Int = Settings.cols) -> [String] {
         [
-            "Help", AppSettings.wordWrapLabel, "Open", "Search", "Goto",
+            "Help", Settings.wordWrapLabel, "Open", "Search", "Goto",
             "Bookm", "Start", "End", "Menu", "Quit",
         ]
     }
 }
 
 // Top-level wrapper function for use by other modules
-func aboutActionBarItems(cols: Int = AppSettings.cols) -> [String] {
-    OverlayFactory.aboutActionBarItems(cols: cols)
+func welcomeActionBarItems(cols: Int = Settings.cols) -> [String] {
+    OverlayFactory.welcomeActionBarItems(cols: cols)
 }
 
 // Top-level helper struct to expose per-overlay ActionBar items
-struct AboutOverlay {
-    static func actionBarItems(cols: Int = AppSettings.cols) -> [String] {
-        OverlayFactory.aboutActionBarItems(cols: cols)
+struct WelcomeOverlay {
+    static func actionBarItems(cols: Int = Settings.cols) -> [String] {
+        OverlayFactory.welcomeActionBarItems(cols: cols)
     }
 }

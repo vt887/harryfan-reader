@@ -25,7 +25,7 @@ struct ActionBar: View {
 
         // Default menu items
         return [
-            "Help", AppSettings.wordWrapLabel, "Open", "Search", "Goto",
+            "Help", Settings.wordWrapLabel, "Open", "Search", "Goto",
             "Bookm", "Start", "End", "Menu", "Quit",
         ]
     }
@@ -33,7 +33,7 @@ struct ActionBar: View {
     // Main view body rendering the menu bar
     var body: some View {
         ScreenView(document: document,
-                   contentToDisplay: TextFormatter.getActionBarText(menuItems: menuItems, cols: AppSettings.cols),
+                   contentToDisplay: TextFormatter.getActionBarText(menuItems: menuItems, cols: Settings.cols),
                    displayRows: 1,
                    rowOffset: document.rows - 1,
                    backgroundColor: Colors.theme.menuBarBackground,

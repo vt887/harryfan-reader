@@ -36,8 +36,8 @@ struct ContentView: View {
             ActionBar(document: document)
         }
         .frame(
-            width: CGFloat(AppSettings.cols * AppSettings.charW),
-            height: CGFloat(AppSettings.rows * AppSettings.charH),
+            width: CGFloat(Settings.cols * Settings.charW),
+            height: CGFloat(Settings.rows * Settings.charH),
         )
         .background(Colors.theme.background)
         .sheet(isPresented: $showingSettings) {

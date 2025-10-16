@@ -7,11 +7,11 @@ final class OverlayFactoryQuickSpec: QuickSpec {
         describe("OverlayFactory about overlay centering") {
             it("places the top border and other lines at the same horizontal offset") {
                 // Create the overlay layer for `.about`
-                let layer = OverlayFactory.make(kind: .about, rows: AppSettings.rows - 2, cols: AppSettings.cols)
+                let layer = OverlayFactory.make(kind: .about, rows: Settings.rows - 2, cols: Settings.cols)
 
                 // Helper to find first non-space column index for a given row (returns nil if none)
                 func firstNonSpaceIndex(in row: Int) -> Int? {
-                    for col in 0 ..< AppSettings.cols {
+                    for col in 0 ..< Settings.cols {
                         if layer[row, col].char != " " {
                             return col
                         }
