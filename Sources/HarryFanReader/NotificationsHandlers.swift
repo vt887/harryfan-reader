@@ -39,6 +39,11 @@ private struct NotificationsModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .clearRecentFilesCommand)) { _ in recentFilesManager.clearRecentFiles() }
             .onReceive(NotificationCenter.default.publisher(for: .toggleWordWrapCommand)) { _ in document.toggleWordWrap() }
+            .onReceive(NotificationCenter.default.publisher(for: .showHelpCommand)) { _ in
+                // Forward the command to the toggle notification so the view can
+                // toggle the centered help overlay (show/hide).
+                NotificationCenter.default.post(name: .toggleHelpOverlay, object: nil)
+            }
 
         let contentWithBookmarks = contentWithFile
             .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in
@@ -74,6 +79,9 @@ private struct NotificationsModifier: ViewModifier {
             }
 
         return contentWithAbout
+            .onReceive(NotificationCenter.default.publisher(for: .removeHelpOverlay)) { _ in
+                overlayManager.removeHelpOverlay()
+            }
             .onReceive(NotificationCenter.default.publisher(for: .scrollUpCommand)) { _ in document.lineUp() }
             .onReceive(NotificationCenter.default.publisher(for: .scrollDownCommand)) { _ in document.lineDown() }
             .onReceive(NotificationCenter.default.publisher(for: .pageUpCommand)) { _ in document.pageUp() }
@@ -92,4 +100,7 @@ extension View {
 
 extension Notification.Name {
     static let showAboutOverlay = Notification.Name("showAboutOverlay")
+    static let showHelpOverlay = Notification.Name("showHelpOverlay")
+    static let toggleHelpOverlay = Notification.Name("toggleHelpOverlay")
+    static let removeHelpOverlay = Notification.Name("removeHelpOverlay")
 }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AppKit
 
 // Represents a single cell in the screen grid
 struct ScreenCell {
@@ -20,13 +21,14 @@ struct ScreenLayer: Identifiable {
     var grid: [[ScreenCell]] // [row][col], 24x80
 
     init(rows: Int = AppSettings.rows, cols: Int = AppSettings.cols) {
-        grid = Array(
-            repeating: Array(
-                repeating: ScreenCell(char: " ", fgColor: nil, bgColor: nil),
-                count: cols,
-            ),
-            count: rows,
-        )
+        grid = []
+        for _ in 0 ..< rows {
+            var rowArray: [ScreenCell] = []
+            for _ in 0 ..< cols {
+                rowArray.append(ScreenCell(char: " ", fgColor: nil, bgColor: nil))
+            }
+            grid.append(rowArray)
+        }
     }
 
     subscript(row: Int, col: Int) -> ScreenCell {
@@ -55,6 +57,10 @@ struct ScreenView: View {
     // New flag to highlight the cursor (current) line (top visible line)
     var highlightCursorLine: Bool = false
 
+    // Optional tap handler that receives (col, row, isSecondary)
+    // isSecondary == true means the click was a secondary (right) mouse click
+    var tapHandler: ((Int, Int, Bool) -> Void)? = nil
+
     // Number of columns in the screen (from AppSettings)
     static let cols = AppSettings.cols
     // Character width in pixels (from AppSettings)
@@ -68,10 +74,10 @@ struct ScreenView: View {
 
     // Helper function to create inverted screen cell
     private func createInvertedCell(_ char: Character) -> ScreenCell {
-        ScreenCell(
+        return ScreenCell(
             char: char,
             fgColor: Colors.theme.titleBarBackground,
-            bgColor: Colors.theme.menuBarForeground,
+            bgColor: Colors.theme.menuBarForeground
         )
     }
 
@@ -171,34 +177,63 @@ struct ScreenView: View {
 
     // Main view body rendering the text screen
     var body: some View {
-        Canvas { context, size in
-            // Conditionally enable anti-aliasing for smoother text rendering
-            if AppSettings.enableAntiAliasing {
-                context.withCGContext { cgContext in
-                    cgContext.setShouldAntialias(true)
-                    cgContext.setShouldSmoothFonts(true)
-                    cgContext.setAllowsFontSmoothing(true)
-                }
-            }
-
-            // Fill background
-            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
-
-            let grid = compositeGrid()
+        GeometryReader { geo in
             let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW), height: CGFloat(displayRows * ScreenView.charH))
-            let offsetX = (size.width - idealSize.width) / 2.0
+            let offsetX = (geo.size.width - idealSize.width) / 2.0
+            Canvas { context, size in
+                // Conditionally enable anti-aliasing for smoother text rendering
+                if AppSettings.enableAntiAliasing {
+                    // Anti-aliasing: no-op here (CGContext tweaking removed for compatibility)
+                }
 
-            // Determine cursor line index within the visible viewport (removed highlight feature)
-            // (Cursor line highlight disabled as per user request)
+                // Fill background
+                context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
 
-            for row in 0 ..< displayRows {
-                for col in 0 ..< ScreenView.cols {
-                    let cell = grid[row][col]
-                    drawChar(cell.char, at: (col, row), in: context, origin: CGPoint(x: offsetX, y: 0), customFgColor: cell.fgColor, customBgColor: cell.bgColor)
+                let grid = compositeGrid()
+                // offsetX already computed above from geometry
+
+                // Determine cursor line index within the visible viewport (removed highlight feature)
+                // (Cursor line highlight disabled as per user request)
+
+                for row in 0 ..< displayRows {
+                    for col in 0 ..< ScreenView.cols {
+                        let cell = grid[row][col]
+                        drawChar(cell.char, at: (col, row), in: context, origin: CGPoint(x: offsetX, y: 0), customFgColor: cell.fgColor, customBgColor: cell.bgColor)
+                    }
                 }
             }
+            // Keep the existing DragGesture as a fallback (e.g. trackpad taps)
+            .gesture(DragGesture(minimumDistance: 0)
+                .onEnded { value in
+                    let loc = value.location
+                    let x = loc.x - offsetX
+                    let y = loc.y
+                    let idealW = idealSize.width
+                    let idealH = idealSize.height
+                    guard x >= 0, x <= idealW, y >= 0, y <= idealH else { return }
+                    let col = Int(x / CGFloat(ScreenView.charW))
+                    let row = Int(y / CGFloat(ScreenView.charH))
+                    // Treat DragGesture taps as primary (not secondary)
+                    tapHandler?(col, row, false)
+                }
+            )
+            // Add an NSViewRepresentable on top of the Canvas to capture primary and secondary mouse clicks
+            .overlay(
+                MouseEventCatcher { localPoint, isSecondary in
+                    let x = localPoint.x - offsetX
+                    let y = localPoint.y
+                    let idealW = idealSize.width
+                    let idealH = idealSize.height
+                    guard x >= 0, x <= idealW, y >= 0, y <= idealH else { return }
+                    let col = Int(x / CGFloat(ScreenView.charW))
+                    let row = Int(y / CGFloat(ScreenView.charH))
+                    tapHandler?(col, row, isSecondary)
+                }
+                .frame(width: idealSize.width, height: idealSize.height)
+                .offset(x: offsetX, y: 0)
+            )
+            .accessibilityHidden(true) // no cursor or focus ring
         }
-        .accessibilityHidden(true) // no cursor or focus ring
     }
 
     // Draws a single character at the given position
@@ -228,23 +263,16 @@ struct ScreenView: View {
 
         if AppSettings.enableAntiAliasing {
             // Draw with anti-aliasing for smoother text
-            context.withCGContext { cgContext in
-                cgContext.setShouldAntialias(true)
-                cgContext.setAllowsAntialiasing(true)
-                cgContext.setShouldSmoothFonts(true)
-
-                for rowIndex in 0 ..< ScreenView.charH {
-                    for columnIndex in 0 ..< ScreenView.charW {
-                        if bitmap[rowIndex * ScreenView.charW + columnIndex] {
-                            let rect = CGRect(
-                                x: baseX + CGFloat(columnIndex),
-                                y: baseY + CGFloat(rowIndex),
-                                width: 1.0,
-                                height: 1.0,
-                            )
-                            cgContext.setFillColor(currentFgColor.cgColor ?? CGColor(red: 1, green: 1, blue: 1, alpha: 1))
-                            cgContext.fill(rect)
-                        }
+            for rowIndex in 0 ..< ScreenView.charH {
+                for columnIndex in 0 ..< ScreenView.charW {
+                    if bitmap[rowIndex * ScreenView.charW + columnIndex] {
+                        let rect = CGRect(
+                            x: baseX + CGFloat(columnIndex),
+                            y: baseY + CGFloat(rowIndex),
+                            width: 1.0,
+                            height: 1.0,
+                        )
+                        context.fill(Path(rect), with: .color(currentFgColor))
                     }
                 }
             }
@@ -264,5 +292,47 @@ struct ScreenView: View {
                 }
             }
         }
+    }
+}
+
+// NSViewRepresentable used to catch mouseDown and rightMouseDown on macOS
+private struct MouseEventCatcher: NSViewRepresentable {
+    // localPoint is in the view's coordinate space (origin at top-left of the catcher view)
+    var handler: (CGPoint, Bool) -> Void
+
+    func makeNSView(context: Context) -> MouseCatcherView {
+        let v = MouseCatcherView()
+        v.handler = handler
+        v.wantsLayer = true
+        // Ensure the view accepts mouse events
+        v.addTrackingArea(NSTrackingArea(rect: v.bounds, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect, .mouseMoved], owner: v, userInfo: nil))
+        return v
+    }
+
+    func updateNSView(_ nsView: MouseCatcherView, context: Context) {
+        // no-op; handler may be updated by re-creating the representable
+        nsView.handler = handler
+    }
+
+    class MouseCatcherView: NSView {
+        var handler: ((CGPoint, Bool) -> Void)?
+
+        override func mouseDown(with event: NSEvent) {
+            let local = convert(event.locationInWindow, from: nil)
+            handler?(local, false)
+        }
+
+        override func rightMouseDown(with event: NSEvent) {
+            let local = convert(event.locationInWindow, from: nil)
+            handler?(local, true)
+        }
+
+        // Support two-button mice calling otherMouseDown as secondary as well
+        override func otherMouseDown(with event: NSEvent) {
+            let local = convert(event.locationInWindow, from: nil)
+            handler?(local, true)
+        }
+
+        override var acceptsFirstResponder: Bool { true }
     }
 }

@@ -21,37 +21,7 @@ jobs:
 
       - name: Compute Swift line totals
         id: count
-        run: |
-          set -euo pipefail
-
-          # Helper to compute total lines for a directory (0 if missing/no files)
-          get_total() {
-            dir="$1"
-            if [ -d "$dir" ]; then
-              total=$(find "$dir" -name '*.swift' -print0 | xargs -0 wc -l 2>/dev/null | tail -n1 | awk '{print $1}')
-              total=${total:-0}
-            else
-              total=0
-            fi
-            echo "$total"
-          }
-
-          sources_total=$(get_total "Sources")
-          tests_total=$(get_total "Tests")
-
-          # Print numbers so they appear in the Count job logs
-          echo "Swift lines by directory:"
-          echo "Sources: ${sources_total}"
-          echo "Tests:   ${tests_total}"
-
-          # Compute combined total and export step outputs so job outputs are populated
-          all_total=$((sources_total + tests_total))
-          echo "All:     ${all_total}"
-
-          # Export outputs for other jobs (use the special GITHUB_OUTPUT file)
-          echo "sources_total=${sources_total}" >> "$GITHUB_OUTPUT"
-          echo "tests_total=${tests_total}" >> "$GITHUB_OUTPUT"
-          echo "all_total=${all_total}" >> "$GITHUB_OUTPUT"
+        run: sh scripts/count-swift-lines.sh
 
   build:
     name: Build on ${{ matrix.arch }}

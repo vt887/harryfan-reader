@@ -40,6 +40,39 @@ final class UtilityQuickSpec: QuickSpec {
     // Tests for AppSettings: constants and dimensions
     private class func specAppSettings() {
         describe("AppSettings") {
+            // Use UserDefaults to control persisted settings for deterministic tests
+            var originalWordWrap: Any?
+            var originalShouldShowQuitMessage: Any?
+            var originalDebug: Any?
+
+            beforeEach {
+                originalWordWrap = UserDefaults.standard.object(forKey: "wordWrap")
+                originalShouldShowQuitMessage = UserDefaults.standard.object(forKey: "shouldShowQuitMessage")
+                originalDebug = UserDefaults.standard.object(forKey: "debug")
+
+                UserDefaults.standard.set(true, forKey: "wordWrap")
+                UserDefaults.standard.set(false, forKey: "shouldShowQuitMessage")
+                UserDefaults.standard.set(true, forKey: "debug")
+            }
+
+            afterEach {
+                if let v = originalWordWrap {
+                    UserDefaults.standard.set(v, forKey: "wordWrap")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "wordWrap")
+                }
+                if let v = originalShouldShowQuitMessage {
+                    UserDefaults.standard.set(v, forKey: "shouldShowQuitMessage")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "shouldShowQuitMessage")
+                }
+                if let v = originalDebug {
+                    UserDefaults.standard.set(v, forKey: "debug")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "debug")
+                }
+            }
+
             // Checks that AppSettings constants have expected values (app name, home dir, font, etc).
             it("has correct constants") {
                 expect(AppSettings.appName).to(equal("HarryFan Reader"))

@@ -47,9 +47,9 @@ struct MainContentScreenView: View {
     }
 
     private func addOverlay(kind: OverlayKind, fadeDuration: Double = 0.25) -> UUID {
-        overlayManager.removeHelpOverlay()
         let layer = OverlayFactory.make(kind: kind, rows: AppSettings.rows - 2, cols: AppSettings.cols)
         let id = layer.id
+        DebugLogger.log("addOverlay: kind=\(kind) id=\(id)")
         overlayLayers.append(layer)
 
         overlayOpacities[id] = 0.0
@@ -76,6 +76,19 @@ struct MainContentScreenView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
             overlayLayers.removeAll { $0.id == id }
             overlayOpacities[id] = nil
+            // If we removed a tracked overlay id, clear it and inform keyHandler
+            if id == helpOverlayId {
+                helpOverlayId = nil
+                keyHandler?.setHelpOverlayId(nil)
+            }
+            if id == welcomeOverlayId {
+                welcomeOverlayId = nil
+                keyHandler?.setWelcomeOverlayId(nil)
+            }
+            if id == quitOverlayId {
+                quitOverlayId = nil
+                keyHandler?.setQuitOverlayId(nil)
+            }
             // Reset activeOverlay if no overlays left
             if overlayLayers.isEmpty { keyHandler?.setActiveOverlay(.none) }
         }
@@ -225,25 +238,62 @@ struct MainContentScreenView: View {
                         DebugLogger.log("About overlay already showing; skipping add.")
                     }
                 }
+                // Listen for the toggleHelpOverlay notification and toggle the help overlay
+                .onReceive(NotificationCenter.default.publisher(for: .toggleHelpOverlay)) { _ in
+                    DebugLogger.log("MainContentScreenView: received toggleHelpOverlay notification")
+                    // If we have a tracked help overlay id, remove it (toggle off)
+                    if let hid = helpOverlayId {
+                        DebugLogger.log("MainContentScreenView: hiding tracked help overlay id=\(hid)")
+                        removeOverlay(id: hid)
+                        // helpOverlayId will be cleared in removeOverlay's completion
+                        return
+                    }
+
+                    // Otherwise, check if a help overlay (by first line) exists in overlayLayers
+                    let helpFirstLine = Messages.helpMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
+                    if !helpFirstLine.isEmpty {
+                        if let existing = overlayLayers.first(where: { layer in
+                            let rows = layer.grid.count
+                            let cols = layer.grid.first?.count ?? 0
+                            for r in 0..<rows {
+                                var rowStr = ""
+                                for c in 0..<cols {
+                                    rowStr.append(layer[r, c].char)
+                                }
+                                if rowStr.trimmingCharacters(in: .whitespaces).contains(helpFirstLine) { return true }
+                            }
+                            return false
+                        }) {
+                            DebugLogger.log("MainContentScreenView: hiding existing help overlay id=\(existing.id)")
+                            removeOverlay(id: existing.id)
+                            return
+                        }
+                    }
+
+                    // No help overlay visible: show it
+                    let hid = addOverlay(kind: .help)
+                    helpOverlayId = hid
+                    keyHandler?.setHelpOverlayId(hid)
+                    keyHandler?.setActiveOverlay(.help)
+                    DebugLogger.log("Help overlay shown (id=\(hid))")
+                }
                 // React to overlays added to OverlayManager (programmatic additions elsewhere)
                 .onReceive(overlayManager.$overlays) { newKinds in
-                    // Determine newly added kinds
+                    // Determine newly added and removed kinds (compare to previous observedOverlayKinds)
                     let added = newKinds.filter { !observedOverlayKinds.contains($0) }
                     observedOverlayKinds = newKinds
+
                     if added.contains(.about) {
                         DebugLogger.log("MainContentScreenView: detected .about added to OverlayManager — adding about overlay")
-                        // Mirror behavior: remove help/welcome and add about overlay if not already present
-                        overlayManager.removeHelpOverlay()
-                        // Intentionally do not auto-remove the welcome overlay here.
-
+                        // Mirror behavior: add about overlay if not already present
                         let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
                         let alreadyShowing = overlayLayers.contains { layer in
                             guard !aboutFirstLine.isEmpty else { return false }
                             let rows = layer.grid.count
                             let cols = layer.grid.first?.count ?? 0
-                            for r in 0 ..< rows {
+                            for r in 0..<rows {
                                 var rowStr = ""
-                                for c in 0 ..< cols {
+                                for c in 0..<cols {
                                     rowStr.append(layer[r, c].char)
                                 }
                                 if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) { return true }

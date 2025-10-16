@@ -25,6 +25,7 @@ extension Notification.Name {
     static let openBookmarkCommand = Notification.Name("AppCommand.openBookmark")
     static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
     static let toggleWordWrapCommand = Notification.Name("AppCommand.toggleWordWrap")
+    static let showHelpCommand = Notification.Name("AppCommand.showHelp")
 }
 
 // Main app commands for menu and shortcuts

@@ -60,12 +60,22 @@ enum OverlayFactory {
                      cols: Int = AppSettings.cols,
                      fgColor: Color = Colors.theme.foreground) -> ScreenLayer
     {
+        // Default behavior: use centeredOverlayLayer built from the overlay's message
         let text = kind.message
-        // Use the centeredOverlayLayer for these built-in framed overlays so
-        // box borders and padding are preserved and the entire block is centered.
+        return centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    /// Return the action-bar items to display for a given overlay kind.
+    static func actionBarItems(for kind: OverlayKind) -> [String] {
         switch kind {
-        case .welcome, .help, .quit, .about:
-            return centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
+        case .help:
+            return HelpOverlay.actionBarItems()
+        case .welcome:
+            return WelcomeOverlay.actionBarItems()
+        case .quit:
+            return QuitOverlay.actionBarItems()
+        case .about:
+            return AboutOverlay.actionBarItems()
         }
     }
 

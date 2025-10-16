@@ -2,7 +2,7 @@
 
 SWIFT_FLAGS=-Xswiftc -sdk -Xswiftc $(shell xcrun --sdk macosx --show-sdk-path) -Xswiftc -no-verify-emitted-module-interface
 
-.PHONY: lint style build run test pre-commit
+.PHONY: lint style build run test stat pre-commit
 
 lint:
 	swiftformat . --swift-version 6.2 -verbose
@@ -18,10 +18,10 @@ run:
 	swift run
 
 test:
-	swift test $(SWIFT_FLAGS)
+	swift test $(SWIFT_FLAGS) 2>&1 | xcbeautify
 
 stat:
-	wc -l Sources/HarryFanReader/*.swift
+	@sh scripts/count-swift-lines.sh
 
 pre-commit:
 	@echo "Installing pre-commit hook..."
