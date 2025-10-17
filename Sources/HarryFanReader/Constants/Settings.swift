@@ -63,4 +63,10 @@ class Settings {
         get { UserDefaults.standard.object(forKey: "showStatusBarIcon") as? Bool ?? false }
         set { UserDefaults.standard.set(newValue, forKey: "showStatusBarIcon") }
     }
+
+    // Mouse usage setting
+    static var useMouse: Bool {
+        get { UserDefaults.standard.object(forKey: "useMouse") as? Bool ?? false }
+        set { UserDefaults.standard.set(newValue, forKey: "useMouse") }
+    }
 }

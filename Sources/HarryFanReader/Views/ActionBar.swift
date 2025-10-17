@@ -39,6 +39,7 @@ struct ActionBar: View {
                    backgroundColor: Colors.theme.menuBarBackground,
                    fontColor: Colors.theme.menuBarForeground,
                    tapHandler: { col, _, isSecondary in
+                       guard Settings.useMouse else { return }
                        // Each menu item is padded to 8 columns in TextFormatter.getActionBarText
                        let index = max(0, min(menuItems.count - 1, col / 8))
                        DebugLogger.log("ActionBar tapped: col=\(col), index=\(index), secondary=\(isSecondary)")
