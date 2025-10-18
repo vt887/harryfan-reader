@@ -8,6 +8,24 @@
 import Foundation
 import SwiftUI
 
+// Minimal overlay action type used by OverlayButton.
+// Kept intentionally simple: it stores the originating label and can be extended later.
+struct OverlayAction {
+    let label: String
+    init(fromLabel: String) {
+        label = fromLabel
+    }
+}
+
+// Represents a clickable button region inside an overlay layer.
+struct OverlayButton {
+    let label: String
+    let row: Int
+    let col: Int
+    let length: Int
+    let action: OverlayAction
+}
+
 // OverlayKind defines the different types of overlays
 // that can be displayed in the application, such as
 // welcome, help, custom messages, or file text previews.
@@ -99,12 +117,60 @@ func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: C
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         let padding = max(0, (cols - trimmed.count) / 2)
         let startCol = padding
-        for (j, char) in trimmed.enumerated() {
-            let row = verticalPadding + i
-            let col = startCol + j
-            if row < rows, col < cols {
-                layer[row, col] = ScreenCell(char: char, fgColor: fgColor, bgColor: nil)
+
+        // First: fill the overlay background for this trimmed region so the overlay
+        // shows overlayBackground even where characters are spaces.
+        let endCol = startCol + max(0, trimmed.count - 1)
+        if verticalPadding + i < rows {
+            for c in startCol ... min(endCol, cols - 1) where c >= 0 {
+                layer[verticalPadding + i, c] = ScreenCell(char: " ", fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
             }
+        }
+
+        // Scan trimmed string for bracketed button tokens and also place characters
+        var idx = trimmed.startIndex
+        var charIndex = 0
+        while idx < trimmed.endIndex {
+            let ch = trimmed[idx]
+            // If we find an opening bracket, attempt to find a matching closing bracket
+            if ch == "[" {
+                if let closeIdx = trimmed[idx...].firstIndex(of: "]") {
+                    // Extract inside label
+                    let innerStart = trimmed.index(after: idx)
+                    let inner = String(trimmed[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
+                    let j = charIndex
+                    let length = trimmed.distance(from: idx, to: closeIdx) + 1 // inclusive
+                    let row = verticalPadding + i
+                    let col = startCol + j
+                    // Register button on layer
+                    let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
+                    layer.buttons.append(button)
+                    // Place all characters from idx..closeIdx into grid (with overlay bg)
+                    var kIdx = idx
+                    var kCharIndex = j
+                    while kIdx <= closeIdx {
+                        let writeRow = verticalPadding + i
+                        let writeCol = startCol + kCharIndex
+                        if writeRow < rows, writeCol < cols {
+                            layer[writeRow, writeCol] = ScreenCell(char: trimmed[kIdx], fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
+                        }
+                        kCharIndex += 1
+                        kIdx = trimmed.index(after: kIdx)
+                    }
+                    // Advance idx and charIndex past the bracketed token
+                    idx = trimmed.index(after: closeIdx)
+                    charIndex += length
+                    continue
+                }
+            }
+            // Normal character placement (respect overlay background)
+            let writeRow = verticalPadding + i
+            let writeCol = startCol + charIndex
+            if writeRow < rows, writeCol < cols {
+                layer[writeRow, writeCol] = ScreenCell(char: ch, fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
+            }
+            idx = trimmed.index(after: idx)
+            charIndex += 1
         }
     }
     return layer
@@ -117,11 +183,14 @@ enum OverlayFactory {
     static func make(kind: OverlayKind,
                      rows: Int = Settings.rows - 2,
                      cols: Int = Settings.cols,
-                     fgColor: Color = Colors.theme.foreground) -> ScreenLayer
+                     fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer
     {
         // Default behavior: use centeredOverlayLayer built from the overlay's message
         let text = kind.message
-        return centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
+        var layer = centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
+        // Record overlay kind on the layer so UI/event handlers can inspect it
+        layer.overlayKind = kind
+        return layer
     }
 
     /// Return the action-bar items to display for a given overlay kind.
@@ -134,37 +203,37 @@ enum OverlayFactory {
     // small implementations across multiple files.
 
     // Per-overlay factory helpers (moved from separate overlay files)
-    static func makeWelcomeOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    static func makeWelcomeOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         let message = Messages.welcomeMessage
         return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    static func makeHelpOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    static func makeHelpOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         let message = Messages.helpMessage
         return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    static func makeQuitOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    static func makeQuitOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         let message = Messages.quitMessage
         return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    static func makeAboutOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    static func makeAboutOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         let message = Messages.aboutMessage
         return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    static func makeSearchOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    static func makeSearchOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         let message = Messages.searchMessage
         return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    static func makeGotoOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    static func makeGotoOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         let message = Messages.gotoMessage
         return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    static func makeMenuOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+    static func makeMenuOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         let message = Messages.menuMessage
         return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }

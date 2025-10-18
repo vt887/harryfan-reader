@@ -19,6 +19,10 @@ struct ScreenCell {
 struct ScreenLayer: Identifiable {
     let id = UUID()
     var grid: [[ScreenCell]] // [row][col], 24x80
+    // Buttons discovered in this layer (for overlay interactive regions)
+    var buttons: [OverlayButton] = []
+    // Optional overlay kind recorded by OverlayFactory
+    var overlayKind: OverlayKind?
 
     init(rows: Int = Settings.rows, cols: Int = Settings.cols) {
         grid = []
@@ -162,10 +166,18 @@ struct ScreenView: View {
             for row in 0 ..< min(gridRows, layer.grid.count) {
                 for col in 0 ..< min(gridCols, layer.grid[row].count) {
                     let cell = layer.grid[row][col]
-                    if cell.char != " " {
+                    // Previously we only copied overlay cells that had a non-space character.
+                    // That prevented overlay backgrounds (which are often stored on space chars)
+                    // from being applied. Copy the cell if it either has a non-space char or
+                    // an explicit background color. Also apply the overlay alpha to both
+                    // foreground and background colors.
+                    if cell.char != Character(" ") || cell.bgColor != nil {
                         var adjusted = cell
                         if let c = cell.fgColor {
                             adjusted.fgColor = c.opacity(alpha)
+                        }
+                        if let bg = cell.bgColor {
+                            adjusted.bgColor = bg.opacity(alpha)
                         }
                         result[row][col] = adjusted
                     }
@@ -177,11 +189,11 @@ struct ScreenView: View {
 
     // Main view body rendering the text screen
     var body: some View {
-        GeometryReader { geo in
+        GeometryReader { (geo: GeometryProxy) in
             let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW), height: CGFloat(displayRows * ScreenView.charH))
             let offsetX = (geo.size.width - idealSize.width) / 2.0
+
             Canvas { context, size in
-                // Conditionally enable anti-aliasing for smoother text rendering
                 if Settings.enableAntiAliasing {
                     // Anti-aliasing: no-op here (CGContext tweaking removed for compatibility)
                 }
@@ -190,10 +202,6 @@ struct ScreenView: View {
                 context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
 
                 let grid = compositeGrid()
-                // offsetX already computed above from geometry
-
-                // Determine cursor line index within the visible viewport (removed highlight feature)
-                // (Cursor line highlight disabled as per user request)
 
                 for row in 0 ..< displayRows {
                     for col in 0 ..< ScreenView.cols {
@@ -202,7 +210,6 @@ struct ScreenView: View {
                     }
                 }
             }
-            // Keep the existing DragGesture as a fallback (e.g. trackpad taps)
             .gesture(DragGesture(minimumDistance: 0)
                 .onEnded { value in
                     let loc = value.location
@@ -213,10 +220,8 @@ struct ScreenView: View {
                     guard x >= 0, x <= idealW, y >= 0, y <= idealH else { return }
                     let col = Int(x / CGFloat(ScreenView.charW))
                     let row = Int(y / CGFloat(ScreenView.charH))
-                    // Treat DragGesture taps as primary (not secondary)
                     tapHandler?(col, row, false)
                 })
-            // Add an NSViewRepresentable on top of the Canvas to capture primary and secondary mouse clicks
             .overlay(
                 MouseEventCatcher { localPoint, isSecondary in
                     let x = localPoint.x - offsetX
@@ -231,7 +236,7 @@ struct ScreenView: View {
                 .frame(width: idealSize.width, height: idealSize.height)
                 .offset(x: offsetX, y: 0),
             )
-            .accessibilityHidden(true) // no cursor or focus ring
+            .accessibilityHidden(true)
         }
     }
 
@@ -250,44 +255,20 @@ struct ScreenView: View {
         let baseX = origin.x + CGFloat(column * ScreenView.charW)
         let baseY = origin.y + CGFloat(row * ScreenView.charH)
 
-        // Determine foreground and background color to use
         let currentFgColor = customFgColor ?? fontColor
-        let currentBgColor = customBgColor
 
-        // Draw background color if present
-        if let bg = currentBgColor {
+        // Draw background if present
+        if let bg = customBgColor {
             let rect = CGRect(x: baseX, y: baseY, width: CGFloat(ScreenView.charW), height: CGFloat(ScreenView.charH))
             context.fill(Path(rect), with: .color(bg))
         }
 
-        if Settings.enableAntiAliasing {
-            // Draw with anti-aliasing for smoother text
-            for rowIndex in 0 ..< ScreenView.charH {
-                for columnIndex in 0 ..< ScreenView.charW {
-                    if bitmap[rowIndex * ScreenView.charW + columnIndex] {
-                        let rect = CGRect(
-                            x: baseX + CGFloat(columnIndex),
-                            y: baseY + CGFloat(rowIndex),
-                            width: 1.0,
-                            height: 1.0,
-                        )
-                        context.fill(Path(rect), with: .color(currentFgColor))
-                    }
-                }
-            }
-        } else {
-            // Draw without anti-aliasing for sharp, pixel-perfect text
-            for rowIndex in 0 ..< ScreenView.charH {
-                for columnIndex in 0 ..< ScreenView.charW {
-                    if bitmap[rowIndex * ScreenView.charW + columnIndex] {
-                        let rect = CGRect(
-                            x: baseX + CGFloat(columnIndex),
-                            y: baseY + CGFloat(rowIndex),
-                            width: 1,
-                            height: 1,
-                        )
-                        context.fill(Path(rect), with: .color(currentFgColor))
-                    }
+        // Draw character pixels (1x1 rectangles) based on bitmap
+        for yIndex in 0 ..< ScreenView.charH {
+            for xIndex in 0 ..< ScreenView.charW {
+                if bitmap[yIndex * ScreenView.charW + xIndex] {
+                    let pixelRect = CGRect(x: baseX + CGFloat(xIndex), y: baseY + CGFloat(yIndex), width: 1, height: 1)
+                    context.fill(Path(pixelRect), with: .color(currentFgColor))
                 }
             }
         }

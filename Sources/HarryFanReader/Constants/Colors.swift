@@ -28,6 +28,10 @@ struct AppTheme {
     let bottomMenuForeground: Color
     let helpMenuBackground: Color
     let helpMenuForeground: Color
+    let shadedbackground: Color
+    let shadedforeground: Color
+    let overlayBackground: Color
+    let overlayForeground: Color
 
     static func theme(for appearance: AppAppearance) -> AppTheme {
         switch appearance {
@@ -44,6 +48,10 @@ struct AppTheme {
                 bottomMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
                 helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
+                shadedbackground: Color(red: 0.0, green: 0.0, blue: 0.0),
+                shadedforeground: Color(red: 0.294, green: 0.647, blue: 0.655),
+                overlayBackground: Color(red: 0.667, green: 0.667, blue: 0.667), // Light gray
+                overlayForeground: .black,
             )
         case .dark:
             AppTheme(
@@ -58,6 +66,10 @@ struct AppTheme {
                 bottomMenuForeground: Color(red: 0.8, green: 0.8, blue: 0.8),
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
                 helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
+                shadedbackground: Color(red: 0.0, green: 0.0, blue: 0.0),
+                shadedforeground: Color(red: 0.294, green: 0.647, blue: 0.655),
+                overlayBackground: Color(red: 0.667, green: 0.667, blue: 0.667), // Light gray
+                overlayForeground: .black,
             )
         case .blue:
             AppTheme(
@@ -72,6 +84,10 @@ struct AppTheme {
                 bottomMenuForeground: Color(red: 0.9, green: 0.9, blue: 0.9),
                 helpMenuBackground: Color(red: 0.8, green: 0.8, blue: 0.8), // Light gray
                 helpMenuForeground: Color(red: 0.2, green: 0.2, blue: 0.2), // Dark gray
+                shadedbackground: Color(red: 0.0, green: 0.0, blue: 0.0),
+                shadedforeground: Color(red: 0.294, green: 0.647, blue: 0.655),
+                overlayBackground: Color(red: 0.667, green: 0.667, blue: 0.667), // Light gray
+                overlayForeground: .black,
             )
         }
     }

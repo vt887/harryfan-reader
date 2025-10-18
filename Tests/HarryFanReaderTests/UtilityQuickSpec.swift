@@ -185,7 +185,7 @@ final class UtilityQuickSpec: QuickSpec {
                 // Use split to preserve empty lines as explicit items; handle a trailing empty line
                 var lines = centeredMessage.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
                 // If the implementation appends a trailing newline, the last element will be an empty string — remove it for the strict height check
-                if lines.count > screenHeight && lines.last == "" {
+                if lines.count > screenHeight, lines.last == "" {
                     lines.removeLast()
                 }
                 expect(lines.count).to(equal(screenHeight))
