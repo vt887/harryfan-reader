@@ -88,7 +88,8 @@ extension ActiveOverlay {
 }
 
 // Utility to create a centered overlay layer from a string
-private func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: Color) -> ScreenLayer {
+// Made internal so other overlay files can reuse this implementation
+func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: Color) -> ScreenLayer {
     var layer = ScreenLayer(rows: rows, cols: cols)
     let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
     let totalLines = lines.count
@@ -124,24 +125,58 @@ enum OverlayFactory {
     }
 
     /// Return the action-bar items to display for a given overlay kind.
-    static func actionBarItems(for kind: OverlayKind) -> [String] {
-        switch kind {
-        case .help:
-            HelpOverlay.actionBarItems()
-        case .welcome:
-            WelcomeOverlay.actionBarItems()
-        case .quit:
-            QuitOverlay.actionBarItems()
-        case .about:
-            AboutOverlay.actionBarItems()
-        case .search:
-            SearchOverlay.actionBarItems()
-        case .goto:
-            GotoOverlay.actionBarItems()
-        case .menu:
-            MenuOverlay.actionBarItems()
-        }
+    static func actionBarItems(for _: OverlayKind) -> [String] {
+        ActionBar.defaultMenuItems
     }
+
+    // NOTE: per-overlay helpers previously lived in separate files (e.g. HelpOverlay.swift).
+    // They've been consolidated here to centralize overlay creation and avoid scattering
+    // small implementations across multiple files.
+
+    // Per-overlay factory helpers (moved from separate overlay files)
+    static func makeWelcomeOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+        let message = Messages.welcomeMessage
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    static func makeHelpOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+        let message = Messages.helpMessage
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    static func makeQuitOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+        let message = Messages.quitMessage
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    static func makeAboutOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+        let message = Messages.aboutMessage
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    static func makeSearchOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+        let message = Messages.searchMessage
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    static func makeGotoOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+        let message = Messages.gotoMessage
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    static func makeMenuOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.foreground) -> ScreenLayer {
+        let message = Messages.menuMessage
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    // Per-overlay action bar item helpers
+    static func welcomeActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
+    static func helpActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
+    static func quitActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
+    static func aboutActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
+    static func searchActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
+    static func gotoActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
+    static func menuActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
 }
 
 // OverlayManager manages the stack of overlays currently displayed.

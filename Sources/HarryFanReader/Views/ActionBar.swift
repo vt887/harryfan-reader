@@ -16,18 +16,17 @@ struct ActionBar: View {
     // Overlay manager to check active overlays and enforce allowed actions
     @EnvironmentObject var overlayManager: OverlayManager
 
-    // Computed menu items to reflect current wordWrap state
-    var menuItems: [String] {
-        // If an overlay is active, prefer the overlay-specific action bar items
-        if let top = overlayManager.overlays.last {
-            return OverlayFactory.actionBarItems(for: top)
-        }
-
-        // Default menu items
-        return [
+    // Make this a computed property so it always reflects current Settings (e.g. wordWrapLabel)
+    static var defaultMenuItems: [String] {
+        [
             "Help", Settings.wordWrapLabel, "Open", "Search", "Goto",
             "Bookm", "Start", "End", "Menu", "Quit",
         ]
+    }
+
+    // Prefer overlay-provided action bar items when an overlay is active.
+    var menuItems: [String] {
+        Self.defaultMenuItems
     }
 
     // Main view body rendering the menu bar
@@ -38,31 +37,11 @@ struct ActionBar: View {
                    rowOffset: document.rows - 1,
                    backgroundColor: Colors.theme.menuBarBackground,
                    fontColor: Colors.theme.menuBarForeground,
-                   tapHandler: { col, _, isSecondary in
+                   tapHandler: { col, _, _ in
                        guard Settings.useMouse else { return }
                        // Each menu item is padded to 8 columns in TextFormatter.getActionBarText
                        let index = max(0, min(menuItems.count - 1, col / 8))
-                       DebugLogger.log("ActionBar tapped: col=\(col), index=\(index), secondary=\(isSecondary)")
-                       switch index {
-                       case 0: // Help
-                           DispatchQueue.main.async {
-                               if isSecondary {
-                                   // If help overlay is active, ignore secondary clicks (Help must be dismissed with F1)
-                                   if overlayManager.overlays.contains(.help) {
-                                       DebugLogger.log("ActionBar: secondary-click on Help ignored because Help overlay is active (F1 required to dismiss)")
-                                   } else {
-                                       DebugLogger.log("ActionBar: secondary-click — posting removeHelpOverlay")
-                                       NotificationCenter.default.post(name: .removeHelpOverlay, object: nil)
-                                   }
-                               } else {
-                                   DebugLogger.log("ActionBar: posting toggleHelpOverlay")
-                                   NotificationCenter.default.post(name: .toggleHelpOverlay, object: nil)
-                               }
-                           }
-                       default:
-                           // All other buttons are intentionally disabled (no-op)
-                           DebugLogger.log("ActionBar: tapped disabled button at index=\(index)")
-                       }
+                       DebugLogger.log("ActionBar tapped: col=\(col), index=\(index)")
                    },
                    overlayLayers: .constant([]),
                    overlayOpacities: .constant([:]))

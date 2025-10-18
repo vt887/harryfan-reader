@@ -15,7 +15,7 @@ enum Messages {
     ║                                           ║
     ║          Version xxxxxxxxxxxx             ║
     ║                                           ║
-    ║             Press any key...              ║
+    ║                  [Close]                  ║
     ╚═══════════════════════════════════════════╝
     """
 
@@ -25,7 +25,7 @@ enum Messages {
     ║                                           ║
     ║      Retro MS-DOS Style Text Viewer       ║
     ║                                           ║
-    ║             Press any key...              ║
+    ║          Version xxxxxxxxxxxx             ║
     ╚═══════════════════════════════════════════╝
     """
 
@@ -41,12 +41,10 @@ enum Messages {
     """
 
     static let quitMessage = """
-    ╔══════════════════════════════════════════════════╗
-    ║                                                  ║
+    ╔════════════════════[ Welcome ]═══════════════════╗
     ║        Thank you for using HarryFan Reader!      ║
     ║                                                  ║
-    ║           Exiting application - Y/N?             ║
-    ║                                                  ║
+    ║                   [Yes] [ No ]                   ║
     ╚══════════════════════════════════════════════════╝
     """
 
@@ -54,19 +52,20 @@ enum Messages {
     ╔═════════════════[ Search ]═══════════════════════╗
     ║  Search for the string                           ║
     ║  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   ║
+    ║  [Search] [Cancel]                               ║
     ╚══════════════════════════════════════════════════╝
     """
 
     static let gotoMessage = """
-    ╔═════════════════[ Search ]═══════════════════════╗
-    ║  Go to the line                                  ║
+    ╔═══════════════════[ Goto ]═══════════════════════╗
+    ║  Look for a line                                 ║
     ║  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   ║
+    ║  [Go To] [Cancel]                                ║
     ╚══════════════════════════════════════════════════╝
     """
 
     static let menuMessage = """
-    ╔══════════════════════════════════════════════════╗
-    ║                  Main Menu                       ║
+    ╔════════════════════[Menu]════════════════════════╗
     ║                                                  ║
     ║  Open File          F3                           ║
     ║  Search             F4                           ║

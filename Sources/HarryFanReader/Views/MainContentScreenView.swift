@@ -34,10 +34,7 @@ struct MainContentScreenView: View {
     // Key handler
     @State private var keyHandler: KeyHandler?
 
-    private func removeWelcomeOverlayIfPresent(fadeDuration: Double = 0.25, force: Bool = false) {
-        // By default do not remove the welcome overlay automatically.
-        // Callers that intend to remove it (e.g. when a user opens a file)
-        // should pass `force: true`.
+    private func removeWelcomeOverlayIfPresent(fadeDuration: Double = 0, force: Bool = false) {
         guard force else {
             DebugLogger.log("removeWelcomeOverlayIfPresent called without force — skipping auto removal")
             return

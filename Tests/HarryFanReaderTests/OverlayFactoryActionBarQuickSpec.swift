@@ -18,19 +18,19 @@ final class OverlayFactoryActionBarQuickSpec: QuickSpec {
                     let fromFactory = OverlayFactory.actionBarItems(for: kind)
                     switch kind {
                     case .help:
-                        expect(fromFactory).to(equal(HelpOverlay.actionBarItems()))
+                        expect(fromFactory).to(equal(OverlayFactory.helpActionBarItems()))
                     case .welcome:
-                        expect(fromFactory).to(equal(WelcomeOverlay.actionBarItems()))
+                        expect(fromFactory).to(equal(OverlayFactory.welcomeActionBarItems()))
                     case .quit:
-                        expect(fromFactory).to(equal(QuitOverlay.actionBarItems()))
+                        expect(fromFactory).to(equal(OverlayFactory.quitActionBarItems()))
                     case .about:
-                        expect(fromFactory).to(equal(AboutOverlay.actionBarItems()))
+                        expect(fromFactory).to(equal(OverlayFactory.aboutActionBarItems()))
                     case .search:
-                        expect(fromFactory).to(equal(SearchOverlay.actionBarItems()))
+                        expect(fromFactory).to(equal(OverlayFactory.searchActionBarItems()))
                     case .goto:
-                        expect(fromFactory).to(equal(GotoOverlay.actionBarItems()))
+                        expect(fromFactory).to(equal(OverlayFactory.gotoActionBarItems()))
                     case .menu:
-                        expect(fromFactory).to(equal(MenuOverlay.actionBarItems()))
+                        expect(fromFactory).to(equal(OverlayFactory.menuActionBarItems()))
                     }
                 }
             }
