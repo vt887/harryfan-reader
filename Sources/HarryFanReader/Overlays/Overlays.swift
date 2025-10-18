@@ -112,21 +112,50 @@ func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: C
     let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
     let totalLines = lines.count
     let verticalPadding = max(0, (rows - totalLines) / 2)
-    for (i, line) in lines.enumerated() {
-        // Trim only for measurement; we already removed common indentation
+
+    // First pass: compute per-line start/end columns for the trimmed text so we can
+    // compute a single bounding box for the whole overlay. This lets us expand
+    // the background by one column/row on every side.
+    var startCols: [Int] = []
+    var endCols: [Int] = []
+    for line in lines {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         let padding = max(0, (cols - trimmed.count) / 2)
         let startCol = padding
-
-        // First: fill the overlay background for this trimmed region so the overlay
-        // shows overlayBackground even where characters are spaces.
         let endCol = startCol + max(0, trimmed.count - 1)
-        if verticalPadding + i < rows {
-            for c in startCol ... min(endCol, cols - 1) where c >= 0 {
-                layer[verticalPadding + i, c] = ScreenCell(char: " ", fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
+        startCols.append(startCol)
+        endCols.append(endCol)
+    }
+
+    // Determine bounding box across all lines
+    let minStartCol = startCols.min() ?? 0
+    let maxEndCol = endCols.max() ?? 0
+    let textTopRow = verticalPadding
+    let textBottomRow = verticalPadding + max(0, totalLines - 1)
+
+    // Expand bounding box by one row/column on each side
+    let fillTop = max(0, textTopRow - 1)
+    let fillBottom = min(rows - 1, textBottomRow + 1)
+    // Expand horizontally by an extra column on each side (2 columns total per side)
+    let horizontalPadding = 3
+    let fillLeft = max(0, minStartCol - horizontalPadding)
+    let fillRight = min(cols - 1, maxEndCol + horizontalPadding)
+
+    // Fill the expanded background rectangle first so buttons/text placed later
+    // will appear on top of it.
+    if fillTop <= fillBottom, fillLeft <= fillRight {
+        for r in fillTop ... fillBottom {
+            for c in fillLeft ... fillRight {
+                layer[r, c] = ScreenCell(char: " ", fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
             }
         }
+    }
 
+    // Now place the trimmed text lines, scanning for bracketed button tokens as before.
+    for (i, line) in lines.enumerated() {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        let padding = max(0, (cols - trimmed.count) / 2)
+        let startCol = padding
         // Scan trimmed string for bracketed button tokens and also place characters
         var idx = trimmed.startIndex
         var charIndex = 0
@@ -145,7 +174,7 @@ func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: C
                     // Register button on layer
                     let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
                     layer.buttons.append(button)
-                    // Place all characters from idx..closeIdx into grid (with overlay bg)
+                    // Place all characters from idx..closeIdx into grid (with overlay bg already present)
                     var kIdx = idx
                     var kCharIndex = j
                     while kIdx <= closeIdx {
@@ -163,7 +192,7 @@ func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: C
                     continue
                 }
             }
-            // Normal character placement (respect overlay background)
+            // Normal character placement (respect overlay background already set)
             let writeRow = verticalPadding + i
             let writeCol = startCol + charIndex
             if writeRow < rows, writeCol < cols {
@@ -173,6 +202,7 @@ func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: C
             charIndex += 1
         }
     }
+
     return layer
 }
 

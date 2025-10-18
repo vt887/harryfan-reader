@@ -11,27 +11,22 @@ import Foundation
 enum Messages {
     // Keep templates separate so we can substitute placeholders when accessed
     private static let aboutTemplate = """
-    ╔══════════════════[About]══════════════════╗
+    ╔══════════════════ About ══════════════════╗
     ║              HarryFan Reader              ║
-    ║                                           ║
     ║            Version %version%              ║
-    ║                                           ║
     ║                  [Close]                  ║
     ╚═══════════════════════════════════════════╝
     """
 
     private static let welcomeTemplate = """
-    ╔═══════════════════════════════════════════╗
-    ║              HarryFan Reader              ║
-    ║                                           ║
+    ╔═════════════ HarryFan Reader ═════════════╗
     ║      Retro MS-DOS Style Text Viewer       ║
-    ║                                           ║
     ║             Version %version%             ║
     ╚═══════════════════════════════════════════╝
     """
 
     static let helpMessage = """
-    ╔═════════════════════[Help]════════════════════════════╗
+    ╔════════════════════════ Help ═════════════════════════╗
     ║  F1  - Help        Show/hide this help screen         ║
     ║  F2  - Word Wrap   Toggle word wrapping on/off        ║
     ║  F3  - Open File   Open a new text file               ║
@@ -42,15 +37,14 @@ enum Messages {
     """
 
     static let quitMessage = """
-    ╔════════════════════[ Quit ]═══════════════════╗
+    ╔═════════════════════ Quit ════════════════════╗
     ║        Thank you for using HarryFan Reader!   ║
-    ║                                               ║
     ║                   [Yes] [No]                  ║
     ╚═══════════════════════════════════════════════╝
     """
 
     static let searchMessage = """
-    ╔═════════════════[ Search ]═══════════════════════╗
+    ╔════════════════════ Search ══════════════════════╗
     ║  Search for the string                           ║
     ║  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   ║
     ║  [Search] [Cancel]                               ║
@@ -58,7 +52,7 @@ enum Messages {
     """
 
     static let gotoMessage = """
-    ╔═══════════════════[ Goto ]═══════════════════════╗
+    ╔═════════════════════ Goto ═══════════════════════╗
     ║  Look for a line                                 ║
     ║  xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx   ║
     ║  [Go To] [Cancel]                                ║
@@ -66,8 +60,7 @@ enum Messages {
     """
 
     static let menuMessage = """
-    ╔════════════════════[Menu]════════════════════════╗
-    ║                                                  ║
+    ╔══════════════════════ Menu ══════════════════════╗
     ║  Open File          F3                           ║
     ║  Search             F4                           ║
     ╚══════════════════════════════════════════════════╝
