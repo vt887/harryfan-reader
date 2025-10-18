@@ -9,28 +9,29 @@ import Foundation
 
 // Enum for static app messages
 enum Messages {
-    static let aboutMessage = """
-    ╔═══════════════════════════════════════════╗
+    // Keep templates separate so we can substitute placeholders when accessed
+    private static let aboutTemplate = """
+    ╔══════════════════[About]══════════════════╗
     ║              HarryFan Reader              ║
     ║                                           ║
-    ║          Version xxxxxxxxxxxx             ║
+    ║            Version %version%              ║
     ║                                           ║
     ║                  [Close]                  ║
     ╚═══════════════════════════════════════════╝
     """
 
-    static let welcomeMessage = """
+    private static let welcomeTemplate = """
     ╔═══════════════════════════════════════════╗
     ║              HarryFan Reader              ║
     ║                                           ║
     ║      Retro MS-DOS Style Text Viewer       ║
     ║                                           ║
-    ║          Version xxxxxxxxxxxx             ║
+    ║             Version %version%             ║
     ╚═══════════════════════════════════════════╝
     """
 
     static let helpMessage = """
-    ╔═══════════════════════════════════════════════════════╗
+    ╔═════════════════════[Help]════════════════════════════╗
     ║  F1  - Help        Show/hide this help screen         ║
     ║  F2  - Word Wrap   Toggle word wrapping on/off        ║
     ║  F3  - Open File   Open a new text file               ║
@@ -41,11 +42,11 @@ enum Messages {
     """
 
     static let quitMessage = """
-    ╔════════════════════[ Welcome ]═══════════════════╗
-    ║        Thank you for using HarryFan Reader!      ║
-    ║                                                  ║
-    ║                   [Yes] [ No ]                   ║
-    ╚══════════════════════════════════════════════════╝
+    ╔════════════════════[ Quit ]═══════════════════╗
+    ║        Thank you for using HarryFan Reader!   ║
+    ║                                               ║
+    ║                   [Yes] [No]                  ║
+    ╚═══════════════════════════════════════════════╝
     """
 
     static let searchMessage = """
@@ -72,10 +73,22 @@ enum Messages {
     ╚══════════════════════════════════════════════════╝
     """
 
+    // Simple helper to substitute common placeholders in message templates
+    private static func applyPlaceholders(_ template: String) -> String {
+        var result = template
+        result = result.replacingOccurrences(of: "%version%", with: ReleaseInfo.version)
+        return result
+    }
+
+    // Public computed properties apply placeholders on access
+    static var aboutMessage: String { applyPlaceholders(aboutTemplate) }
+    static var welcomeMessage: String { applyPlaceholders(welcomeTemplate) }
+
     // Returns the welcome message centered horizontally and vertically for the current screen size, with version
     static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {
         DebugLogger.log("ReleaseInfo.version: '\(ReleaseInfo.version)'")
-        let versionedMessage = welcomeMessage.replacingOccurrences(of: "%version%", with: ReleaseInfo.version)
+        // Use the template with placeholders applied to ensure %version% is replaced
+        let versionedMessage = applyPlaceholders(welcomeTemplate)
         let lines = versionedMessage.components(separatedBy: "\n")
         let centeredLines = lines.map { line in
             let trimmed = line.trimmingCharacters(in: .whitespaces)

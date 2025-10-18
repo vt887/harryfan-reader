@@ -23,7 +23,7 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
                 if let window = notification.object as? NSWindow {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification for window: \(window.title)")
-                    overlayManager.addOverlay(.about)
+                    overlayManager.addOverlay(.welcome)
                 } else {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification received")
                 }

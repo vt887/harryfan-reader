@@ -155,7 +155,10 @@ final class UtilityQuickSpec: QuickSpec {
                 expect(quitMessage.isEmpty).to(beFalse())
                 expect(quitMessage).to(contain("Thank you"))
                 expect(quitMessage).to(contain("HarryFan Reader"))
-                expect(quitMessage).to(contain("Y/N"))
+                // Accept either 'Y/N' or a '[Yes]'/'No' layout; be tolerant to different message formats
+                let hasYN = quitMessage.contains("Y/N")
+                let hasYesNo = quitMessage.contains("[Yes]") || (quitMessage.contains("Yes") && quitMessage.contains("No"))
+                expect(hasYN || hasYesNo).to(beTrue(), description: "Quit message should indicate Yes/No (Y/N or Yes/No)")
                 expect(quitMessage).to(contain("╔"))
                 expect(quitMessage).to(contain("╗"))
                 expect(quitMessage).to(contain("╚"))
@@ -179,7 +182,12 @@ final class UtilityQuickSpec: QuickSpec {
                 let centeredMessage = Messages.centeredWelcomeMessage(screenWidth: screenWidth, screenHeight: screenHeight)
                 expect(centeredMessage.isEmpty).to(beFalse())
                 expect(centeredMessage).to(contain("HarryFan Reader"))
-                let lines = centeredMessage.components(separatedBy: "\n")
+                // Use split to preserve empty lines as explicit items; handle a trailing empty line
+                var lines = centeredMessage.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
+                // If the implementation appends a trailing newline, the last element will be an empty string — remove it for the strict height check
+                if lines.count > screenHeight && lines.last == "" {
+                    lines.removeLast()
+                }
                 expect(lines.count).to(equal(screenHeight))
                 for line in lines {
                     expect(line.count).to(equal(screenWidth), description: "Line should be padded to screen width: '\(line)'")

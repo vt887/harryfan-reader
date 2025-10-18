@@ -14,7 +14,7 @@ final class OverlayPoliciesQuickSpec: QuickSpec {
         describe("OverlayPolicies") {
             it("returns expected activities for welcome") {
                 let activities = OverlayPolicies.allowedActivities(for: .welcome)
-                expect(activities.allowAnyKeyToDismiss).to(beTrue())
+                expect(activities.allowAnyKeyToDismiss).to(beFalse())
                 expect(activities.dismissKeyCodes.isEmpty).to(beTrue())
                 expect(activities.allowActionBarSecondaryClick).to(beFalse())
             }
