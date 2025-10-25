@@ -78,9 +78,9 @@ struct ScreenView: View {
 
     // Helper function to create inverted screen cell
     private func createInvertedCell(_ char: Character) -> ScreenCell {
-        return ScreenCell(char: char,
-                          fgColor: Colors.theme.titleBarBackground,
-                          bgColor: Colors.theme.menuBarForeground)
+        ScreenCell(char: char,
+                   fgColor: Colors.theme.titleBarBackground,
+                   bgColor: Colors.theme.menuBarForeground)
     }
 
     // Helper function to detect and handle digit patterns
@@ -232,7 +232,7 @@ struct ScreenView: View {
                     tapHandler?(col, row, isSecondary)
                 }
                 .frame(width: idealSize.width, height: idealSize.height)
-                .offset(x: offsetX, y: 0)
+                .offset(x: offsetX, y: 0),
             )
             .accessibilityHidden(true)
         }

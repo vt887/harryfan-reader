@@ -15,6 +15,7 @@ class SettingsViewModel: ObservableObject {
     @Published var wordWrap: Bool
     @Published var wrapWidth: Double
     @Published var enableAntiAliasing: Bool
+    @Published var showStatusBar: Bool
 
     // Original values for cancel functionality
     private var originalFont: FontManager.MSDOSFont
@@ -23,6 +24,7 @@ class SettingsViewModel: ObservableObject {
     private var originalWordWrap: Bool
     private var originalWrapWidth: Double
     private var originalEnableAntiAliasing: Bool
+    private var originalShowStatusBar: Bool
 
     init(fontManager: FontManager, document: TextDocument) {
         let currentFont = fontManager.currentFont
@@ -31,6 +33,7 @@ class SettingsViewModel: ObservableObject {
         let currentWordWrap = document.wordWrap
         let currentWrapWidth = Double(document.wrapWidth)
         let currentEnableAntiAliasing = Settings.enableAntiAliasing
+        let currentShowStatusBar = Settings.showStatusBar
 
         selectedFont = currentFont
         fontSize = currentFontSize
@@ -38,6 +41,7 @@ class SettingsViewModel: ObservableObject {
         wordWrap = currentWordWrap
         wrapWidth = currentWrapWidth
         enableAntiAliasing = currentEnableAntiAliasing
+        showStatusBar = currentShowStatusBar
 
         // Store originals
         originalFont = currentFont
@@ -46,6 +50,7 @@ class SettingsViewModel: ObservableObject {
         originalWordWrap = currentWordWrap
         originalWrapWidth = currentWrapWidth
         originalEnableAntiAliasing = currentEnableAntiAliasing
+        originalShowStatusBar = currentShowStatusBar
     }
 
     // Applies the current settings to the models
@@ -56,6 +61,7 @@ class SettingsViewModel: ObservableObject {
         document.wordWrap = wordWrap
         document.wrapWidth = Int(wrapWidth)
         Settings.enableAntiAliasing = enableAntiAliasing
+        Settings.showStatusBar = showStatusBar
         document.reloadWithNewSettings()
     }
 
@@ -67,5 +73,6 @@ class SettingsViewModel: ObservableObject {
         wordWrap = originalWordWrap
         wrapWidth = originalWrapWidth
         enableAntiAliasing = originalEnableAntiAliasing
+        showStatusBar = originalShowStatusBar
     }
 }

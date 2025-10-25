@@ -39,7 +39,7 @@ final class PrintManager: ObservableObject {
 
                 let attrs: [NSAttributedString.Key: Any] = [
                     .font: NSFont.monospacedSystemFont(ofSize: 10.0, weight: .regular),
-                    .paragraphStyle: paragraphStyle
+                    .paragraphStyle: paragraphStyle,
                 ]
 
                 let fullText = header + text + footer
@@ -94,7 +94,10 @@ final class PrintManager: ObservableObject {
     }
 
     // Convenience static accessor for quick calls
-    static let shared = PrintManager()
+    // Initialize the shared instance using the convenience initializer that
+    // registers for notifications so the manager will handle print requests
+    // without requiring callers to reference PrintManager elsewhere.
+    static let shared = PrintManager(registerForNotifications: true)
     static func sharedPrint(_ document: TextDocument) { shared.printDocument(document) }
 }
 
@@ -112,13 +115,13 @@ extension PrintManager {
         self.init()
         if registerForNotifications {
             NotificationCenter.default.addObserver(forName: Notification.Name("AppCommand.printRequest"), object: nil, queue: .main) { [weak self] note in
-                guard let self = self else { return }
+                guard let self else { return }
                 if let text = note.userInfo?["text"] as? String {
                     // Create a temporary TextDocument-like content and print
                     let tempDoc = TextDocument()
                     tempDoc.content = text.components(separatedBy: "\n")
                     tempDoc.fileName = note.userInfo?["fileName"] as? String ?? ""
-                    self.printDocument(tempDoc)
+                    printDocument(tempDoc)
                 }
             }
         }

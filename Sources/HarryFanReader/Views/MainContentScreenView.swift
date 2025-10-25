@@ -314,6 +314,11 @@ struct MainContentScreenView: View {
                         }
                     }
                 }
+                // React to requests to show the quit overlay posted by AppDelegate
+                .onReceive(NotificationCenter.default.publisher(for: .showQuitOverlay)) { _ in
+                    DebugLogger.log("MainContentScreenView: received showQuitOverlay notification — showing quit overlay")
+                    document.shouldShowQuitMessage = true
+                }
                 // React to changes in the document.shouldShowQuitMessage flag and show/hide a centered quit overlay
                 .onChange(of: document.shouldShowQuitMessage) { _, showQuit in
                     let quitFirstLine = Messages.quitMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""

@@ -5,25 +5,9 @@
 //  Created by @vt887 on 9/1/25.
 //
 
-import SwiftUI
 import AppKit
 import Combine
-
-// Small AppDelegate to manage activation policy and status bar startup
-final class AppDelegate: NSObject, NSApplicationDelegate {
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        // Update status bar visibility based on Settings
-        StatusBarManager.shared.updateVisibility()
-
-        // Set activation policy to regular so the app has a Dock icon and menus
-        NSApp.setActivationPolicy(.regular)
-    }
-
-    func applicationWillTerminate(_ notification: Notification) {
-        // Clean up status bar
-        StatusBarManager.shared.stop()
-    }
-}
+import SwiftUI
 
 @main
 struct HarryFanReaderApp: App {

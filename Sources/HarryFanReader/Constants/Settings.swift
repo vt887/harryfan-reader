@@ -58,10 +58,21 @@ class Settings {
         set { UserDefaults.standard.set(newValue, forKey: "debug") }
     }
 
-    // Whether to show the Status Bar icon (persisted). Default: false
-    static var showStatusBarIcon: Bool {
-        get { UserDefaults.standard.object(forKey: "showStatusBarIcon") as? Bool ?? false }
-        set { UserDefaults.standard.set(newValue, forKey: "showStatusBarIcon") }
+    // Whether to show the Status Bar (persisted). Default: false
+    // Migration: older versions used the `showStatusBarIcon` key — migrate on first read.
+    private static let _showStatusBarKeyNew = "showStatusBar"
+    static var showStatusBar: Bool {
+        get {
+            let defaults = UserDefaults.standard
+            // If new key exists, prefer it
+            if let val = defaults.object(forKey: _showStatusBarKeyNew) as? Bool {
+                return val
+            }
+            return false
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: _showStatusBarKeyNew)
+        }
     }
 
     // Mouse usage setting

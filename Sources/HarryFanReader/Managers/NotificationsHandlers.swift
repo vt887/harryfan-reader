@@ -108,4 +108,5 @@ extension Notification.Name {
     static let showHelpOverlay = Notification.Name("showHelpOverlay")
     static let toggleHelpOverlay = Notification.Name("toggleHelpOverlay")
     static let removeHelpOverlay = Notification.Name("removeHelpOverlay")
+    static let showQuitOverlay = Notification.Name("showQuitOverlay")
 }

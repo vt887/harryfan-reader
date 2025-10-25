@@ -26,19 +26,19 @@ class TextFormatter {
         let minTitleLen = 10
         var displayFileName = fileName
         let emptyFile = fileName.isEmpty
-        if !emptyFile {
+        let title: String
+        let left = leftPad + appName + separator
+
+        if emptyFile {
+            title = left.padding(toLength: totalCols, withPad: " ", startingAt: 0)
+        } else {
             let usedWidth = appName.count + separator.count + statusText.count + leftPad.count + rightPad.count
             let availableWidth = max(minTitleLen, totalCols - usedWidth)
+            // Truncate the file name if it exceeds the available width, adding "..." at the end
             if fileName.count > availableWidth {
                 displayFileName = String(fileName.prefix(availableWidth - 3)) + "..."
             }
-        }
-        let title: String
-        if emptyFile {
-            let left = leftPad + appName + separator
-            title = left.padding(toLength: totalCols, withPad: " ", startingAt: 0)
-        } else {
-            let left = leftPad + appName + separator + displayFileName
+            let left = left + displayFileName
             let paddedLeft = left.padding(toLength: totalCols - statusText.count - rightPad.count, withPad: " ", startingAt: 0)
             title = paddedLeft + statusText + rightPad
         }

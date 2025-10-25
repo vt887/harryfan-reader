@@ -129,6 +129,9 @@ struct SettingsView: View {
                 Section("Display") {
                     Toggle("Enable anti-aliasing", isOn: $viewModel.enableAntiAliasing)
                         .help("Smooth text rendering for better visual quality")
+
+                    Toggle("Show status bar", isOn: $viewModel.showStatusBar)
+                        .help("Display the status bar icon for quick access to app controls")
                 }
             }
             .formStyle(.grouped)
@@ -170,6 +173,7 @@ struct SettingsView: View {
             viewModel.wordWrap = document.wordWrap
             viewModel.wrapWidth = Double(document.wrapWidth)
             viewModel.enableAntiAliasing = Settings.enableAntiAliasing
+            viewModel.showStatusBar = Settings.showStatusBar
         }
     }
 }
