@@ -60,7 +60,12 @@ struct AppCommands: Commands {
 
                 // Print... moved from status bar into main AppCommands menu
                 Button("Print...") {
-                    NotificationCenter.default.post(name: Notification.Name("AppCommand.print"), object: nil)
+                    DebugLogger.log("AppCommands: Print menu selected. document.totalLines=\(document.totalLines) fileName=\(document.fileName)")
+                    DebugLogger.log("AppCommands: invoking PrintManager.sharedPrint")
+                    DispatchQueue.main.async {
+                        PrintManager.sharedPrint(document)
+                    }
+                    DebugLogger.log("AppCommands: invoked PrintManager.sharedPrint")
                 }
                 .keyboardShortcut("p", modifiers: .command)
                 .disabled(document.totalLines == 0 && document.fileName.isEmpty)

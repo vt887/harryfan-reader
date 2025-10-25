@@ -30,6 +30,15 @@ class TextDocument: ObservableObject {
     // Returns the quit message string
     var quitMessage: String { Messages.quitMessage }
 
+    // Number of bytes in the original file (fallback to UTF-8 bytes of current content)
+    var byteSize: Int {
+        if let data = originalData {
+            return data.count
+        }
+        let joined = content.joined(separator: "\n")
+        return joined.data(using: .utf8)?.count ?? 0
+    }
+
     // Loads the welcome text into the document
     func loadWelcomeText() {
         content = splitLines(Messages.centeredWelcomeMessage(screenWidth: Settings.cols, screenHeight: Settings.rows - 2))

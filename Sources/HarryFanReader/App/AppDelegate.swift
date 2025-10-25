@@ -17,6 +17,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         // Request status bar visibility update based on Settings (StatusBarManager listens for this notification)
         NotificationCenter.default.post(name: Notification.Name("updateStatusBarVisibility"), object: nil)
 
+        // Ensure PrintManager is initialized so it can observe print requests
+        DebugLogger.log("AppDelegate: initializing PrintManager.shared")
+        _ = PrintManager.shared
+
         // Set activation policy to regular so the app has a Dock icon and menus
         NSApp.setActivationPolicy(.regular)
 
