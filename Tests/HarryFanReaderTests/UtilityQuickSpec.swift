@@ -179,7 +179,8 @@ final class UtilityQuickSpec: QuickSpec {
             it("centers the welcome message") {
                 let screenWidth = 80
                 let screenHeight = 24
-                let centeredMessage = Messages.centeredWelcomeMessage(screenWidth: screenWidth, screenHeight: screenHeight)
+                // Use the generic centeredMessage helper with the welcome template (placeholders already applied)
+                let centeredMessage = Messages.centeredMessage(Messages.welcomeMessage, screenWidth: screenWidth, screenHeight: screenHeight)
                 expect(centeredMessage.isEmpty).to(beFalse())
                 expect(centeredMessage).to(contain("HarryFan Reader"))
                 // Use split to preserve empty lines as explicit items; handle a trailing empty line
