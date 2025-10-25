@@ -13,7 +13,7 @@ struct RecentFile: Identifiable, Codable, Equatable {
     let id: UUID
     let url: URL
     let displayName: String
-    let lastOpened: Date
+    var lastOpened: Date
 
     init(url: URL) {
         id = UUID()
@@ -36,60 +36,73 @@ class RecentFilesManager: ObservableObject {
 
     // Adds a file to the recent files list
     func addRecentFile(url: URL) {
-        // Remove existing entry if file was already opened
-        recentFiles.removeAll { $0.url == url }
+        DispatchQueue.main.async {
+            // If an entry exists, update its lastOpened and move it to the front
+            if let existingIndex = self.recentFiles.firstIndex(where: { $0.url == url }) {
+                var existing = self.recentFiles.remove(at: existingIndex)
+                existing.lastOpened = Date()
+                self.recentFiles.insert(existing, at: 0)
+            } else {
+                // Add new entry at the beginning
+                let newFile = RecentFile(url: url)
+                self.recentFiles.insert(newFile, at: 0)
+            }
 
-        // Add new entry at the beginning
-        let newFile = RecentFile(url: url)
-        recentFiles.insert(newFile, at: 0)
+            // Keep only the latest maxRecentFiles files
+            if self.recentFiles.count > self.maxRecentFiles {
+                self.recentFiles = Array(self.recentFiles.prefix(self.maxRecentFiles))
+            }
 
-        // Keep only the latest 20 files
-        if recentFiles.count > maxRecentFiles {
-            recentFiles = Array(recentFiles.prefix(maxRecentFiles))
+            self.saveRecentFiles()
         }
-
-        saveRecentFiles()
     }
 
     // Clears all recent files
     func clearRecentFiles() {
-        recentFiles = []
-        saveRecentFiles()
+        DispatchQueue.main.async {
+            self.recentFiles = []
+            self.saveRecentFiles()
+        }
     }
 
     // Saves recent files to UserDefaults
     private func saveRecentFiles() {
-        do {
-            let encoder = JSONEncoder()
-            let data = try encoder.encode(recentFiles)
-            UserDefaults.standard.set(data, forKey: userDefaultsKey)
-        } catch {
-            DebugLogger.logError("Failed to save recent files: \(error)")
+        DispatchQueue.global(qos: .utility).async {
+            do {
+                let encoder = JSONEncoder()
+                let data = try encoder.encode(self.recentFiles)
+                UserDefaults.standard.set(data, forKey: self.userDefaultsKey)
+            } catch {
+                DebugLogger.logError("Failed to save recent files: \(error)")
+            }
         }
     }
 
     // Loads recent files from UserDefaults
     private func loadRecentFiles() {
-        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
-            return
-        }
+        guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else { return }
 
-        do {
-            let decoder = JSONDecoder()
-            recentFiles = try decoder.decode([RecentFile].self, from: data)
+        DispatchQueue.global(qos: .utility).async {
+            do {
+                let decoder = JSONDecoder()
+                var loaded = try decoder.decode([RecentFile].self, from: data)
 
-            // Remove files that no longer exist
-            recentFiles = recentFiles.filter { FileManager.default.fileExists(atPath: $0.url.path) }
+                // Remove files that no longer exist
+                loaded = loaded.filter { FileManager.default.fileExists(atPath: $0.url.path) }
 
-            // Keep only the latest 20
-            if recentFiles.count > maxRecentFiles {
-                recentFiles = Array(recentFiles.prefix(maxRecentFiles))
+                // Keep only the latest maxRecentFiles
+                if loaded.count > self.maxRecentFiles {
+                    loaded = Array(loaded.prefix(self.maxRecentFiles))
+                }
+
+                DispatchQueue.main.async {
+                    self.recentFiles = loaded
+                    self.saveRecentFiles()
+                }
+            } catch {
+                DebugLogger.logError("Failed to load recent files: \(error)")
+                DispatchQueue.main.async { self.recentFiles = [] }
             }
-
-            saveRecentFiles()
-        } catch {
-            DebugLogger.logError("Failed to load recent files: \(error)")
-            recentFiles = []
         }
     }
 }

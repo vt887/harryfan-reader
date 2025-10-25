@@ -44,6 +44,11 @@ private struct NotificationsModifier: ViewModifier {
                 // toggle the centered help overlay (show/hide).
                 NotificationCenter.default.post(name: .toggleHelpOverlay, object: nil)
             }
+            // Print command: post a printRequest notification with document text; PrintManager listens for this
+            .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AppCommand.print"))) { _ in
+                let text = document.content.joined(separator: "\n")
+                NotificationCenter.default.post(name: Notification.Name("AppCommand.printRequest"), object: nil, userInfo: ["text": text, "fileName": document.fileName])
+            }
 
         let contentWithBookmarks = contentWithFile
             .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in

@@ -32,6 +32,7 @@ extension Notification.Name {
 struct AppCommands: Commands {
     @ObservedObject var recentFilesManager: RecentFilesManager
     @ObservedObject var bookmarkManager: BookmarkManager
+    @ObservedObject var document: TextDocument
 
     // Note: Bookmark and Recent Files menu items are generated inline in the Commands body to avoid parsing issues
 
@@ -56,6 +57,13 @@ struct AppCommands: Commands {
                         Button("Clear Recent") { NotificationCenter.default.post(name: .clearRecentFilesCommand, object: nil) }
                     }
                 }
+
+                // Print... moved from status bar into main AppCommands menu
+                Button("Print...") {
+                    NotificationCenter.default.post(name: Notification.Name("AppCommand.print"), object: nil)
+                }
+                .keyboardShortcut("p", modifiers: .command)
+                .disabled(document.totalLines == 0 && document.fileName.isEmpty)
             }
 
             CommandMenu("Bookmarks") {

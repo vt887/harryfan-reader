@@ -21,8 +21,8 @@ enum OverlayPolicies {
     static func allowedActivities(for kind: OverlayKind) -> OverlayAllowedActivities {
         switch kind {
         case .welcome:
-            // Welcome: dismiss on any key, action bar clicks not allowed
-            OverlayAllowedActivities(dismissKeyCodes: [], allowAnyKeyToDismiss: false, allowActionBarSecondaryClick: false)
+            // Welcome: allow ESC to dismiss the welcome overlay; action bar clicks not allowed
+            OverlayAllowedActivities(dismissKeyCodes: [], allowAnyKeyToDismiss: true, allowActionBarSecondaryClick: false)
         case .help:
             // Help: F1 and ESC dismisses (no other keys or action-bar secondary clicks)
             OverlayAllowedActivities(dismissKeyCodes: [KeyCode.f1, KeyCode.escape], allowAnyKeyToDismiss: false, allowActionBarSecondaryClick: true)
