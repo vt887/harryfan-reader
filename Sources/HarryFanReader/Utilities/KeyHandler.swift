@@ -20,6 +20,7 @@ class KeyHandler {
     private var gotoOverlayId: UUID?
     private var menuOverlayId: UUID?
     private var quitOverlayId: UUID?
+    private var statsOverlayId: UUID?
     private var overlayLayers: [ScreenLayer]
     private var overlayOpacities: [UUID: Double]
     private var showingFilePicker: Bool
@@ -166,6 +167,50 @@ class KeyHandler {
                 return nil
             }
 
+            // Statistics overlay dismissal (explicit handler)
+            if kind == .statistics {
+                // User reported statistics overlay wasn't dismissing; accept any key to dismiss it.
+                DebugLogger.log("Statistics overlay: key pressed keyCode=\(event.keyCode) — dismissing overlay on any key")
+                if let sId = statsOverlayId { removeOverlay(sId, 0.25); statsOverlayId = nil }
+                overlayManager.removeOverlay(.statistics)
+                activeOverlay = .none
+                return nil
+            }
+
+            // Generic dismissal for overlays (statistics, menu, search, goto)
+            // If policy allows dismissal by specific keys or any key, remove the overlay and clear tracked ids
+            let isDismissKeyGeneric = policy.dismissKeyCodes.contains(event.keyCode)
+            if policy.allowAnyKeyToDismiss || isDismissKeyGeneric {
+                switch kind {
+                case .statistics:
+                    DebugLogger.log("Statistics overlay: dismissing per policy.")
+                    if let sId = statsOverlayId { removeOverlay(sId, 0.25); statsOverlayId = nil }
+                    overlayManager.removeOverlay(.statistics)
+                    activeOverlay = .none
+                    return nil
+                case .menu:
+                    DebugLogger.log("Menu overlay: dismissing per policy.")
+                    if let mId = menuOverlayId { removeOverlay(mId, 0.25); menuOverlayId = nil }
+                    overlayManager.removeOverlay(.menu)
+                    activeOverlay = .none
+                    return nil
+                case .search:
+                    DebugLogger.log("Search overlay: dismissing per policy.")
+                    if let sId = searchOverlayId { removeOverlay(sId, 0.25); searchOverlayId = nil }
+                    overlayManager.removeOverlay(.search)
+                    activeOverlay = .none
+                    return nil
+                case .goto:
+                    DebugLogger.log("Goto overlay: dismissing per policy.")
+                    if let gId = gotoOverlayId { removeOverlay(gId, 0.25); gotoOverlayId = nil }
+                    overlayManager.removeOverlay(.goto)
+                    activeOverlay = .none
+                    return nil
+                default:
+                    break
+                }
+            }
+
             // For other overlays, fall through to per-key handlers below
         }
 
@@ -297,5 +342,6 @@ class KeyHandler {
     func setGotoOverlayId(_ id: UUID?) { gotoOverlayId = id }
     func setMenuOverlayId(_ id: UUID?) { menuOverlayId = id }
     func setQuitOverlayId(_ id: UUID?) { quitOverlayId = id }
+    func setStatsOverlayId(_ id: UUID?) { statsOverlayId = id }
     func setActiveOverlay(_ overlay: ActiveOverlay) { activeOverlay = overlay }
 }

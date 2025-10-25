@@ -28,6 +28,7 @@ struct MainContentScreenView: View {
     @State private var menuOverlayId: UUID? = nil // menu overlay tracking
     @State private var gotoOverlayId: UUID? = nil // goto overlay tracking
     @State private var quitOverlayId: UUID? = nil // quit overlay tracking
+    @State private var statsOverlayId: UUID? = nil // statistics overlay tracking
     // Track overlay kinds received from OverlayManager to react to programmatic changes
     @State private var observedOverlayKinds: [OverlayKind] = []
 
@@ -58,6 +59,25 @@ struct MainContentScreenView: View {
         }
         // Set activeOverlay based on kind using centralized mapping
         keyHandler?.setActiveOverlay(kind.activeOverlay)
+        return id
+    }
+
+    // Add a pre-built ScreenLayer (used to insert document-aware overlays like Statistics)
+    private func addCustomOverlay(_ layer: ScreenLayer, fadeDuration: Double = 0.25) -> UUID {
+        let id = layer.id
+        DebugLogger.log("addCustomOverlay: kind=\(String(describing: layer.overlayKind)) id=\(id)")
+        overlayLayers.append(layer)
+        overlayOpacities[id] = 0.0
+        withAnimation(.easeInOut(duration: fadeDuration)) {
+            overlayOpacities[id] = 1.0
+        }
+        if let kind = layer.overlayKind {
+            keyHandler?.setActiveOverlay(kind.activeOverlay)
+            switch kind {
+            case .statistics: statsOverlayId = id; keyHandler?.setStatsOverlayId(id)
+            default: break
+            }
+        }
         return id
     }
 
@@ -94,6 +114,10 @@ struct MainContentScreenView: View {
             if id == quitOverlayId {
                 quitOverlayId = nil
                 keyHandler?.setQuitOverlayId(nil)
+            }
+            if id == statsOverlayId {
+                statsOverlayId = nil
+                keyHandler?.setStatsOverlayId(nil)
             }
             // Reset activeOverlay if no overlays left
             if overlayLayers.isEmpty { keyHandler?.setActiveOverlay(.none) }
@@ -144,234 +168,212 @@ struct MainContentScreenView: View {
         }
     }
 
+    // Keep the body very small to help the Swift compiler type-check quickly.
+    private var screenContent: some View {
+        ScreenView(document: document, displayRows: Settings.rows - 2, rowOffset: 1, overlayLayers: $overlayLayers, overlayOpacities: $overlayOpacities)
+            .environmentObject(fontManager)
+            .frame(height: CGFloat(Settings.rows - 2) * CGFloat(ScreenView.charH))
+    }
+
     var body: some View {
         Group {
-            // Always render the screen with overlayLayers and let overlays (welcome/help/about/quit)
-            // be displayed using the OverlayFactory (centered). This aligns the quit overlay
-            // with the welcome overlay which is also produced by the OverlayFactory.
-            ScreenView(document: document, displayRows: Settings.rows - 2, rowOffset: 1, overlayLayers: $overlayLayers, overlayOpacities: $overlayOpacities)
-                .environmentObject(fontManager)
-                .frame(height: CGFloat(Settings.rows - 2) * CGFloat(ScreenView.charH))
-                .onAppear {
-                    if document.fileName.isEmpty, document.totalLines == 0 {
-                        DebugLogger.log("Skipping loadWelcomeText; using overlay only")
-                    }
-                    DebugLogger.log("Main content area appeared")
-                    if welcomeOverlayId == nil, helpOverlayId == nil, document.fileName.isEmpty {
-                        welcomeOverlayId = addOverlay(kind: .welcome)
-                        DebugLogger.log("Welcome overlay added (id=\(welcomeOverlayId!))")
-                    }
-                    installQuitMonitor()
-                    // Initialize key handler
-                    keyHandler = KeyHandler(document: document,
-                                            overlayLayers: overlayLayers,
-                                            overlayOpacities: overlayOpacities,
-                                            showingFilePicker: showingFilePicker,
-                                            addOverlay: addOverlay,
-                                            removeOverlay: removeOverlay,
-                                            overlayManager: overlayManager,
-                                            recentFilesManager: recentFilesManager)
-                    // set handler's known overlay ids
-                    keyHandler?.setWelcomeOverlayId(welcomeOverlayId)
-                    keyHandler?.setHelpOverlayId(helpOverlayId)
-                    keyHandler?.setSearchOverlayId(searchOverlayId)
-                    keyHandler?.setMenuOverlayId(menuOverlayId)
-                    keyHandler?.setGotoOverlayId(gotoOverlayId)
-                    keyHandler?.setQuitOverlayId(quitOverlayId)
-                    // If we've just created a welcome overlay, mark it as the active overlay
-                    // and make it temporarily non-dismissable to avoid accidental dismissal
-                    // from synthetic or startup key events. Enable dismissal after a short delay.
-                    if welcomeOverlayId != nil {
-                        keyHandler?.setActiveOverlay(.welcome)
-                    }
-                    // If OverlayManager already contains .about (added earlier by AppDelegate), mirror it here
-                    if overlayManager.overlays.contains(.about) {
-                        DebugLogger.log("MainContentScreenView.onAppear: overlayManager already contains .about — ensuring about overlay is shown")
-                        let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-                        let alreadyShowing = overlayLayers.contains { layer in
-                            guard !aboutFirstLine.isEmpty else { return false }
-                            let rows = layer.grid.count
-                            let cols = layer.grid.first?.count ?? 0
-                            for r in 0 ..< rows {
-                                var rowStr = ""
-                                for c in 0 ..< cols {
-                                    rowStr.append(layer[r, c].char)
-                                }
-                                if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) { return true }
-                            }
-                            return false
-                        }
-                        if !alreadyShowing {
-                            _ = addOverlay(kind: .about)
-                        }
-                    }
-                }
+            screenContent
+                .onAppear(perform: onAppearAction)
                 .fileImporter(isPresented: $showingFilePicker,
                               allowedContentTypes: [UTType.plainText],
                               allowsMultipleSelection: false,
                               onCompletion: handleFileImport)
-                .onChange(of: document.fileName) { _, newFileName in
-                    if !newFileName.isEmpty {
-                        overlayManager.removeHelpOverlay()
-                        // File name changed as a result of user action — explicitly remove welcome overlay
-                        removeWelcomeOverlayIfPresent(force: true)
-                    }
+                .onChange(of: document.fileName) { _ , newFileName in
+                    handleDocumentFileNameChange(newFileName)
                 }
-                // Listen for the showAboutOverlay notification and add the about overlay in this view
-                .onReceive(NotificationCenter.default.publisher(for: .showAboutOverlay)) { _ in
-                    DebugLogger.log("MainContentScreenView: received showAboutOverlay notification — adding about overlay")
-                    // Remove welcome/help overlays first and then add about overlay
-                    overlayManager.removeHelpOverlay()
-                    // Intentionally not removing the welcome overlay here; it should be
-                    // dismissed only by explicit user actions (file open) or when a
-                    // caller passes `force: true`.
-
-                    // If about overlay is already present in overlayLayers, skip adding
-                    let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-                    let alreadyShowing = overlayLayers.contains { layer in
-                        guard !aboutFirstLine.isEmpty else { return false }
-                        let rows = layer.grid.count
-                        let cols = layer.grid.first?.count ?? 0
-                        for r in 0 ..< rows {
-                            var rowStr = ""
-                            for c in 0 ..< cols {
-                                rowStr.append(layer[r, c].char)
-                            }
-                            if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) { return true }
-                        }
-                        return false
-                    }
-                    if !alreadyShowing {
-                        _ = addOverlay(kind: .about)
-                    } else {
-                        DebugLogger.log("About overlay already showing; skipping add.")
-                    }
-                }
-                // Listen for the toggleHelpOverlay notification and toggle the help overlay
-                .onReceive(NotificationCenter.default.publisher(for: .toggleHelpOverlay)) { _ in
-                    DebugLogger.log("MainContentScreenView: received toggleHelpOverlay notification")
-                    // If we have a tracked help overlay id, remove it (toggle off)
-                    if let hid = helpOverlayId {
-                        DebugLogger.log("MainContentScreenView: hiding tracked help overlay id=\(hid)")
-                        removeOverlay(id: hid)
-                        // helpOverlayId will be cleared in removeOverlay's completion
-                        return
-                    }
-
-                    // Otherwise, check if a help overlay (by first line) exists in overlayLayers
-                    let helpFirstLine = Messages.helpMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-                    if !helpFirstLine.isEmpty {
-                        if let existing = overlayLayers.first(where: { layer in
-                            let rows = layer.grid.count
-                            let cols = layer.grid.first?.count ?? 0
-                            for r in 0 ..< rows {
-                                var rowStr = ""
-                                for c in 0 ..< cols {
-                                    rowStr.append(layer[r, c].char)
-                                }
-                                if rowStr.trimmingCharacters(in: .whitespaces).contains(helpFirstLine) { return true }
-                            }
-                            return false
-                        }) {
-                            DebugLogger.log("MainContentScreenView: hiding existing help overlay id=\(existing.id)")
-                            removeOverlay(id: existing.id)
-                            return
-                        }
-                    }
-
-                    // No help overlay visible: show it
-                    let hid = addOverlay(kind: .help)
-                    helpOverlayId = hid
-                    keyHandler?.setHelpOverlayId(hid)
-                    keyHandler?.setActiveOverlay(.help)
-                    DebugLogger.log("Help overlay shown (id=\(hid))")
-                }
-                // React to overlays added to OverlayManager (programmatic additions elsewhere)
-                .onReceive(overlayManager.$overlays) { newKinds in
-                    // Determine newly added and removed kinds (compare to previous observedOverlayKinds)
-                    let added = newKinds.filter { !observedOverlayKinds.contains($0) }
-                    observedOverlayKinds = newKinds
-
-                    if added.contains(.about) {
-                        DebugLogger.log("MainContentScreenView: detected .about added to OverlayManager — adding about overlay")
-                        // Mirror behavior: add about overlay if not already present
-                        let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-                        let alreadyShowing = overlayLayers.contains { layer in
-                            guard !aboutFirstLine.isEmpty else { return false }
-                            let rows = layer.grid.count
-                            let cols = layer.grid.first?.count ?? 0
-                            for r in 0 ..< rows {
-                                var rowStr = ""
-                                for c in 0 ..< cols {
-                                    rowStr.append(layer[r, c].char)
-                                }
-                                if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) { return true }
-                            }
-                            return false
-                        }
-                        if !alreadyShowing {
-                            _ = addOverlay(kind: .about)
-                        }
-                    }
-
-                    if added.contains(.statistics) {
-                        DebugLogger.log("MainContentScreenView: detected .statistics added to OverlayManager — adding statistics overlay (live)")
-                        // If a statistics overlay is already present, skip adding
-                        let alreadyShowing = overlayLayers.contains { $0.overlayKind == .statistics }
-                        if !alreadyShowing {
-                            // Create a live statistics layer using current document data
-                            var statsLayer = OverlayFactory.makeStatisticsOverlay(document: document, rows: Settings.rows - 2, cols: Settings.cols)
-                            statsLayer.overlayKind = .statistics
-                            let id = statsLayer.id
-                            overlayLayers.append(statsLayer)
-                            overlayOpacities[id] = 0.0
-                            withAnimation(.easeInOut(duration: 0.25)) {
-                                overlayOpacities[id] = 1.0
-                            }
-                            keyHandler?.setActiveOverlay(.statistics)
-                            DebugLogger.log("Statistics overlay shown (id=\(id))")
-                        }
-                    }
-                }
-                // React to requests to show the quit overlay posted by AppDelegate
-                .onReceive(NotificationCenter.default.publisher(for: .showQuitOverlay)) { _ in
-                    DebugLogger.log("MainContentScreenView: received showQuitOverlay notification — showing quit overlay")
-                    document.shouldShowQuitMessage = true
-                }
-                // React to changes in the document.shouldShowQuitMessage flag and show/hide a centered quit overlay
-                .onChange(of: document.shouldShowQuitMessage) { _, showQuit in
-                    let quitFirstLine = Messages.quitMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-                    let alreadyShowingQuit = overlayLayers.contains { layer in
-                        guard !quitFirstLine.isEmpty else { return false }
-                        let rows = layer.grid.count
-                        let cols = layer.grid.first?.count ?? 0
-                        for r in 0 ..< rows {
-                            var rowStr = ""
-                            for c in 0 ..< cols {
-                                rowStr.append(layer[r, c].char)
-                            }
-                            if rowStr.trimmingCharacters(in: .whitespaces).contains(quitFirstLine) { return true }
-                        }
-                        return false
-                    }
-                    if showQuit {
-                        overlayManager.removeHelpOverlay()
-                        // Do not remove the welcome overlay automatically when showing quit.
-                        if !alreadyShowingQuit {
-                            let qid = addOverlay(kind: .quit)
-                            quitOverlayId = qid
-                            keyHandler?.setActiveOverlay(.quit)
-                            DebugLogger.log("Quit overlay shown (id=\(qid))")
-                        }
-                    } else {
-                        if let qId = quitOverlayId {
-                            removeOverlay(id: qId)
-                            quitOverlayId = nil
-                        }
-                    }
+                .onReceive(NotificationCenter.default.publisher(for: .showAboutOverlay), perform: handleShowAboutNotification)
+                .onReceive(NotificationCenter.default.publisher(for: .toggleHelpOverlay), perform: handleToggleHelpNotification)
+                .onReceive(overlayManager.$overlays, perform: handleOverlayManagerChange)
+                .onReceive(NotificationCenter.default.publisher(for: .showQuitOverlay), perform: handleShowQuitOverlay)
+                .onChange(of: document.shouldShowQuitMessage) { _ , newValue in
+                    handleDocumentShouldShowQuitChange(newValue)
                 }
         }
         .onAppear { installQuitMonitor() }
         .onDisappear { removeQuitMonitor() }
     }
+
+    // MARK: - Helper methods extracted from body to simplify type-checking
+
+    private func onAppearAction() {
+        if document.fileName.isEmpty, document.totalLines == 0 {
+            DebugLogger.log("Skipping loadWelcomeText; using overlay only")
+        }
+        DebugLogger.log("Main content area appeared")
+        if welcomeOverlayId == nil, helpOverlayId == nil, document.fileName.isEmpty {
+            welcomeOverlayId = addOverlay(kind: .welcome)
+            DebugLogger.log("Welcome overlay added (id=\(welcomeOverlayId!))")
+        }
+        installQuitMonitor()
+        // Initialize key handler
+        keyHandler = KeyHandler(document: document,
+                                overlayLayers: overlayLayers,
+                                overlayOpacities: overlayOpacities,
+                                showingFilePicker: showingFilePicker,
+                                addOverlay: addOverlay,
+                                removeOverlay: removeOverlay,
+                                overlayManager: overlayManager,
+                                recentFilesManager: recentFilesManager)
+        // set handler's known overlay ids
+        keyHandler?.setWelcomeOverlayId(welcomeOverlayId)
+        keyHandler?.setHelpOverlayId(helpOverlayId)
+        keyHandler?.setSearchOverlayId(searchOverlayId)
+        keyHandler?.setMenuOverlayId(menuOverlayId)
+        keyHandler?.setGotoOverlayId(gotoOverlayId)
+        keyHandler?.setQuitOverlayId(quitOverlayId)
+        // Inform keyHandler about statistics overlay if it already exists
+        if let sId = statsOverlayId {
+            keyHandler?.setStatsOverlayId(sId)
+            keyHandler?.setActiveOverlay(.statistics)
+        }
+        if welcomeOverlayId != nil { keyHandler?.setActiveOverlay(.welcome) }
+        // Mirror any .about overlay present in OverlayManager
+        if overlayManager.overlays.contains(.about) {
+            DebugLogger.log("MainContentScreenView.onAppear: overlayManager already contains .about — ensuring about overlay is shown")
+            let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
+            let alreadyShowing = overlayLayers.contains { layer in
+                guard !aboutFirstLine.isEmpty else { return false }
+                let rows = layer.grid.count
+                let cols = layer.grid.first?.count ?? 0
+                for r in 0 ..< rows {
+                    var rowStr = ""
+                    for c in 0 ..< cols {
+                        rowStr.append(layer[r, c].char)
+                    }
+                    if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) {
+                        return true
+                    }
+                }
+                return false
+            }
+            if !alreadyShowing { _ = addOverlay(kind: .about) }
+        }
+    }
+
+    private func handleDocumentFileNameChange(_ newFileName: String) {
+        if !newFileName.isEmpty {
+            overlayManager.removeHelpOverlay()
+            removeWelcomeOverlayIfPresent(force: true)
+        }
+    }
+
+    private func handleShowAboutNotification(_ note: Notification) {
+        DebugLogger.log("MainContentScreenView: received showAboutOverlay notification — adding about overlay")
+        overlayManager.removeHelpOverlay()
+        let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
+        let alreadyShowing = overlayLayers.contains { layer in
+            guard !aboutFirstLine.isEmpty else { return false }
+            let rows = layer.grid.count
+            let cols = layer.grid.first?.count ?? 0
+            for r in 0 ..< rows {
+                var rowStr = ""
+                for c in 0 ..< cols {
+                    rowStr.append(layer[r, c].char)
+                }
+                if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) {
+                    return true
+                }
+            }
+            return false
+        }
+        if !alreadyShowing { _ = addOverlay(kind: .about) }
+    }
+
+    private func handleToggleHelpNotification(_ note: Notification) {
+        DebugLogger.log("MainContentScreenView: received toggleHelpOverlay notification")
+        if let hid = helpOverlayId { DebugLogger.log("MainContentScreenView: hiding tracked help overlay id=\(hid)"); removeOverlay(id: hid); return }
+        let helpFirstLine = Messages.helpMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
+        if !helpFirstLine.isEmpty {
+            if let existing = overlayLayers.first(where: { layer in
+                let rows = layer.grid.count
+                let cols = layer.grid.first?.count ?? 0
+                for r in 0 ..< rows {
+                    var rowStr = ""
+                    for c in 0 ..< cols {
+                        rowStr.append(layer[r, c].char)
+                    }
+                    if rowStr.trimmingCharacters(in: .whitespaces).contains(helpFirstLine) { return true }
+                }
+                return false
+            }) {
+                DebugLogger.log("MainContentScreenView: hiding existing help overlay id=\(existing.id)")
+                removeOverlay(id: existing.id)
+                return
+            }
+        }
+        let hid = addOverlay(kind: .help)
+        helpOverlayId = hid
+        keyHandler?.setHelpOverlayId(hid)
+        keyHandler?.setActiveOverlay(.help)
+        DebugLogger.log("Help overlay shown (id=\(hid))")
+    }
+
+    private func handleOverlayManagerChange(_ newKinds: [OverlayKind]) {
+        let added = newKinds.filter { !observedOverlayKinds.contains($0) }
+        observedOverlayKinds = newKinds
+        if added.contains(.about) {
+            DebugLogger.log("MainContentScreenView: detected .about added to OverlayManager — adding about overlay")
+            let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
+            let alreadyShowing = overlayLayers.contains { layer in
+                guard !aboutFirstLine.isEmpty else { return false }
+                let rows = layer.grid.count
+                let cols = layer.grid.first?.count ?? 0
+                for r in 0 ..< rows {
+                    var rowStr = ""
+                    for c in 0 ..< cols { rowStr.append(layer[r, c].char) }
+                    if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) { return true }
+                }
+                return false
+            }
+            if !alreadyShowing { _ = addOverlay(kind: .about) }
+        }
+        if added.contains(.statistics) {
+            DebugLogger.log("MainContentScreenView: detected .statistics added to OverlayManager — adding statistics overlay (live)")
+            let alreadyShowing = overlayLayers.contains { $0.overlayKind == .statistics }
+            if !alreadyShowing {
+                var statsLayer = OverlayFactory.makeStatisticsOverlay(document: document, rows: Settings.rows - 2, cols: Settings.cols)
+                statsLayer.overlayKind = .statistics
+                let id = addCustomOverlay(statsLayer)
+                statsOverlayId = id
+                DebugLogger.log("Statistics overlay shown (id=\(id))")
+            }
+        }
+    }
+
+    private func handleShowQuitOverlay(_ note: Notification) {
+        DebugLogger.log("MainContentScreenView: received showQuitOverlay notification — showing quit overlay")
+        document.shouldShowQuitMessage = true
+    }
+
+    private func handleDocumentShouldShowQuitChange(_ showQuit: Bool) {
+        let quitFirstLine = Messages.quitMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
+        let alreadyShowingQuit = overlayLayers.contains { layer in
+            guard !quitFirstLine.isEmpty else { return false }
+            let rows = layer.grid.count
+            let cols = layer.grid.first?.count ?? 0
+            for r in 0 ..< rows {
+                var rowStr = ""
+                for c in 0 ..< cols { rowStr.append(layer[r, c].char) }
+                if rowStr.trimmingCharacters(in: .whitespaces).contains(quitFirstLine) { return true }
+            }
+            return false
+        }
+        if showQuit {
+            overlayManager.removeHelpOverlay()
+            if !alreadyShowingQuit {
+                let qid = addOverlay(kind: .quit)
+                quitOverlayId = qid
+                keyHandler?.setActiveOverlay(.quit)
+                DebugLogger.log("Quit overlay shown (id=\(qid))")
+            }
+        } else {
+            if let qId = quitOverlayId { removeOverlay(id: qId); quitOverlayId = nil }
+        }
+    }
+
 }

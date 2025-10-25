@@ -110,44 +110,36 @@ extension ActiveOverlay {
     }
 }
 
-// Utility to create a centered overlay layer from a string
-// Made internal so other overlay files can reuse this implementation
+// CenteredOverlayLayer preserves each line exactly (no trimming) so multi-line box drawings
+// remain vertically aligned and produce a straight-shaped border.
 func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: Color) -> ScreenLayer {
     var layer = ScreenLayer(rows: rows, cols: cols)
     let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
     let totalLines = lines.count
     let verticalPadding = max(0, (rows - totalLines) / 2)
 
-    // First pass: compute per-line start/end columns for the trimmed text so we can
-    // compute a single bounding box for the whole overlay. This lets us expand
-    // the background by one column/row on every side.
+    // Compute bounding box using the full (not trimmed) lines so borders align
     var startCols: [Int] = []
     var endCols: [Int] = []
     for line in lines {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        let padding = max(0, (cols - trimmed.count) / 2)
+        let padding = max(0, (cols - line.count) / 2)
         let startCol = padding
-        let endCol = startCol + max(0, trimmed.count - 1)
+        let endCol = startCol + max(0, line.count - 1)
         startCols.append(startCol)
         endCols.append(endCol)
     }
 
-    // Determine bounding box across all lines
     let minStartCol = startCols.min() ?? 0
     let maxEndCol = endCols.max() ?? 0
     let textTopRow = verticalPadding
     let textBottomRow = verticalPadding + max(0, totalLines - 1)
 
-    // Expand bounding box by one row/column on each side
     let fillTop = max(0, textTopRow - 1)
     let fillBottom = min(rows - 1, textBottomRow + 1)
-    // Expand horizontally by an extra column on each side (2 columns total per side)
     let horizontalPadding = 3
     let fillLeft = max(0, minStartCol - horizontalPadding)
     let fillRight = min(cols - 1, maxEndCol + horizontalPadding)
 
-    // Fill the expanded background rectangle first so buttons/text placed later
-    // will appear on top of it.
     if fillTop <= fillBottom, fillLeft <= fillRight {
         for r in fillTop ... fillBottom {
             for c in fillLeft ... fillRight {
@@ -156,58 +148,54 @@ func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: C
         }
     }
 
-    // Now place the trimmed text lines, scanning for bracketed button tokens as before.
     for (i, line) in lines.enumerated() {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        let padding = max(0, (cols - trimmed.count) / 2)
+        let padding = max(0, (cols - line.count) / 2)
         let startCol = padding
-        // Scan trimmed string for bracketed button tokens and also place characters
-        var idx = trimmed.startIndex
+        var idx = line.startIndex
         var charIndex = 0
-        while idx < trimmed.endIndex {
-            let ch = trimmed[idx]
+        while idx < line.endIndex {
+            let ch = line[idx]
             // If we find an opening bracket, attempt to find a matching closing bracket
             if ch == "[" {
-                if let closeIdx = trimmed[idx...].firstIndex(of: "]") {
+                if let closeIdx = line[idx...].firstIndex(of: "]") {
                     // Extract inside label
-                    let innerStart = trimmed.index(after: idx)
-                    let inner = String(trimmed[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
+                    let innerStart = line.index(after: idx)
+                    let inner = String(line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
                     let j = charIndex
-                    let length = trimmed.distance(from: idx, to: closeIdx) + 1 // inclusive
+                    let length = line.distance(from: idx, to: closeIdx) + 1 // inclusive
                     let row = verticalPadding + i
                     let col = startCol + j
                     // Register button on layer
                     let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
                     layer.buttons.append(button)
-                    // Place all characters from idx..closeIdx into grid (with overlay bg already present)
+                    // Place all characters from idx..closeIdx into grid
                     var kIdx = idx
                     var kCharIndex = j
                     while kIdx <= closeIdx {
                         let writeRow = verticalPadding + i
                         let writeCol = startCol + kCharIndex
                         if writeRow < rows, writeCol < cols {
-                            layer[writeRow, writeCol] = ScreenCell(char: trimmed[kIdx], fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
+                            layer[writeRow, writeCol] = ScreenCell(char: line[kIdx], fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
                         }
                         kCharIndex += 1
-                        kIdx = trimmed.index(after: kIdx)
+                        kIdx = line.index(after: kIdx)
                     }
                     // Advance idx and charIndex past the bracketed token
-                    idx = trimmed.index(after: closeIdx)
+                    idx = line.index(after: closeIdx)
                     charIndex += length
                     continue
                 }
             }
-            // Normal character placement (respect overlay background already set)
+            // Normal character placement
             let writeRow = verticalPadding + i
             let writeCol = startCol + charIndex
             if writeRow < rows, writeCol < cols {
                 layer[writeRow, writeCol] = ScreenCell(char: ch, fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
             }
-            idx = trimmed.index(after: idx)
+            idx = line.index(after: idx)
             charIndex += 1
         }
     }
-
     return layer
 }
 
@@ -220,7 +208,7 @@ enum OverlayFactory {
                      cols: Int = Settings.cols,
                      fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer
     {
-        // Default behavior: use centeredOverlayLayer built from the overlay's message
+        // Use centered overlay (preserves each line exactly)
         let text = kind.message
         var layer = centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
         // Record overlay kind on the layer so UI/event handlers can inspect it
@@ -228,104 +216,145 @@ enum OverlayFactory {
         return layer
     }
 
-    /// Return the action-bar items to display for a given overlay kind.
-    static func actionBarItems(for _: OverlayKind) -> [String] {
-        ActionBar.defaultMenuItems
-    }
-
-    // NOTE: per-overlay helpers previously lived in separate files (e.g. HelpOverlay.swift).
-    // They've been consolidated here to centralize overlay creation and avoid scattering
-    // small implementations across multiple files.
-
     // Per-overlay factory helpers (moved from separate overlay files)
     static func makeWelcomeOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        let message = Messages.welcomeMessage
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        // Use the centralized helper which accepts a pre-filled message string.
+        makeCenteredOverlay(from: Messages.welcomeMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     static func makeHelpOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        let message = Messages.helpMessage
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        makeCenteredOverlay(from: Messages.helpMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     static func makeQuitOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        let message = Messages.quitMessage
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        makeCenteredOverlay(from: Messages.quitMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     static func makeAboutOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        let message = Messages.aboutMessage
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        makeCenteredOverlay(from: Messages.aboutMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     static func makeSearchOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        let message = Messages.searchMessage
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        makeCenteredOverlay(from: Messages.searchMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     static func makeGotoOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        let message = Messages.gotoMessage
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        makeCenteredOverlay(from: Messages.gotoMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     static func makeMenuOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        let message = Messages.menuMessage
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        makeCenteredOverlay(from: Messages.menuMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     static func makeStatisticsOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        let message = Messages.statisticsMessage
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        // Statistics overlay contains ASCII box art: preserve whitespace so borders align
+        makeCenteredOverlay(from: Messages.statisticsMessage, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    // Unified helper: create a ScreenLayer from a message string (placeholders should be applied by caller).
+    // If `preserveWhitespace` is true, the message is placed exactly as-is (useful for ASCII boxes).
+    static func makeCenteredOverlay(from message: String, rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
+        // Canonical centered overlay builder (preserves each line exactly).
+        centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
     // Create a statistics overlay using live document data (fills placeholders)
     static func makeStatisticsOverlay(document: TextDocument, rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        // Gather statistics
-        let lines = document.content
-        let totalLines = document.totalLines
-        let totalChars = lines.joined(separator: "\n").count
-        let totalWords = lines.reduce(0) { acc, line in
-            acc + line.split { $0.isWhitespace }.count
-        }
-        let lengths = lines.map(\.count)
-        let longest = lengths.max() ?? 0
-        let shortest = lengths.min() ?? 0
-        let avg = totalLines > 0 ? Int(round(Double(lengths.reduce(0, +)) / Double(totalLines))) : 0
+        let stats = document.statistics()
+        // Format numbers with thousands separators using NumberFormatter
+        let formatter: NumberFormatter = {
+            let f = NumberFormatter()
+            f.numberStyle = .decimal
+            f.groupingSeparator = ","
+            f.usesGroupingSeparator = true
+            f.locale = Locale.current
+            return f
+        }()
 
-        // Replace placeholders in the template
-        var message = Messages.statisticsMessage
-        message = message.replacingOccurrences(of: "%totalLines%", with: "\(totalLines)")
-        message = message.replacingOccurrences(of: "%totalWords%", with: "\(totalWords)")
-        message = message.replacingOccurrences(of: "%totalChars%", with: "\(totalChars)")
-        message = message.replacingOccurrences(of: "%avgLineLength%", with: "\(avg)")
-        message = message.replacingOccurrences(of: "%longestLineLength%", with: "\(longest)")
-        message = message.replacingOccurrences(of: "%shortestLineLength%", with: "\(shortest)")
+        func fmt(_ n: Int) -> String { formatter.string(from: NSNumber(value: n)) ?? "\(n)" }
 
-        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+        // Fill the statistics message template with values from TextDocument.Statistics
+        var text = Messages.statisticsMessage
+        text = text.replacingOccurrences(of: "%totalLines%", with: fmt(stats.totalLines))
+        text = text.replacingOccurrences(of: "%totalWords%", with: fmt(stats.totalWords))
+        text = text.replacingOccurrences(of: "%totalChars%", with: fmt(stats.totalCharacters))
+        text = text.replacingOccurrences(of: "%byteSize%", with: fmt(stats.byteSize))
+        text = text.replacingOccurrences(of: "%avgLineLength%", with: fmt(stats.averageLineLength))
+        text = text.replacingOccurrences(of: "%longestLineLength%", with: fmt(stats.longestLineLength))
+        text = text.replacingOccurrences(of: "%shortestLineLength%", with: fmt(stats.shortestLineLength))
+
+        let layer = makeCenteredOverlay(from: text, rows: rows, cols: cols, fgColor: fgColor)
+        return layer
     }
 
     // Per-overlay action bar item helpers
-    static func welcomeActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
-    static func helpActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
-    static func quitActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
-    static func aboutActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
-    static func searchActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
-    static func gotoActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
-    static func menuActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
-    static func statisticsActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
+    static func actionBarItems(for kind: OverlayKind) -> [String] {
+        switch kind {
+        case .welcome:
+            [
+                "Continue",
+                "Quit",
+            ]
+        case .help:
+            [
+                "Search",
+                "Continue",
+                "Quit",
+            ]
+        case .quit:
+            [
+                "Quit",
+            ]
+        case .about:
+            [
+                "Continue",
+                "Quit",
+            ]
+        case .search:
+            [
+                "Search",
+                "Continue",
+                "Quit",
+            ]
+        case .goto:
+            [
+                "Goto",
+                "Continue",
+                "Quit",
+            ]
+        case .menu:
+            [
+                "Continue",
+                "Quit",
+            ]
+        case .statistics:
+            [
+                "Continue",
+                "Quit",
+            ]
+        }
+    }
+
+    // Convenience wrappers used by unit tests and call sites that expect per-kind helpers.
+    static func helpActionBarItems() -> [String] { actionBarItems(for: .help) }
+    static func welcomeActionBarItems() -> [String] { actionBarItems(for: .welcome) }
+    static func quitActionBarItems() -> [String] { actionBarItems(for: .quit) }
+    static func aboutActionBarItems() -> [String] { actionBarItems(for: .about) }
+    static func searchActionBarItems() -> [String] { actionBarItems(for: .search) }
+    static func gotoActionBarItems() -> [String] { actionBarItems(for: .goto) }
+    static func menuActionBarItems() -> [String] { actionBarItems(for: .menu) }
+    static func statisticsActionBarItems() -> [String] { actionBarItems(for: .statistics) }
+
 }
 
 // OverlayManager manages the stack of overlays currently displayed.
 // It allows adding, removing, and clearing overlays, as well as
 // controlling the opacity of the overlay layer.
 final class OverlayManager: ObservableObject {
-    // Published properties so SwiftUI views observing this manager
-    // will update when overlays or opacity change.
     @Published private(set) var overlays: [OverlayKind] = []
     @Published private(set) var opacity: Double = 1.0
 
-    // Adds a new overlay if it is not already present. Use either
-    // `addOverlay(.custom("..."))` to add a custom multi-line overlay.
+    // Adds a new overlay if it is not already present.
     func addOverlay(_ kind: OverlayKind) {
         if !overlays.contains(kind) {
             overlays.append(kind)
@@ -346,8 +375,7 @@ final class OverlayManager: ObservableObject {
     // Removes all overlays from the stack.
     func removeAll() { overlays.removeAll() }
 
-    // Sets the opacity for the overlay layer. The value is clamped
-    // between 0.0 and 1.0.
+    // Sets the opacity for the overlay layer. The value is clamped between 0.0 and 1.0.
     func setOpacity(_ value: Double) {
         opacity = min(max(value, 0.0), 1.0)
     }

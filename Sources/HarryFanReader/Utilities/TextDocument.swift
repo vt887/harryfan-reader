@@ -39,9 +39,44 @@ class TextDocument: ObservableObject {
         return joined.data(using: .utf8)?.count ?? 0
     }
 
+    // Simple statistics struct returned by `statistics()`.
+    struct Statistics {
+        let totalLines: Int
+        let totalWords: Int
+        let totalCharacters: Int
+        let averageLineLength: Int
+        let longestLineLength: Int
+        let shortestLineLength: Int
+        let byteSize: Int
+    }
+
+    /// Compute and return document statistics derived from `content` and `originalData`.
+    /// This centralizes counting logic so other code (overlays, status, tests) can reuse it.
+    func statistics() -> Statistics {
+        let linesArray = content
+        let totalLines = linesArray.count
+        let totalChars = linesArray.joined(separator: "\n").count
+        let totalWords = linesArray.reduce(0) { acc, line in
+            acc + line.split { $0.isWhitespace }.count
+        }
+        let lengths = linesArray.map(\.count)
+        let longest = lengths.max() ?? 0
+        let shortest = lengths.min() ?? 0
+        let avg = totalLines > 0 ? Int(round(Double(lengths.reduce(0, +)) / Double(totalLines))) : 0
+        return Statistics(totalLines: totalLines,
+                          totalWords: totalWords,
+                          totalCharacters: totalChars,
+                          averageLineLength: avg,
+                          longestLineLength: longest,
+                          shortestLineLength: shortest,
+                          byteSize: byteSize)
+    }
+
     // Loads the welcome text into the document
     func loadWelcomeText() {
-        content = splitLines(Messages.centeredWelcomeMessage(screenWidth: Settings.cols, screenHeight: Settings.rows - 2))
+        // Use Messages.welcomeMessage (placeholders applied) and center it with centeredMessage
+        let centered = Messages.centeredMessage(Messages.welcomeMessage, screenWidth: Settings.cols, screenHeight: Settings.rows - 2)
+        content = splitLines(centered)
         totalLines = content.count
         topLine = 0
         currentLine = 0

@@ -71,10 +71,10 @@ enum Messages {
     ║  Total Lines: %totalLines%                       ║
     ║  Total Words: %totalWords%                       ║
     ║  Total Characters: %totalChars%                  ║
+    ║  File Size: %byteSize% bytes                     ║
     ║  Average Line Length: %avgLineLength%            ║
     ║  Longest Line Length: %longestLineLength%        ║
     ║  Shortest Line Length: %shortestLineLength%      ║
-    ║  [Close]                                         ║
     ╚══════════════════════════════════════════════════╝
     """
 
@@ -89,12 +89,10 @@ enum Messages {
     static var aboutMessage: String { applyPlaceholders(aboutTemplate) }
     static var welcomeMessage: String { applyPlaceholders(welcomeTemplate) }
 
-    // Returns the welcome message centered horizontally and vertically for the current screen size, with version
-    static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {
-        DebugLogger.log("ReleaseInfo.version: '\(ReleaseInfo.version)'")
-        // Use the template with placeholders applied to ensure %version% is replaced
-        let versionedMessage = applyPlaceholders(welcomeTemplate)
-        let lines = versionedMessage.components(separatedBy: "\n")
+    // Centers an already-filled multi-line message string horizontally and vertically.
+    // This function assumes placeholders (like %version%) are already substituted in the input string.
+    static func centeredMessage(_ message: String, screenWidth: Int, screenHeight: Int) -> String {
+        let lines = message.components(separatedBy: "\n")
         let centeredLines = lines.map { line in
             let trimmed = line.trimmingCharacters(in: .whitespaces)
             let totalPadding = max(0, screenWidth - trimmed.count)
