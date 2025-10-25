@@ -1,5 +1,9 @@
-// PrintManager.swift
-// Responsible for printing the current document using AppKit's print system
+//
+//  PrintManager.swift
+//  harryfan-reader
+//
+//  Created by @vt887 on 10/25/25.
+//
 
 import AppKit
 import Foundation
@@ -108,7 +112,8 @@ final class PrintManager: ObservableObject {
     }
 
     // Measure the number of pages required to render the given fullText with attrs
-    private func pagesForFullText(_ fullText: String, attrs: [NSAttributedString.Key: Any], printableWidth: CGFloat, printableHeight: CGFloat) -> Int {
+    // (made internal so unit tests can verify pagination behavior)
+    func pagesForFullText(_ fullText: String, attrs: [NSAttributedString.Key: Any], printableWidth: CGFloat, printableHeight: CGFloat) -> Int {
         let attributed = NSAttributedString(string: fullText, attributes: attrs)
         let ts = NSTextStorage(attributedString: attributed)
         let lm = NSLayoutManager()
@@ -175,7 +180,7 @@ extension PrintManager {
         self.init()
         if registerForNotifications {
             NotificationCenter.default.addObserver(forName: Notification.Name("AppCommand.printRequest"), object: nil, queue: .main) { [weak self] note in
-                guard let self = self else { return }
+                guard let self else { return }
                 let keys = note.userInfo?.keys.map { "\($0)" } ?? []
                 DebugLogger.log("PrintManager: received AppCommand.printRequest notification userInfoKeys=\(keys)")
                 if let text = note.userInfo?["text"] as? String {
@@ -184,11 +189,11 @@ extension PrintManager {
                     let tempDoc = TextDocument()
                     tempDoc.content = text.components(separatedBy: "\n")
                     tempDoc.fileName = note.userInfo?["fileName"] as? String ?? ""
-                    self.printDocument(tempDoc)
+                    printDocument(tempDoc)
                 } else {
                     DebugLogger.log("PrintManager: printRequest missing text in userInfo")
                 }
-             }
+            }
         }
     }
 }

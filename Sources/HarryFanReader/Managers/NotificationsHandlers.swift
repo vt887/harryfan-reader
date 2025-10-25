@@ -82,6 +82,9 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .showAboutOverlay)) { _ in
                 overlayManager.addOverlay(.about)
             }
+            .onReceive(NotificationCenter.default.publisher(for: .showStatisticsOverlay)) { _ in
+                overlayManager.addOverlay(.statistics)
+            }
 
         return contentWithAbout
             .onReceive(NotificationCenter.default.publisher(for: .removeHelpOverlay)) { _ in
@@ -109,4 +112,5 @@ extension Notification.Name {
     static let toggleHelpOverlay = Notification.Name("toggleHelpOverlay")
     static let removeHelpOverlay = Notification.Name("removeHelpOverlay")
     static let showQuitOverlay = Notification.Name("showQuitOverlay")
+    static let showStatisticsOverlay = Notification.Name("showStatisticsOverlay")
 }

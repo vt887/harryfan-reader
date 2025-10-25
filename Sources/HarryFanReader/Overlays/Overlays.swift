@@ -37,6 +37,7 @@ enum OverlayKind: Int, CaseIterable {
     case search
     case goto
     case menu
+    case statistics
 
     // Returns the message string associated with each overlay kind.
     // Implemented via a static array indexed by the enum's rawValue to avoid
@@ -57,6 +58,7 @@ enum OverlayKind: Int, CaseIterable {
         Messages.searchMessage,
         Messages.gotoMessage,
         Messages.menuMessage,
+        Messages.statisticsMessage,
     ]
 }
 
@@ -71,6 +73,7 @@ extension OverlayKind {
         case .search: .search
         case .goto: .goto
         case .menu: .menu
+        case .statistics: .statistics
         }
     }
 }
@@ -87,6 +90,7 @@ enum ActiveOverlay: Equatable {
     case search
     case goto
     case menu
+    case statistics
 }
 
 // Map an ActiveOverlay back to an optional OverlayKind (none -> nil).
@@ -101,6 +105,7 @@ extension ActiveOverlay {
         case .search: .search
         case .goto: .goto
         case .menu: .menu
+        case .statistics: .statistics
         }
     }
 }
@@ -268,6 +273,37 @@ enum OverlayFactory {
         return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
+    static func makeStatisticsOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
+        let message = Messages.statisticsMessage
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
+    // Create a statistics overlay using live document data (fills placeholders)
+    static func makeStatisticsOverlay(document: TextDocument, rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
+        // Gather statistics
+        let lines = document.content
+        let totalLines = document.totalLines
+        let totalChars = lines.joined(separator: "\n").count
+        let totalWords = lines.reduce(0) { acc, line in
+            acc + line.split { $0.isWhitespace }.count
+        }
+        let lengths = lines.map(\.count)
+        let longest = lengths.max() ?? 0
+        let shortest = lengths.min() ?? 0
+        let avg = totalLines > 0 ? Int(round(Double(lengths.reduce(0, +)) / Double(totalLines))) : 0
+
+        // Replace placeholders in the template
+        var message = Messages.statisticsMessage
+        message = message.replacingOccurrences(of: "%totalLines%", with: "\(totalLines)")
+        message = message.replacingOccurrences(of: "%totalWords%", with: "\(totalWords)")
+        message = message.replacingOccurrences(of: "%totalChars%", with: "\(totalChars)")
+        message = message.replacingOccurrences(of: "%avgLineLength%", with: "\(avg)")
+        message = message.replacingOccurrences(of: "%longestLineLength%", with: "\(longest)")
+        message = message.replacingOccurrences(of: "%shortestLineLength%", with: "\(shortest)")
+
+        return centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
     // Per-overlay action bar item helpers
     static func welcomeActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
     static func helpActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
@@ -276,6 +312,7 @@ enum OverlayFactory {
     static func searchActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
     static func gotoActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
     static func menuActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
+    static func statisticsActionBarItems(cols _: Int = Settings.cols) -> [String] { ActionBar.defaultMenuItems }
 }
 
 // OverlayManager manages the stack of overlays currently displayed.

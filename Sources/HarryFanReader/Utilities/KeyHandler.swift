@@ -88,6 +88,7 @@ class KeyHandler {
         case .search: .search
         case .goto: .goto
         case .menu: .menu
+        case .statistics: .statistics
         }
     }
 

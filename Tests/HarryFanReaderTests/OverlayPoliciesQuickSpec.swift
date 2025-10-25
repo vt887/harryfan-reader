@@ -14,7 +14,7 @@ final class OverlayPoliciesQuickSpec: QuickSpec {
         describe("OverlayPolicies") {
             it("returns expected activities for welcome") {
                 let activities = OverlayPolicies.allowedActivities(for: .welcome)
-                expect(activities.allowAnyKeyToDismiss).to(beFalse())
+                expect(activities.allowAnyKeyToDismiss).to(beTrue())
                 expect(activities.dismissKeyCodes.isEmpty).to(beTrue())
                 expect(activities.allowActionBarSecondaryClick).to(beFalse())
             }
@@ -39,6 +39,13 @@ final class OverlayPoliciesQuickSpec: QuickSpec {
             it("returns expected activities for about") {
                 let activities = OverlayPolicies.allowedActivities(for: .about)
                 expect(activities.allowAnyKeyToDismiss).to(beFalse())
+                expect(activities.dismissKeyCodes).to(contain(KeyCode.escape))
+                expect(activities.allowActionBarSecondaryClick).to(beFalse())
+            }
+
+            it("returns expected activities for statistics") {
+                let activities = OverlayPolicies.allowedActivities(for: .statistics)
+                expect(activities.allowAnyKeyToDismiss).to(beTrue())
                 expect(activities.dismissKeyCodes).to(contain(KeyCode.escape))
                 expect(activities.allowActionBarSecondaryClick).to(beFalse())
             }

@@ -61,11 +61,10 @@ struct AppCommands: Commands {
                 // Print... moved from status bar into main AppCommands menu
                 Button("Print...") {
                     DebugLogger.log("AppCommands: Print menu selected. document.totalLines=\(document.totalLines) fileName=\(document.fileName)")
-                    DebugLogger.log("AppCommands: invoking PrintManager.sharedPrint")
-                    DispatchQueue.main.async {
-                        PrintManager.sharedPrint(document)
-                    }
-                    DebugLogger.log("AppCommands: invoked PrintManager.sharedPrint")
+                    DebugLogger.log("AppCommands: posting printRequest notification")
+                    let text = document.content.joined(separator: "\n")
+                    NotificationCenter.default.post(name: Notification.Name("AppCommand.printRequest"), object: nil, userInfo: ["text": text, "fileName": document.fileName])
+                    DebugLogger.log("AppCommands: posted printRequest notification")
                 }
                 .keyboardShortcut("p", modifiers: .command)
                 .disabled(document.totalLines == 0 && document.fileName.isEmpty)
@@ -117,6 +116,13 @@ struct AppCommands: Commands {
                     NotificationCenter.default.post(name: .gotoEndCommand, object: nil)
                 }
                 .keyboardShortcut(.downArrow, modifiers: [.command, .control])
+            }
+
+            CommandMenu("View") {
+                Button("Statistics") {
+                    NotificationCenter.default.post(name: .showStatisticsOverlay, object: nil)
+                }
+                .keyboardShortcut("S", modifiers: [.command, .shift])
             }
         }
     }

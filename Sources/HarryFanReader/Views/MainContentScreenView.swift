@@ -313,6 +313,25 @@ struct MainContentScreenView: View {
                             _ = addOverlay(kind: .about)
                         }
                     }
+
+                    if added.contains(.statistics) {
+                        DebugLogger.log("MainContentScreenView: detected .statistics added to OverlayManager — adding statistics overlay (live)")
+                        // If a statistics overlay is already present, skip adding
+                        let alreadyShowing = overlayLayers.contains { $0.overlayKind == .statistics }
+                        if !alreadyShowing {
+                            // Create a live statistics layer using current document data
+                            var statsLayer = OverlayFactory.makeStatisticsOverlay(document: document, rows: Settings.rows - 2, cols: Settings.cols)
+                            statsLayer.overlayKind = .statistics
+                            let id = statsLayer.id
+                            overlayLayers.append(statsLayer)
+                            overlayOpacities[id] = 0.0
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                overlayOpacities[id] = 1.0
+                            }
+                            keyHandler?.setActiveOverlay(.statistics)
+                            DebugLogger.log("Statistics overlay shown (id=\(id))")
+                        }
+                    }
                 }
                 // React to requests to show the quit overlay posted by AppDelegate
                 .onReceive(NotificationCenter.default.publisher(for: .showQuitOverlay)) { _ in

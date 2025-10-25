@@ -66,6 +66,18 @@ enum Messages {
     ╚══════════════════════════════════════════════════╝
     """
 
+    static let statisticsMessage = """
+    ╔═══════════════════ Statistics ═══════════════════╗
+    ║  Total Lines: %totalLines%                       ║
+    ║  Total Words: %totalWords%                       ║
+    ║  Total Characters: %totalChars%                  ║
+    ║  Average Line Length: %avgLineLength%            ║
+    ║  Longest Line Length: %longestLineLength%        ║
+    ║  Shortest Line Length: %shortestLineLength%      ║
+    ║  [Close]                                         ║
+    ╚══════════════════════════════════════════════════╝
+    """
+
     // Simple helper to substitute common placeholders in message templates
     private static func applyPlaceholders(_ template: String) -> String {
         var result = template

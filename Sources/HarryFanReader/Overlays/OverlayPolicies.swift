@@ -32,6 +32,9 @@ enum OverlayPolicies {
         case .about:
             // About: dismiss on ESC only
             OverlayAllowedActivities(dismissKeyCodes: [KeyCode.escape, KeyCode.f9], allowAnyKeyToDismiss: false, allowActionBarSecondaryClick: false)
+        case .statistics:
+            // Statistics: dismiss on ESC only, don't allow action-bar secondary clicks
+            OverlayAllowedActivities(dismissKeyCodes: [], allowAnyKeyToDismiss: true, allowActionBarSecondaryClick: false)
         case .menu:
             // Quit overlay: ESC or 'n' cancels, 'y' confirms. Allow action-bar secondary to hide.
             OverlayAllowedActivities(dismissKeyCodes: [KeyCode.escape, KeyCode.yKey, KeyCode.nKey], allowAnyKeyToDismiss: false, allowActionBarSecondaryClick: true)
