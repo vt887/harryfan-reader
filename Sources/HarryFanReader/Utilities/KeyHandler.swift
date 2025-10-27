@@ -21,6 +21,7 @@ class KeyHandler {
     private var menuOverlayId: UUID?
     private var quitOverlayId: UUID?
     private var statsOverlayId: UUID?
+    private var libraryOverlayId: UUID?
     private var overlayLayers: [ScreenLayer]
     private var overlayOpacities: [UUID: Double]
     private var showingFilePicker: Bool
@@ -89,6 +90,7 @@ class KeyHandler {
         case .search: .search
         case .goto: .goto
         case .menu: .menu
+        case .library: .library
         case .statistics: .statistics
         }
     }
@@ -186,6 +188,12 @@ class KeyHandler {
                     DebugLogger.log("Statistics overlay: dismissing per policy.")
                     if let sId = statsOverlayId { removeOverlay(sId, 0.25); statsOverlayId = nil }
                     overlayManager.removeOverlay(.statistics)
+                    activeOverlay = .none
+                    return nil
+                case .library:
+                    DebugLogger.log("Library overlay: dismissing per policy.")
+                    if let lId = libraryOverlayId { removeOverlay(lId, 0.25); libraryOverlayId = nil }
+                    overlayManager.removeOverlay(.library)
                     activeOverlay = .none
                     return nil
                 case .menu:
@@ -343,5 +351,6 @@ class KeyHandler {
     func setMenuOverlayId(_ id: UUID?) { menuOverlayId = id }
     func setQuitOverlayId(_ id: UUID?) { quitOverlayId = id }
     func setStatsOverlayId(_ id: UUID?) { statsOverlayId = id }
+    func setLibraryOverlayId(_ id: UUID?) { libraryOverlayId = id }
     func setActiveOverlay(_ overlay: ActiveOverlay) { activeOverlay = overlay }
 }

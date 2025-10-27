@@ -37,6 +37,7 @@ enum OverlayKind: Int, CaseIterable {
     case search
     case goto
     case menu
+    case library
     case statistics
 
     // Returns the message string associated with each overlay kind.
@@ -58,6 +59,7 @@ enum OverlayKind: Int, CaseIterable {
         Messages.searchMessage,
         Messages.gotoMessage,
         Messages.menuMessage,
+        Messages.libraryMessage,
         Messages.statisticsMessage,
     ]
 }
@@ -73,6 +75,7 @@ extension OverlayKind {
         case .search: .search
         case .goto: .goto
         case .menu: .menu
+        case .library: .library
         case .statistics: .statistics
         }
     }
@@ -90,6 +93,7 @@ enum ActiveOverlay: Equatable {
     case search
     case goto
     case menu
+    case library
     case statistics
 }
 
@@ -105,6 +109,7 @@ extension ActiveOverlay {
         case .search: .search
         case .goto: .goto
         case .menu: .menu
+        case .library: .library
         case .statistics: .statistics
         }
     }
@@ -251,6 +256,10 @@ enum OverlayFactory {
         makeCenteredOverlay(from: Messages.statisticsMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
+    static func makeLibraryOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
+        makeCenteredOverlay(from: Messages.libraryMessage, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
     // Unified helper: create a ScreenLayer from a message string (placeholders should be applied by caller).
     // If `preserveWhitespace` is true, the message is placed exactly as-is (useful for ASCII boxes).
     static func makeCenteredOverlay(from message: String, rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
@@ -273,16 +282,19 @@ enum OverlayFactory {
 
         func fmt(_ n: Int) -> String { formatter.string(from: NSNumber(value: n)) ?? "\(n)" }
 
-        // Fill the statistics message template with values from TextDocument.Statistics
-        var text = Messages.statisticsMessage
-        text = text.replacingOccurrences(of: "%totalLines%", with: fmt(stats.totalLines))
-        text = text.replacingOccurrences(of: "%totalWords%", with: fmt(stats.totalWords))
-        text = text.replacingOccurrences(of: "%totalChars%", with: fmt(stats.totalCharacters))
-        text = text.replacingOccurrences(of: "%byteSize%", with: fmt(stats.byteSize))
-        text = text.replacingOccurrences(of: "%avgLineLength%", with: fmt(stats.averageLineLength))
-        text = text.replacingOccurrences(of: "%longestLineLength%", with: fmt(stats.longestLineLength))
-        text = text.replacingOccurrences(of: "%shortestLineLength%", with: fmt(stats.shortestLineLength))
+        // Prepare formatted values (with grouping separators) and substitute them into the
+        // statistics template using fixed-width substitution so box borders do not shift.
+        let replacements: [String: String] = [
+            "%totalLines%": fmt(stats.totalLines),
+            "%totalWords%": fmt(stats.totalWords),
+            "%totalChars%": fmt(stats.totalCharacters),
+            "%byteSize%": fmt(stats.byteSize),
+            "%avgLineLength%": fmt(stats.averageLineLength),
+            "%longestLineLength%": fmt(stats.longestLineLength),
+            "%shortestLineLength%": fmt(stats.shortestLineLength),
+        ]
 
+        let text = Messages.substituteFixedWidthPlaceholders(Messages.statisticsMessage, replacements: replacements)
         let layer = makeCenteredOverlay(from: text, rows: rows, cols: cols, fgColor: fgColor)
         return layer
     }
@@ -327,6 +339,11 @@ enum OverlayFactory {
                 "Continue",
                 "Quit",
             ]
+        case .library:
+            [
+                "Open",
+                "Close",
+            ]
         case .statistics:
             [
                 "Continue",
@@ -334,6 +351,8 @@ enum OverlayFactory {
             ]
         }
     }
+
+    static func libraryActionBarItems() -> [String] { actionBarItems(for: .library) }
 
     // Convenience wrappers used by unit tests and call sites that expect per-kind helpers.
     static func helpActionBarItems() -> [String] { actionBarItems(for: .help) }
@@ -344,7 +363,6 @@ enum OverlayFactory {
     static func gotoActionBarItems() -> [String] { actionBarItems(for: .goto) }
     static func menuActionBarItems() -> [String] { actionBarItems(for: .menu) }
     static func statisticsActionBarItems() -> [String] { actionBarItems(for: .statistics) }
-
 }
 
 // OverlayManager manages the stack of overlays currently displayed.

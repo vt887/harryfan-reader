@@ -37,7 +37,7 @@ struct HarryFanReaderApp: App {
         .defaultSize(width: windowWidth, height: windowHeight)
         .defaultPosition(.center)
         .commands {
-            AppCommands(recentFilesManager: recentFilesManager, bookmarkManager: bookmarkManager, document: document)
+            MenuBar(recentFilesManager: recentFilesManager, bookmarkManager: bookmarkManager, document: document)
         }
 
         SwiftUI.Settings {

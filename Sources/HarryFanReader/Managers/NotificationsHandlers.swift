@@ -1,5 +1,5 @@
 //
-// NotificationsHandlers.swift
+//  NotificationsHandlers.swift
 //  harryfan-reader
 //
 //  Created by @vt887 on 9/29/25.
@@ -85,6 +85,9 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .showStatisticsOverlay)) { _ in
                 overlayManager.addOverlay(.statistics)
             }
+            .onReceive(NotificationCenter.default.publisher(for: .showLibraryOverlay)) { _ in
+                overlayManager.addOverlay(.library)
+            }
 
         return contentWithAbout
             .onReceive(NotificationCenter.default.publisher(for: .removeHelpOverlay)) { _ in
@@ -113,4 +116,5 @@ extension Notification.Name {
     static let removeHelpOverlay = Notification.Name("removeHelpOverlay")
     static let showQuitOverlay = Notification.Name("showQuitOverlay")
     static let showStatisticsOverlay = Notification.Name("showStatisticsOverlay")
+    static let showLibraryOverlay = Notification.Name("showLibraryOverlay")
 }

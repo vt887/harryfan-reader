@@ -29,6 +29,7 @@ struct MainContentScreenView: View {
     @State private var gotoOverlayId: UUID? = nil // goto overlay tracking
     @State private var quitOverlayId: UUID? = nil // quit overlay tracking
     @State private var statsOverlayId: UUID? = nil // statistics overlay tracking
+    @State private var libraryOverlayId: UUID? = nil // library overlay tracking
     // Track overlay kinds received from OverlayManager to react to programmatic changes
     @State private var observedOverlayKinds: [OverlayKind] = []
 
@@ -75,6 +76,7 @@ struct MainContentScreenView: View {
             keyHandler?.setActiveOverlay(kind.activeOverlay)
             switch kind {
             case .statistics: statsOverlayId = id; keyHandler?.setStatsOverlayId(id)
+            case .library: libraryOverlayId = id; keyHandler?.setLibraryOverlayId(id)
             default: break
             }
         }
@@ -118,6 +120,10 @@ struct MainContentScreenView: View {
             if id == statsOverlayId {
                 statsOverlayId = nil
                 keyHandler?.setStatsOverlayId(nil)
+            }
+            if id == libraryOverlayId {
+                libraryOverlayId = nil
+                keyHandler?.setLibraryOverlayId(nil)
             }
             // Reset activeOverlay if no overlays left
             if overlayLayers.isEmpty { keyHandler?.setActiveOverlay(.none) }
@@ -183,14 +189,14 @@ struct MainContentScreenView: View {
                               allowedContentTypes: [UTType.plainText],
                               allowsMultipleSelection: false,
                               onCompletion: handleFileImport)
-                .onChange(of: document.fileName) { _ , newFileName in
+                .onChange(of: document.fileName) { _, newFileName in
                     handleDocumentFileNameChange(newFileName)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: .showAboutOverlay), perform: handleShowAboutNotification)
                 .onReceive(NotificationCenter.default.publisher(for: .toggleHelpOverlay), perform: handleToggleHelpNotification)
                 .onReceive(overlayManager.$overlays, perform: handleOverlayManagerChange)
                 .onReceive(NotificationCenter.default.publisher(for: .showQuitOverlay), perform: handleShowQuitOverlay)
-                .onChange(of: document.shouldShowQuitMessage) { _ , newValue in
+                .onChange(of: document.shouldShowQuitMessage) { _, newValue in
                     handleDocumentShouldShowQuitChange(newValue)
                 }
         }
@@ -219,6 +225,8 @@ struct MainContentScreenView: View {
                                 removeOverlay: removeOverlay,
                                 overlayManager: overlayManager,
                                 recentFilesManager: recentFilesManager)
+        // Ensure keyHandler knows about any existing library overlay id
+        keyHandler?.setLibraryOverlayId(libraryOverlayId)
         // set handler's known overlay ids
         keyHandler?.setWelcomeOverlayId(welcomeOverlayId)
         keyHandler?.setHelpOverlayId(helpOverlayId)
@@ -262,7 +270,7 @@ struct MainContentScreenView: View {
         }
     }
 
-    private func handleShowAboutNotification(_ note: Notification) {
+    private func handleShowAboutNotification(_: Notification) {
         DebugLogger.log("MainContentScreenView: received showAboutOverlay notification — adding about overlay")
         overlayManager.removeHelpOverlay()
         let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
@@ -284,7 +292,7 @@ struct MainContentScreenView: View {
         if !alreadyShowing { _ = addOverlay(kind: .about) }
     }
 
-    private func handleToggleHelpNotification(_ note: Notification) {
+    private func handleToggleHelpNotification(_: Notification) {
         DebugLogger.log("MainContentScreenView: received toggleHelpOverlay notification")
         if let hid = helpOverlayId { DebugLogger.log("MainContentScreenView: hiding tracked help overlay id=\(hid)"); removeOverlay(id: hid); return }
         let helpFirstLine = Messages.helpMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
@@ -325,7 +333,9 @@ struct MainContentScreenView: View {
                 let cols = layer.grid.first?.count ?? 0
                 for r in 0 ..< rows {
                     var rowStr = ""
-                    for c in 0 ..< cols { rowStr.append(layer[r, c].char) }
+                    for c in 0 ..< cols {
+                        rowStr.append(layer[r, c].char)
+                    }
                     if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) { return true }
                 }
                 return false
@@ -343,9 +353,21 @@ struct MainContentScreenView: View {
                 DebugLogger.log("Statistics overlay shown (id=\(id))")
             }
         }
+        if added.contains(.library) {
+            DebugLogger.log("MainContentScreenView: detected .library added to OverlayManager — adding library overlay")
+            let alreadyShowing = overlayLayers.contains { $0.overlayKind == .library }
+            if !alreadyShowing {
+                let libLayer = OverlayFactory.makeLibraryOverlay(rows: Settings.rows - 2, cols: Settings.cols)
+                var layer = libLayer
+                layer.overlayKind = .library
+                let id = addCustomOverlay(layer)
+                libraryOverlayId = id
+                DebugLogger.log("Library overlay shown (id=\(id))")
+            }
+        }
     }
 
-    private func handleShowQuitOverlay(_ note: Notification) {
+    private func handleShowQuitOverlay(_: Notification) {
         DebugLogger.log("MainContentScreenView: received showQuitOverlay notification — showing quit overlay")
         document.shouldShowQuitMessage = true
     }
@@ -358,7 +380,9 @@ struct MainContentScreenView: View {
             let cols = layer.grid.first?.count ?? 0
             for r in 0 ..< rows {
                 var rowStr = ""
-                for c in 0 ..< cols { rowStr.append(layer[r, c].char) }
+                for c in 0 ..< cols {
+                    rowStr.append(layer[r, c].char)
+                }
                 if rowStr.trimmingCharacters(in: .whitespaces).contains(quitFirstLine) { return true }
             }
             return false
@@ -375,5 +399,4 @@ struct MainContentScreenView: View {
             if let qId = quitOverlayId { removeOverlay(id: qId); quitOverlayId = nil }
         }
     }
-
 }

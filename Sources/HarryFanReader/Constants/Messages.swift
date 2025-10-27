@@ -67,15 +67,21 @@ enum Messages {
     """
 
     static let statisticsMessage = """
-    ╔═══════════════════ Statistics ═══════════════════╗
-    ║  Total Lines: %totalLines%                       ║
-    ║  Total Words: %totalWords%                       ║
-    ║  Total Characters: %totalChars%                  ║
-    ║  File Size: %byteSize% bytes                     ║
-    ║  Average Line Length: %avgLineLength%            ║
-    ║  Longest Line Length: %longestLineLength%        ║
-    ║  Shortest Line Length: %shortestLineLength%      ║
-    ╚══════════════════════════════════════════════════╝
+    ╔════════════════ Statistics ═════════════════╗
+    ║  Total Lines: %totalLines%                  ║
+    ║  Total Words: %totalWords%                  ║
+    ║  Total Characters: %totalChars%             ║
+    ║  File Size (bytes): %byteSize%              ║
+    ║  Average Line Length: %avgLineLength%       ║
+    ║  Longest Line Length: %longestLineLength%   ║
+    ║  Shortest Line Length: %shortestLineLength% ║
+    ╚═════════════════════════════════════════════╝
+    """
+
+    static let libraryMessage = """
+    ╔════════════════ Library ═════════════════╗
+    ║  No recent files                         ║
+    ╚══════════════════════════════════════════╝
     """
 
     // Simple helper to substitute common placeholders in message templates
@@ -108,5 +114,35 @@ enum Messages {
         let topPadding = Array(repeating: emptyLine, count: verticalPadding)
         let bottomPadding = Array(repeating: emptyLine, count: screenHeight - totalLines - verticalPadding)
         return (topPadding + centeredLines + bottomPadding).joined(separator: "\n")
+    }
+
+    // Substitute placeholders (%name%) in `template` with corresponding values from `replacements`.
+    // Replacement preserves the placeholder width by left-aligning the replacement text and
+    // appending spaces after the value so characters to the right of the placeholder (e.g., box
+    // drawing vertical bars) keep their column positions.
+    static func substituteFixedWidthPlaceholders(_ template: String, replacements: [String: String]) -> String {
+        // For determinism iterate over lines and perform replacement per occurrence
+        let lines = template.components(separatedBy: "\n")
+        var newLines: [String] = []
+        for var line in lines {
+            for (token, value) in replacements {
+                // Replace all occurrences of token in the line
+                while let range = line.range(of: token) {
+                    let tokenLength = token.count
+                    let str = value
+                    let padded: String
+                    if str.count >= tokenLength {
+                        padded = String(str.prefix(tokenLength))
+                    } else {
+                        // LEFT-ALIGN value within the placeholder width by appending spaces after it
+                        let padCount = tokenLength - str.count
+                        padded = str + String(repeating: " ", count: padCount)
+                    }
+                    line.replaceSubrange(range, with: padded)
+                }
+            }
+            newLines.append(line)
+        }
+        return newLines.joined(separator: "\n")
     }
 }

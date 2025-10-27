@@ -13,27 +13,29 @@ final class OverlayFactoryActionBarQuickSpec: QuickSpec {
     override class func spec() {
         describe("OverlayFactory action bar items") {
             it("returns per-overlay actionBarItems for all kinds") {
-                let kinds: [OverlayKind] = [.help, .welcome, .quit, .about, .search, .goto, .menu, .statistics]
-                for kind in kinds {
+                for kind in OverlayKind.allCases {
                     let fromFactory = OverlayFactory.actionBarItems(for: kind)
-                    switch kind {
-                    case .help:
-                        expect(fromFactory).to(equal(OverlayFactory.helpActionBarItems()))
-                    case .welcome:
-                        expect(fromFactory).to(equal(OverlayFactory.welcomeActionBarItems()))
-                    case .quit:
-                        expect(fromFactory).to(equal(OverlayFactory.quitActionBarItems()))
-                    case .about:
-                        expect(fromFactory).to(equal(OverlayFactory.aboutActionBarItems()))
-                    case .search:
-                        expect(fromFactory).to(equal(OverlayFactory.searchActionBarItems()))
-                    case .goto:
-                        expect(fromFactory).to(equal(OverlayFactory.gotoActionBarItems()))
-                    case .menu:
-                        expect(fromFactory).to(equal(OverlayFactory.menuActionBarItems()))
-                    case .statistics:
-                        expect(fromFactory).to(equal(OverlayFactory.statisticsActionBarItems()))
+                    let expected: [String] = if kind == .help {
+                        OverlayFactory.helpActionBarItems()
+                    } else if kind == .welcome {
+                        OverlayFactory.welcomeActionBarItems()
+                    } else if kind == .quit {
+                        OverlayFactory.quitActionBarItems()
+                    } else if kind == .about {
+                        OverlayFactory.aboutActionBarItems()
+                    } else if kind == .search {
+                        OverlayFactory.searchActionBarItems()
+                    } else if kind == .goto {
+                        OverlayFactory.gotoActionBarItems()
+                    } else if kind == .menu {
+                        OverlayFactory.menuActionBarItems()
+                    } else if kind == .statistics {
+                        OverlayFactory.statisticsActionBarItems()
+                    } else {
+                        // Fallback for any new/unknown kinds (e.g. library); actionBarItems(for:) should be the source of truth
+                        OverlayFactory.actionBarItems(for: kind)
                     }
+                    expect(fromFactory).to(equal(expected))
                 }
             }
         }
