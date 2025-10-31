@@ -80,4 +80,16 @@ class Settings {
         get { UserDefaults.standard.object(forKey: "useMouse") as? Bool ?? false }
         set { UserDefaults.standard.set(newValue, forKey: "useMouse") }
     }
+
+    // Returns the window size for 80x24 character grid
+    static func windowSize() -> CGSize {
+        CGSize(width: CGFloat(cols * charW), height: CGFloat(rows * charH))
+    }
+
+    // Returns size for a specific number of rows (useful for partial screen views)
+    static func windowSize(rows displayRows: Int) -> CGSize {
+        CGSize(width: CGFloat(cols * charW), height: CGFloat(displayRows * charH))
+    }
 }
+
+

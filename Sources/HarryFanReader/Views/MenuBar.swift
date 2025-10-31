@@ -26,6 +26,8 @@ extension Notification.Name {
     static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
     static let toggleWordWrapCommand = Notification.Name("AppCommand.toggleWordWrap")
     static let showHelpCommand = Notification.Name("AppCommand.showHelp")
+    static let reloadFileCommand = Notification.Name("AppCommand.reloadFile")
+    static let closeFileCommand = Notification.Name("AppCommand.closeFile")
 }
 
 // Main app commands for menu and shortcuts (exposed as `MenuBar`)
@@ -42,6 +44,13 @@ struct MenuBar: Commands {
                 NotificationCenter.default.post(name: .openFileCommand, object: nil)
             }
             .keyboardShortcut("o", modifiers: [.command, .shift])
+
+            Button("Re-read File") {
+                DebugLogger.log("MenuBar: Reload menu selected")
+                NotificationCenter.default.post(name: .reloadFileCommand, object: nil)
+            }
+            .keyboardShortcut("r", modifiers: .command)
+            .disabled(document.totalLines == 0 && document.fileName.isEmpty)
 
             Button("Library...") {
                 NotificationCenter.default.post(name: .showLibraryOverlay, object: nil)
@@ -62,12 +71,21 @@ struct MenuBar: Commands {
                 }
             }
 
+            Divider()
             Button("Print...") {
                 DebugLogger.log("MenuBar: Print menu selected. document.totalLines=\(document.totalLines) fileName=\(document.fileName)")
                 let text = document.content.joined(separator: "\n")
                 NotificationCenter.default.post(name: Notification.Name("AppCommand.printRequest"), object: nil, userInfo: ["text": text, "fileName": document.fileName])
             }
             .keyboardShortcut("p", modifiers: .command)
+            .disabled(document.totalLines == 0 && document.fileName.isEmpty)
+
+            Divider()
+            Button("Close") {
+                DebugLogger.log("MenuBar: Close menu selected")
+                NotificationCenter.default.post(name: .closeFileCommand, object: nil)
+            }
+            .keyboardShortcut("w", modifiers: .command)
             .disabled(document.totalLines == 0 && document.fileName.isEmpty)
         }
 

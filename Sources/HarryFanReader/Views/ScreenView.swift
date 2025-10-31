@@ -187,8 +187,8 @@ struct ScreenView: View {
 
     // Main view body rendering the text screen
     var body: some View {
-        GeometryReader { (geo: GeometryProxy) in
-            let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW), height: CGFloat(displayRows * ScreenView.charH))
+        GeometryReader { geo in
+            let idealSize = Settings.windowSize(rows: displayRows)
             let offsetX = (geo.size.width - idealSize.width) / 2.0
 
             Canvas { context, size in
@@ -232,7 +232,7 @@ struct ScreenView: View {
                     tapHandler?(col, row, isSecondary)
                 }
                 .frame(width: idealSize.width, height: idealSize.height)
-                .offset(x: offsetX, y: 0),
+                .offset(x: offsetX, y: 0)
             )
             .accessibilityHidden(true)
         }

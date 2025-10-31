@@ -15,6 +15,7 @@ class TextDocument: ObservableObject {
     @Published var totalLines: Int = 0
     @Published var encoding: String = "Unknown"
     @Published var fileName: String = ""
+    @Published var fileURL: URL?
     @Published var removeEmptyLines: Bool = true
     @Published var wordWrap: Bool = Settings.wordWrap
     @Published var wrapWidth: Int = Settings.wrapWidth
@@ -87,6 +88,7 @@ class TextDocument: ObservableObject {
         do {
             DebugLogger.log("Opening file: \(url.path)")
             fileName = url.lastPathComponent
+            fileURL = url
             originalData = try Data(contentsOf: url)
             guard let data = originalData else {
                 return
@@ -217,6 +219,7 @@ class TextDocument: ObservableObject {
         totalLines = 0
         encoding = "Unknown"
         fileName = ""
+        fileURL = nil
         originalData = nil
     }
 

@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import Combine
 import SwiftUI
 
 // ViewModifier for handling app-wide notifications
@@ -18,8 +19,10 @@ private struct NotificationsModifier: ViewModifier {
     @Binding var showingBookmarks: Bool
     @Binding var showingFilePicker: Bool
 
+    @State private var subscriptions: Set<AnyCancellable> = []
+
     func body(content: Content) -> some View {
-        let contentWithWindow = content
+        let step1 = content
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
                 if let window = notification.object as? NSWindow {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification for window: \(window.title)")
@@ -28,8 +31,6 @@ private struct NotificationsModifier: ViewModifier {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification received")
                 }
             }
-
-        let contentWithFile = contentWithWindow
             .onReceive(NotificationCenter.default.publisher(for: .openFileCommand)) { _ in showingFilePicker = true }
             .onReceive(NotificationCenter.default.publisher(for: .openRecentFileCommand)) { notification in
                 if let userInfo = notification.userInfo, let url = userInfo["url"] as? URL {
@@ -39,18 +40,25 @@ private struct NotificationsModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .clearRecentFilesCommand)) { _ in recentFilesManager.clearRecentFiles() }
             .onReceive(NotificationCenter.default.publisher(for: .toggleWordWrapCommand)) { _ in document.toggleWordWrap() }
+
+        let step2 = step1
             .onReceive(NotificationCenter.default.publisher(for: .showHelpCommand)) { _ in
-                // Forward the command to the toggle notification so the view can
-                // toggle the centered help overlay (show/hide).
                 NotificationCenter.default.post(name: .toggleHelpOverlay, object: nil)
             }
-            // Print command: post a printRequest notification with document text; PrintManager listens for this
+            .onReceive(NotificationCenter.default.publisher(for: .reloadFileCommand)) { _ in
+                if let fileURL = document.fileURL {
+                    document.openFile(at: fileURL)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .closeFileCommand)) { _ in
+                document.closeFile()
+            }
             .onReceive(NotificationCenter.default.publisher(for: Notification.Name("AppCommand.print"))) { _ in
                 let text = document.content.joined(separator: "\n")
                 NotificationCenter.default.post(name: Notification.Name("AppCommand.printRequest"), object: nil, userInfo: ["text": text, "fileName": document.fileName])
             }
 
-        let contentWithBookmarks = contentWithFile
+        let step3 = step2
             .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in
                 guard !document.fileName.isEmpty else { return }
                 let desc = document.getCurrentLine()
@@ -78,7 +86,7 @@ private struct NotificationsModifier: ViewModifier {
                 }
             }
 
-        let contentWithAbout = contentWithBookmarks
+        let step4 = step3
             .onReceive(NotificationCenter.default.publisher(for: .showAboutOverlay)) { _ in
                 overlayManager.addOverlay(.about)
             }
@@ -88,11 +96,11 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .showLibraryOverlay)) { _ in
                 overlayManager.addOverlay(.library)
             }
-
-        return contentWithAbout
             .onReceive(NotificationCenter.default.publisher(for: .removeHelpOverlay)) { _ in
                 overlayManager.removeHelpOverlay()
             }
+
+        return step4
             .onReceive(NotificationCenter.default.publisher(for: .scrollUpCommand)) { _ in document.lineUp() }
             .onReceive(NotificationCenter.default.publisher(for: .scrollDownCommand)) { _ in document.lineDown() }
             .onReceive(NotificationCenter.default.publisher(for: .pageUpCommand)) { _ in document.pageUp() }
