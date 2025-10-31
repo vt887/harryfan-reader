@@ -35,10 +35,8 @@ struct ContentView: View {
             MainContentScreenView(document: document, recentFilesManager: recentFilesManager, showingFilePicker: $showingFilePicker)
             ActionBar(document: document)
         }
-        .frame(
-            width: CGFloat(Settings.cols * Settings.charW),
-            height: CGFloat(Settings.rows * Settings.charH),
-        )
+        .frame(width: Settings.windowSize().width,
+               height: Settings.windowSize().height)
         .background(Colors.theme.background)
         .sheet(isPresented: $showingSettings) {
             SettingsView()

@@ -22,7 +22,7 @@ struct MainContentScreenView: View {
     // Overlay management
     @State private var overlayLayers: [ScreenLayer] = []
     @State private var overlayOpacities: [UUID: Double] = [:] // opacity per overlay for fade animations
-    @State private var welcomeOverlayId: UUID? = nil
+    @State private var welcomeOverlayId: UUID? = nil // welcome overlay tracking
     @State private var helpOverlayId: UUID? = nil // help overlay tracking
     @State private var searchOverlayId: UUID? = nil // search overlay tracking
     @State private var menuOverlayId: UUID? = nil // menu overlay tracking
@@ -178,7 +178,7 @@ struct MainContentScreenView: View {
     private var screenContent: some View {
         ScreenView(document: document, displayRows: Settings.rows - 2, rowOffset: 1, overlayLayers: $overlayLayers, overlayOpacities: $overlayOpacities)
             .environmentObject(fontManager)
-            .frame(height: CGFloat(Settings.rows - 2) * CGFloat(ScreenView.charH))
+            .frame(height: Settings.contentSize(rows: Settings.rows - 2, cols: ScreenView.cols).height)
     }
 
     var body: some View {

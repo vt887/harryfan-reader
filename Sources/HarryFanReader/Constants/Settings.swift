@@ -30,6 +30,21 @@ class Settings {
     static let charH = 16
     static let wrapWidth = 80
 
+    // Global UI scale factor (persisted). Default: 1.0
+    private static let _scaleFactorKey = "scaleFactor"
+    static var scaleFactor: CGFloat {
+        get {
+            let defaults = UserDefaults.standard
+            if let val = defaults.object(forKey: _scaleFactorKey) as? Double {
+                return CGFloat(val)
+            }
+            return 1.0
+        }
+        set {
+            UserDefaults.standard.set(Double(newValue), forKey: _scaleFactorKey)
+        }
+    }
+
     // Persisted settings
     static var wordWrap: Bool {
         get { UserDefaults.standard.object(forKey: "wordWrap") as? Bool ?? true }
@@ -80,4 +95,39 @@ class Settings {
         get { UserDefaults.standard.object(forKey: "useMouse") as? Bool ?? false }
         set { UserDefaults.standard.set(newValue, forKey: "useMouse") }
     }
+
+    private static var baseWindowSize: CGSize {
+        CGSize(width: CGFloat(cols) * CGFloat(charW), height: CGFloat(rows) * CGFloat(charH))
+    }
+
+    /// Pixel size of a single character cell after scale applied
+    static func pixelCharSize(scale: CGFloat? = nil) -> CGSize {
+        let s = scale ?? scaleFactor
+        return CGSize(width: CGFloat(charW) * s, height: CGFloat(charH) * s)
+    }
+
+    /// Pixel size of an arbitrary rows x cols content area after scale applied
+    static func contentSize(rows: Int, cols: Int, scale: CGFloat? = nil) -> CGSize {
+        let p = pixelCharSize(scale: scale)
+        return CGSize(width: CGFloat(cols) * p.width, height: CGFloat(rows) * p.height)
+    }
+
+    static func windowSize(scale: CGFloat? = nil) -> CGSize {
+        // Scaled window size for full app (Settings.rows x Settings.cols)
+        contentSize(rows: rows, cols: cols, scale: scale)
+     }
+
+     /// Returns a compact telemetry string (not PII) for debug logs.
+     static func telemetryString() -> String {
+         // Collect small set of non-sensitive telemetry values useful for debugging
+         let app = appName
+         let version = ReleaseInfo.version
+         let build = ReleaseInfo.build
+         let scale = String(format: "%.2f", Double(scaleFactor))
+         let appearanceStr = appearance.rawValue
+         let wrap = wordWrap ? "wrap" : "nowrap"
+         let aa = enableAntiAliasing ? "aa:on" : "aa:off"
+         let os = ProcessInfo.processInfo.operatingSystemVersionString
+         return "app=\(app) ver=\(version) (build:\(build)) scale=\(scale) appearance=\(appearanceStr) \(wrap) \(aa) os=\(os)"
+     }
 }

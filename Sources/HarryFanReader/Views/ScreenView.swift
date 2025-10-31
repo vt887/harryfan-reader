@@ -185,57 +185,57 @@ struct ScreenView: View {
         return result
     }
 
-    // Main view body rendering the text screen
+    // Main view body rendering the text screen (fixed-size canvas, scaled by Settings)
     var body: some View {
-        GeometryReader { (geo: GeometryProxy) in
-            let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW), height: CGFloat(displayRows * ScreenView.charH))
-            let offsetX = (geo.size.width - idealSize.width) / 2.0
-
-            Canvas { context, size in
+        let idealSize = Settings.contentSize(rows: displayRows, cols: ScreenView.cols)
+        let charPx = Settings.pixelCharSize()
+        return Canvas { context, size in
+            // Configure antialiasing according to Settings
+            context.withCGContext { cg in
                 if Settings.enableAntiAliasing {
-                    // Anti-aliasing: no-op here (CGContext tweaking removed for compatibility)
-                }
-
-                // Fill background
-                context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
-
-                let grid = compositeGrid()
-
-                for row in 0 ..< displayRows {
-                    for col in 0 ..< ScreenView.cols {
-                        let cell = grid[row][col]
-                        drawChar(cell.char, at: (col, row), in: context, origin: CGPoint(x: offsetX, y: 0), customFgColor: cell.fgColor, customBgColor: cell.bgColor)
-                    }
+                    cg.setAllowsAntialiasing(true)
+                    cg.setShouldAntialias(true)
+                    cg.interpolationQuality = .high
+                    cg.setBlendMode(.normal)
+                } else {
+                    cg.setAllowsAntialiasing(false)
+                    cg.setShouldAntialias(false)
+                    cg.interpolationQuality = .none
+                    cg.setBlendMode(.copy)
                 }
             }
-            .gesture(DragGesture(minimumDistance: 0)
-                .onEnded { value in
-                    let loc = value.location
-                    let x = loc.x - offsetX
-                    let y = loc.y
-                    let idealW = idealSize.width
-                    let idealH = idealSize.height
-                    guard x >= 0, x <= idealW, y >= 0, y <= idealH else { return }
-                    let col = Int(x / CGFloat(ScreenView.charW))
-                    let row = Int(y / CGFloat(ScreenView.charH))
-                    tapHandler?(col, row, false)
-                })
-            .overlay(
-                MouseEventCatcher { localPoint, isSecondary in
-                    let x = localPoint.x - offsetX
-                    let y = localPoint.y
-                    let idealW = idealSize.width
-                    let idealH = idealSize.height
-                    guard x >= 0, x <= idealW, y >= 0, y <= idealH else { return }
-                    let col = Int(x / CGFloat(ScreenView.charW))
-                    let row = Int(y / CGFloat(ScreenView.charH))
-                    tapHandler?(col, row, isSecondary)
+
+            // Fill background
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
+
+            let grid = compositeGrid()
+
+            for row in 0 ..< displayRows {
+                for col in 0 ..< ScreenView.cols {
+                    let cell = grid[row][col]
+                    drawChar(cell.char, at: (col, row), in: context, origin: CGPoint(x: 0, y: 0), customFgColor: cell.fgColor, customBgColor: cell.bgColor)
                 }
-                .frame(width: idealSize.width, height: idealSize.height)
-                .offset(x: offsetX, y: 0),
-            )
-            .accessibilityHidden(true)
+            }
         }
+        .frame(width: idealSize.width, height: idealSize.height)
+        .gesture(DragGesture(minimumDistance: 0)
+            .onEnded { value in
+                let loc = value.location
+                guard loc.x >= 0, loc.x <= idealSize.width, loc.y >= 0, loc.y <= idealSize.height else { return }
+                let col = Int(loc.x / charPx.width)
+                let row = Int(loc.y / charPx.height)
+                tapHandler?(col, row, false)
+            })
+        .overlay(
+            MouseEventCatcher { localPoint, isSecondary in
+                guard localPoint.x >= 0, localPoint.x <= idealSize.width, localPoint.y >= 0, localPoint.y <= idealSize.height else { return }
+                let col = Int(localPoint.x / charPx.width)
+                let row = Int(localPoint.y / charPx.height)
+                tapHandler?(col, row, isSecondary)
+            }
+            .frame(width: idealSize.width, height: idealSize.height)
+        )
+        .accessibilityHidden(true)
     }
 
     // Draws a single character at the given position
@@ -250,23 +250,46 @@ struct ScreenView: View {
               bitmap.count == (ScreenView.charW * ScreenView.charH) else { return }
 
         let (column, row) = pos
-        let baseX = origin.x + CGFloat(column * ScreenView.charW)
-        let baseY = origin.y + CGFloat(row * ScreenView.charH)
+        let scale = Settings.scaleFactor
+        let scaledCharW = CGFloat(ScreenView.charW) * scale
+        let scaledCharH = CGFloat(ScreenView.charH) * scale
+        // Compute character bounds snapped to integral coordinates to ensure no seams
+        let rawLeft = origin.x + CGFloat(column) * scaledCharW
+        let rawTop  = origin.y + CGFloat(row) * scaledCharH
+        let charLeft = (rawLeft).rounded(.toNearestOrAwayFromZero)
+        let charTop  = (rawTop).rounded(.toNearestOrAwayFromZero)
+        let charRight = (rawLeft + scaledCharW).rounded(.toNearestOrAwayFromZero)
+        let charBottom = (rawTop + scaledCharH).rounded(.toNearestOrAwayFromZero)
+        let baseX = charLeft
+        let baseY = charTop
+        let charWInt = max(0, Int((charRight - charLeft).rounded(.towardZero)))
+        let charHInt = max(0, Int((charBottom - charTop).rounded(.towardZero)))
 
         let currentFgColor = customFgColor ?? fontColor
 
         // Draw background if present
         if let bg = customBgColor {
-            let rect = CGRect(x: baseX, y: baseY, width: CGFloat(ScreenView.charW), height: CGFloat(ScreenView.charH))
-            context.fill(Path(rect), with: .color(bg))
+            let rect = CGRect(x: baseX, y: baseY, width: CGFloat(charWInt), height: CGFloat(charHInt))
+             if rect.width > 0 && rect.height > 0 {
+                 context.fill(Path(rect), with: .color(bg))
+             }
         }
 
-        // Draw character pixels (1x1 rectangles) based on bitmap
+        // Draw character pixels scaled by scaleFactor based on bitmap
         for yIndex in 0 ..< ScreenView.charH {
             for xIndex in 0 ..< ScreenView.charW {
                 if bitmap[yIndex * ScreenView.charW + xIndex] {
-                    let pixelRect = CGRect(x: baseX + CGFloat(xIndex), y: baseY + CGFloat(yIndex), width: 1, height: 1)
-                    context.fill(Path(pixelRect), with: .color(currentFgColor))
+                    // Boundaries derived from integer character bounds (no seams between cells)
+                    let x0 = baseX + CGFloat(Int((CGFloat(xIndex) * CGFloat(charWInt) / CGFloat(ScreenView.charW)).rounded(.towardZero)))
+                    let x1 = baseX + CGFloat(Int((CGFloat(xIndex + 1) * CGFloat(charWInt) / CGFloat(ScreenView.charW)).rounded(.towardZero)))
+                    let y0 = baseY + CGFloat(Int((CGFloat(yIndex) * CGFloat(charHInt) / CGFloat(ScreenView.charH)).rounded(.towardZero)))
+                    let y1 = baseY + CGFloat(Int((CGFloat(yIndex + 1) * CGFloat(charHInt) / CGFloat(ScreenView.charH)).rounded(.towardZero)))
+                    let rectW = max(0, x1 - x0)
+                    let rectH = max(0, y1 - y0)
+                    if rectW > 0 && rectH > 0 {
+                        let pixelRect = CGRect(x: x0, y: y0, width: rectW, height: rectH)
+                        context.fill(Path(pixelRect), with: .color(currentFgColor))
+                    }
                 }
             }
         }

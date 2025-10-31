@@ -20,8 +20,7 @@ struct HarryFanReaderApp: App {
     @StateObject private var document = TextDocument()
     @StateObject private var overlayManager = OverlayManager()
 
-    var windowWidth: CGFloat { CGFloat(Settings.cols * Settings.charW) }
-    var windowHeight: CGFloat { CGFloat(Settings.rows * Settings.charH) }
+    var windowSize: CGSize { Settings.windowSize() }
 
     var body: some Scene {
         WindowGroup {
@@ -30,14 +29,14 @@ struct HarryFanReaderApp: App {
                 .environmentObject(bookmarkManager)
                 .environmentObject(recentFilesManager)
                 .environmentObject(overlayManager)
-                .frame(minWidth: windowWidth, minHeight: windowHeight)
+                .frame(minWidth: windowSize.width, minHeight: windowSize.height)
                 .colorScheme(Settings.appearance == .dark ? .dark : .light)
         }
         .windowStyle(.titleBar)
-        .defaultSize(width: windowWidth, height: windowHeight)
+        .defaultSize(width: windowSize.width, height: windowSize.height)
         .defaultPosition(.center)
         .commands {
-            MenuBar(recentFilesManager: recentFilesManager, bookmarkManager: bookmarkManager, document: document)
+            HarryFanReader.MenuBar(recentFilesManager: recentFilesManager, bookmarkManager: bookmarkManager, document: document)
         }
 
         SwiftUI.Settings {
