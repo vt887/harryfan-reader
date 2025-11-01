@@ -232,7 +232,7 @@ struct ScreenView: View {
                     tapHandler?(col, row, isSecondary)
                 }
                 .frame(width: idealSize.width, height: idealSize.height)
-                .offset(x: offsetX, y: 0)
+                .offset(x: offsetX, y: 0),
             )
             .accessibilityHidden(true)
         }

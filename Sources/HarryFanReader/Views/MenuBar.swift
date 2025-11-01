@@ -39,6 +39,9 @@ struct MenuBar: Commands {
     // Note: Bookmark and Recent Files menu items are generated inline in the Commands body to avoid parsing issues
 
     var body: some Commands {
+        CommandGroup(replacing: .undoRedo) {}
+        CommandGroup(replacing: .pasteboard) {}
+
         CommandGroup(replacing: .newItem) {
             Button("Open...") {
                 NotificationCenter.default.post(name: .openFileCommand, object: nil)
@@ -51,11 +54,6 @@ struct MenuBar: Commands {
             }
             .keyboardShortcut("r", modifiers: .command)
             .disabled(document.totalLines == 0 && document.fileName.isEmpty)
-
-            Button("Library...") {
-                NotificationCenter.default.post(name: .showLibraryOverlay, object: nil)
-            }
-            .keyboardShortcut("L", modifiers: [.command, .shift])
 
             Menu("Recent Files") {
                 if recentFilesManager.recentFiles.isEmpty {
@@ -72,7 +70,7 @@ struct MenuBar: Commands {
             }
 
             Divider()
-            Button("Print...") {
+            Button("Print File") {
                 DebugLogger.log("MenuBar: Print menu selected. document.totalLines=\(document.totalLines) fileName=\(document.fileName)")
                 let text = document.content.joined(separator: "\n")
                 NotificationCenter.default.post(name: Notification.Name("AppCommand.printRequest"), object: nil, userInfo: ["text": text, "fileName": document.fileName])
@@ -80,16 +78,6 @@ struct MenuBar: Commands {
             .keyboardShortcut("p", modifiers: .command)
             .disabled(document.totalLines == 0 && document.fileName.isEmpty)
 
-            Divider()
-            Button("Close") {
-                DebugLogger.log("MenuBar: Close menu selected")
-                NotificationCenter.default.post(name: .closeFileCommand, object: nil)
-            }
-            .keyboardShortcut("w", modifiers: .command)
-            .disabled(document.totalLines == 0 && document.fileName.isEmpty)
-        }
-
-        CommandMenu("View") {
             Button("Statistics") {
                 NotificationCenter.default.post(name: .showStatisticsOverlay, object: nil)
             }
@@ -115,6 +103,17 @@ struct MenuBar: Commands {
                         }
                     }
                 }
+            }
+        }
+        // Library menu (separate from File)
+        CommandMenu("Library") {
+            Button("Login") {
+                DebugLogger.log("MenuBar: Library -> Login selected")
+                NotificationCenter.default.post(name: .showLibraryOverlay, object: nil, userInfo: ["action": "login"])
+            }
+            Button("Browse") {
+                DebugLogger.log("MenuBar: Library -> Browse selected")
+                NotificationCenter.default.post(name: .showLibraryOverlay, object: nil, userInfo: ["action": "browse"])
             }
         }
         CommandMenu("Navigation") {

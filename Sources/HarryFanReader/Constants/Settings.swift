@@ -91,5 +91,3 @@ class Settings {
         CGSize(width: CGFloat(cols * charW), height: CGFloat(displayRows * charH))
     }
 }
-
-
