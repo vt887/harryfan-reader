@@ -380,18 +380,6 @@ class TextDocument: ObservableObject {
     func getVisibleLines() -> [String] {
         getVisibleLines(displayRows: Settings.rows - 2)
     }
-
-    // Removed obsolete topVisibleLine centering method.
-
-    private func getPercentSpacing(_ percent: Int) -> Int {
-        if percent < 10 {
-            3
-        } else if percent < 100 {
-            2
-        } else {
-            1
-        }
-    }
 }
 
 // Enum for search direction in text document

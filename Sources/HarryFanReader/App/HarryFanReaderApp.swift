@@ -25,12 +25,8 @@ struct HarryFanReaderApp: App {
     }
 
     init() {
+        // Disable automatic window tabbing introduced by macOS so each document opens in its own window
         NSWindow.allowsAutomaticWindowTabbing = false
-        for window in NSApplication.shared.windows {
-            window.collectionBehavior.remove(.fullScreenPrimary)
-            window.styleMask.remove(.fullScreen)
-        }
-        /// removeUnwantedMenus()
     }
 
     var body: some Scene {
@@ -56,37 +52,6 @@ struct HarryFanReaderApp: App {
                 .environmentObject(document)
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
-        }
-    }
-
-    private func removeUnwantedMenus() {
-        // Wait until main menu is loaded
-        DispatchQueue.main.async {
-            guard let mainMenu = NSApp.mainMenu else { return }
-
-            // Remove system Edit menu entirely
-            if let editItem = mainMenu.item(withTitle: "Edit") {
-                mainMenu.removeItem(editItem)
-            }
-
-            // Remove Show/Hide Tab Bar in Window menu
-            if let windowMenu = mainMenu.item(withTitle: "Window")?.submenu {
-                for item in windowMenu.items {
-                    if item.title == "Show Tab Bar" || item.title == "Hide Tab Bar" {
-                        windowMenu.removeItem(item)
-                    }
-                }
-            }
-
-            // Remove New Window / Close / Close All from File menu
-            if let fileMenu = mainMenu.item(withTitle: "File")?.submenu {
-                let unwantedTitles = ["New Window", "Close", "Close All"]
-                for title in unwantedTitles {
-                    if let item = fileMenu.items.first(where: { $0.title == title }) {
-                        fileMenu.removeItem(item)
-                    }
-                }
-            }
         }
     }
 }

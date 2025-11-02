@@ -20,6 +20,7 @@ class Settings {
     // Constants
     static let appName: String = "HarryFan Reader"
     static let homeDir: String = "~/.harryfan"
+    static let tmpDirName: String = "/tmp"
     static let fontFileName: String = "ddd.8x16"
     static let defaultFontFileName: String = "vdu.8x16"
     static let appearance: AppAppearance = .blue
@@ -29,6 +30,8 @@ class Settings {
     static let charW = 8
     static let charH = 16
     static let wrapWidth = 80
+    // LibraryURL
+    static let libraryURL = "https://drive.google.com/drive/u/0/folders/1F7DAtaA3Yw2DeeEtF0WbUook8IVNNz6S"
 
     // Persisted settings
     static var wordWrap: Bool {
@@ -79,6 +82,11 @@ class Settings {
     static var useMouse: Bool {
         get { UserDefaults.standard.object(forKey: "useMouse") as? Bool ?? false }
         set { UserDefaults.standard.set(newValue, forKey: "useMouse") }
+    }
+
+    // Returns the number of visible lines in the viewport (rows - 2 for title and action bars)
+    static var visibleLines: Int {
+        rows - 2
     }
 
     // Returns the window size for 80x24 character grid

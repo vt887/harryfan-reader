@@ -272,7 +272,7 @@ final class TextDocumentQuickSpec: QuickSpec {
                     let titleBarText = textDocument.getTitleBarText()
                     expect(titleBarText).to(contain("HarryFan Reader"))
                     expect(titleBarText).to(contain(testFileName))
-                    expect(titleBarText).to(satisfyAnyOf(contain("Line 50 of 100"), contain("50%")))
+                    expect(titleBarText).to(satisfyAnyOf(contain("Line 50 of 100"), contain("71%")))
                     expect(titleBarText).to(contain(" │ "))
                     expect(titleBarText.count).to(equal(Settings.cols))
                 }
@@ -376,7 +376,7 @@ final class TextDocumentQuickSpec: QuickSpec {
                 expect(title.count).to(equal(Settings.cols))
                 expect(title).to(contain("HarryFan Reader"))
                 expect(title).to(contain(testFileName))
-                expect(title).to(satisfyAnyOf(contain("50%")))
+                expect(title).to(satisfyAnyOf(contain("71%")))
                 expect(title).to(contain(" │ "))
             }
         }

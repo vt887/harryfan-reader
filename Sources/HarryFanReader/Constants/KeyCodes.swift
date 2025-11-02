@@ -10,6 +10,7 @@ import Foundation
 /// Centralized key code constants — use `KeyCode.escape`, `KeyCode.f1`, etc.
 /// Kept as an enum with static lets to mirror previous usage sites.
 public enum KeyCode {
+    public static let enter: UInt16 = 36
     public static let escape: UInt16 = 53
     public static let f1: UInt16 = 122
     public static let f2: UInt16 = 120
