@@ -39,8 +39,16 @@ struct MenuBar: Commands {
     // Note: Bookmark and Recent Files menu items are generated inline in the Commands body to avoid parsing issues
 
     var body: some Commands {
-        CommandGroup(replacing: .undoRedo) {}
-        CommandGroup(replacing: .pasteboard) {}
+        // Replace default Undo/Redo menu so the app doesn't show system Edit > Undo/Redo entries
+        CommandGroup(replacing: .undoRedo) {
+            // Intentionally left empty: HarryFanReader does not use the standard undo/redo menu items.
+            // Leaving the closure empty removes those default commands from the menu.
+        }
+        // Replace default Pasteboard menu so the app's menu only contains app-specific commands
+        CommandGroup(replacing: .pasteboard) {
+            // Intentionally left empty: we don't want the system copy/paste items appearing in the menu.
+            // App actions (Open, Print, etc.) are provided explicitly below.
+        }
 
         CommandGroup(replacing: .newItem) {
             Button("Open...") {

@@ -92,39 +92,25 @@ struct MainContentScreenView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + fadeDuration) {
             overlayLayers.removeAll { $0.id == id }
             overlayOpacities[id] = nil
-            // If we removed a tracked overlay id, clear it and inform keyHandler
-            if id == helpOverlayId {
-                helpOverlayId = nil
-                keyHandler?.setHelpOverlayId(nil)
+
+            // Helper to clear a tracked overlay id and inform keyHandler
+            func clearIfMatching(_ trackedId: inout UUID?, setter: (UUID?) -> Void) {
+                if trackedId == id {
+                    trackedId = nil
+                    setter(nil)
+                }
             }
-            if id == welcomeOverlayId {
-                welcomeOverlayId = nil
-                keyHandler?.setWelcomeOverlayId(nil)
-            }
-            if id == searchOverlayId {
-                searchOverlayId = nil
-                keyHandler?.setSearchOverlayId(nil)
-            }
-            if id == menuOverlayId {
-                menuOverlayId = nil
-                keyHandler?.setMenuOverlayId(nil)
-            }
-            if id == gotoOverlayId {
-                gotoOverlayId = nil
-                keyHandler?.setGotoOverlayId(nil)
-            }
-            if id == quitOverlayId {
-                quitOverlayId = nil
-                keyHandler?.setQuitOverlayId(nil)
-            }
-            if id == statsOverlayId {
-                statsOverlayId = nil
-                keyHandler?.setStatsOverlayId(nil)
-            }
-            if id == libraryOverlayId {
-                libraryOverlayId = nil
-                keyHandler?.setLibraryOverlayId(nil)
-            }
+
+            // Clear all tracked overlay ids using the helper to avoid repeated branching
+            clearIfMatching(&helpOverlayId) { keyHandler?.setHelpOverlayId($0) }
+            clearIfMatching(&welcomeOverlayId) { keyHandler?.setWelcomeOverlayId($0) }
+            clearIfMatching(&searchOverlayId) { keyHandler?.setSearchOverlayId($0) }
+            clearIfMatching(&menuOverlayId) { keyHandler?.setMenuOverlayId($0) }
+            clearIfMatching(&gotoOverlayId) { keyHandler?.setGotoOverlayId($0) }
+            clearIfMatching(&quitOverlayId) { keyHandler?.setQuitOverlayId($0) }
+            clearIfMatching(&statsOverlayId) { keyHandler?.setStatsOverlayId($0) }
+            clearIfMatching(&libraryOverlayId) { keyHandler?.setLibraryOverlayId($0) }
+
             // Reset activeOverlay if no overlays left
             if overlayLayers.isEmpty { keyHandler?.setActiveOverlay(.none) }
         }

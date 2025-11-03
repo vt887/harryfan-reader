@@ -18,7 +18,7 @@ final class LibraryManager: ObservableObject {
     @Published var availableFiles: [LibraryFile] = []
 
     init(
-        baseURL: URL = URL(string: Settings.libraryURL)!
+        baseURL: URL = URL(string: Settings.libraryURL)!,
     ) {
         self.baseURL = baseURL
     }

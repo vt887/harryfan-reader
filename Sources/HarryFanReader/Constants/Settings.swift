@@ -2,7 +2,7 @@
 //  Settings.swift
 //  harryfan-reader
 //
-//  Created by automated-refactor on 10/16/25.
+//  Created by @vt887 on 10/16/25.
 //
 
 import Foundation
@@ -62,19 +62,18 @@ class Settings {
     }
 
     // Whether to show the Status Bar (persisted). Default: false
-    // Migration: older versions used the `showStatusBarIcon` key — migrate on first read.
-    private static let _showStatusBarKeyNew = "showStatusBar"
+    private static let _showStatusBarKey = "showStatusBar"
     static var showStatusBar: Bool {
         get {
             let defaults = UserDefaults.standard
             // If new key exists, prefer it
-            if let val = defaults.object(forKey: _showStatusBarKeyNew) as? Bool {
+            if let val = defaults.object(forKey: _showStatusBarKey) as? Bool {
                 return val
             }
             return false
         }
         set {
-            UserDefaults.standard.set(newValue, forKey: _showStatusBarKeyNew)
+            UserDefaults.standard.set(newValue, forKey: _showStatusBarKey)
         }
     }
 

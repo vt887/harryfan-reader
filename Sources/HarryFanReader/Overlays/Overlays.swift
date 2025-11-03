@@ -124,15 +124,7 @@ func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: C
     let verticalPadding = max(0, (rows - totalLines) / 2)
 
     // Compute bounding box using the full (not trimmed) lines so borders align
-    var startCols: [Int] = []
-    var endCols: [Int] = []
-    for line in lines {
-        let padding = max(0, (cols - line.count) / 2)
-        let startCol = padding
-        let endCol = startCol + max(0, line.count - 1)
-        startCols.append(startCol)
-        endCols.append(endCol)
-    }
+    let (startCols, endCols) = computeStartEndCols(lines: lines, cols: cols)
 
     let minStartCol = startCols.min() ?? 0
     let maxEndCol = endCols.max() ?? 0
@@ -146,62 +138,87 @@ func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: C
     let fillRight = min(cols - 1, maxEndCol + horizontalPadding)
 
     if fillTop <= fillBottom, fillLeft <= fillRight {
-        for r in fillTop ... fillBottom {
-            for c in fillLeft ... fillRight {
-                layer[r, c] = ScreenCell(char: " ", fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
-            }
-        }
+        fillBackground(&layer, top: fillTop, bottom: fillBottom, left: fillLeft, right: fillRight, fgColor: fgColor)
     }
 
     for (i, line) in lines.enumerated() {
         let padding = max(0, (cols - line.count) / 2)
         let startCol = padding
-        var idx = line.startIndex
-        var charIndex = 0
-        while idx < line.endIndex {
-            let ch = line[idx]
-            // If we find an opening bracket, attempt to find a matching closing bracket
-            if ch == "[" {
-                if let closeIdx = line[idx...].firstIndex(of: "]") {
-                    // Extract inside label
-                    let innerStart = line.index(after: idx)
-                    let inner = String(line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
-                    let j = charIndex
-                    let length = line.distance(from: idx, to: closeIdx) + 1 // inclusive
-                    let row = verticalPadding + i
-                    let col = startCol + j
-                    // Register button on layer
-                    let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
-                    layer.buttons.append(button)
-                    // Place all characters from idx..closeIdx into grid
-                    var kIdx = idx
-                    var kCharIndex = j
-                    while kIdx <= closeIdx {
-                        let writeRow = verticalPadding + i
-                        let writeCol = startCol + kCharIndex
-                        if writeRow < rows, writeCol < cols {
-                            layer[writeRow, writeCol] = ScreenCell(char: line[kIdx], fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
-                        }
-                        kCharIndex += 1
-                        kIdx = line.index(after: kIdx)
-                    }
-                    // Advance idx and charIndex past the bracketed token
-                    idx = line.index(after: closeIdx)
-                    charIndex += length
-                    continue
-                }
-            }
-            // Normal character placement
-            let writeRow = verticalPadding + i
-            let writeCol = startCol + charIndex
-            if writeRow < rows, writeCol < cols {
-                layer[writeRow, writeCol] = ScreenCell(char: ch, fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
-            }
-            idx = line.index(after: idx)
-            charIndex += 1
+        processLine(&layer, line: line, row: verticalPadding + i, startCol: startCol, fgColor: fgColor, rows: rows, cols: cols)
+    }
+
+    return layer
+}
+
+// Helper: compute start and end columns for each line
+private func computeStartEndCols(lines: [String], cols: Int) -> (startCols: [Int], endCols: [Int]) {
+    var startCols: [Int] = []
+    var endCols: [Int] = []
+    for line in lines {
+        let padding = max(0, (cols - line.count) / 2)
+        let startCol = padding
+        let endCol = startCol + max(0, line.count - 1)
+        startCols.append(startCol)
+        endCols.append(endCol)
+    }
+    return (startCols, endCols)
+}
+
+// Helper: fill the overlay background area with spaces
+private func fillBackground(_ layer: inout ScreenLayer, top: Int, bottom: Int, left: Int, right: Int, fgColor: Color) {
+    for r in top ... bottom {
+        for c in left ... right {
+            layer[r, c] = ScreenCell(char: " ", fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
         }
     }
-    return layer
+}
+
+// Helper: place characters for a single line and register bracketed buttons
+private func processLine(_ layer: inout ScreenLayer, line: String, row: Int, startCol: Int, fgColor: Color, rows: Int, cols: Int) {
+    var idx = line.startIndex
+    var charIndex = 0
+    while idx < line.endIndex {
+        let ch = line[idx]
+        // If we find an opening bracket, attempt to find a matching closing bracket
+        if ch == "[" {
+            if let closeIdx = line[idx...].firstIndex(of: "]") {
+                // Extract inside label
+                let innerStart = line.index(after: idx)
+                let inner = String(line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
+                let length = line.distance(from: idx, to: closeIdx) + 1 // inclusive
+                let col = startCol + charIndex
+                let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
+                layer.buttons.append(button)
+
+                // Place all characters from idx..closeIdx into grid
+                var kIdx = idx
+                var kCharIndex = charIndex
+                while kIdx <= closeIdx {
+                    let writeRow = row
+                    let writeCol = startCol + kCharIndex
+                    if writeRow < rows, writeCol < cols {
+                        layer[writeRow, writeCol] = ScreenCell(char: line[kIdx], fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
+                    }
+                    kCharIndex += 1
+                    kIdx = line.index(after: kIdx)
+                }
+
+                // Advance idx and charIndex past the bracketed token
+                idx = line.index(after: closeIdx)
+                charIndex += length
+                continue
+            }
+        }
+
+        // Normal character placement
+        let writeRow = row
+        let writeCol = startCol + charIndex
+        if writeRow < rows, writeCol < cols {
+            layer[writeRow, writeCol] = ScreenCell(char: ch, fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
+        }
+        idx = line.index(after: idx)
+        charIndex += 1
+    }
 }
 
 // OverlayFactory is responsible for creating overlays.

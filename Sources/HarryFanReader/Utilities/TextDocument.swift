@@ -321,34 +321,43 @@ class TextDocument: ObservableObject {
 
     // Searches for a query string in the document
     func search(_ query: String, direction: SearchDirection = .forward, caseSensitive: Bool = false) -> Int? {
-        guard !query.isEmpty else {
-            return nil
-        }
+        guard !query.isEmpty else { return nil }
 
         let searchQuery = caseSensitive ? query : query.lowercased()
         let lines = caseSensitive ? content : content.map { $0.lowercased() }
+
+        // Build a single ordered list of indices to check depending on direction.
+        let indices: [Int] = {
+            if lines.isEmpty { return [] }
+            switch direction {
+            case .forward:
+                // Start after currentLine to end, then from 0..currentLine (inclusive)
+                let start1 = min(currentLine + 1, lines.count)
+                let first = start1 < lines.count ? Array(start1 ..< lines.count) : []
+                let second = Array(0 ..< min(currentLine + 1, lines.count))
+                return first + second
+            case .backward:
+                // Start before currentLine down to 0, then from end down to currentLine (inclusive)
+                let first: [Int] = {
+                    guard currentLine > 0 else { return [] }
+                    return Array(stride(from: currentLine - 1, through: 0, by: -1))
+                }()
+                let second: [Int] = {
+                    guard lines.count - 1 >= currentLine else { return [] }
+                    return Array(stride(from: lines.count - 1, through: currentLine, by: -1))
+                }()
+                return first + second
+            }
+        }()
+
         var found: Int? = nil
-        if direction == .forward {
-            for index in (currentLine + 1) ..< lines.count where lines[index].contains(searchQuery) {
-                found = index; break
-            }
-            if found == nil {
-                for index in 0 ... currentLine where lines[index].contains(searchQuery) {
-                    found = index; break
-                }
-            }
-        } else {
-            if currentLine > 0 {
-                for index in stride(from: currentLine - 1, through: 0, by: -1) where lines[index].contains(searchQuery) {
-                    found = index; break
-                }
-            }
-            if found == nil {
-                for index in stride(from: lines.count - 1, through: currentLine, by: -1) where lines[index].contains(searchQuery) {
-                    found = index; break
-                }
+        for index in indices {
+            if lines[index].contains(searchQuery) {
+                found = index
+                break
             }
         }
+
         if let idx = found {
             topLine = idx
             currentLine = idx

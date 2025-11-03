@@ -22,13 +22,21 @@ private struct NotificationsModifier: ViewModifier {
     @State private var subscriptions: Set<AnyCancellable> = []
 
     func body(content: Content) -> some View {
-        let step1 = content
+        let step1 = addWindowAndFileHandlers(to: content)
+        let step2 = addReloadAndHelpHandlers(to: step1)
+        let step3 = addBookmarkHandlers(to: step2)
+        let step4 = addOverlayHandlers(to: step3)
+        return addNavigationHandlers(to: step4)
+    }
+
+    private func addWindowAndFileHandlers(to view: some View) -> some View {
+        view
             .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
                 if let window = notification.object as? NSWindow {
                     DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification for window: \(window.title)")
                     overlayManager.addOverlay(.welcome)
                 } else {
-                    DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification received")
+                    DebugLogger.log("NotificationsModifier: NSWindow.didBecomeKeyNotification received")
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .openFileCommand)) { _ in showingFilePicker = true }
@@ -40,8 +48,10 @@ private struct NotificationsModifier: ViewModifier {
             }
             .onReceive(NotificationCenter.default.publisher(for: .clearRecentFilesCommand)) { _ in recentFilesManager.clearRecentFiles() }
             .onReceive(NotificationCenter.default.publisher(for: .toggleWordWrapCommand)) { _ in document.toggleWordWrap() }
+    }
 
-        let step2 = step1
+    private func addReloadAndHelpHandlers(to view: some View) -> some View {
+        view
             .onReceive(NotificationCenter.default.publisher(for: .showHelpCommand)) { _ in
                 NotificationCenter.default.post(name: .toggleHelpOverlay, object: nil)
             }
@@ -57,8 +67,10 @@ private struct NotificationsModifier: ViewModifier {
                 let text = document.content.joined(separator: "\n")
                 NotificationCenter.default.post(name: Notification.Name("AppCommand.printRequest"), object: nil, userInfo: ["text": text, "fileName": document.fileName])
             }
+    }
 
-        let step3 = step2
+    private func addBookmarkHandlers(to view: some View) -> some View {
+        view
             .onReceive(NotificationCenter.default.publisher(for: .addBookmarkCommand)) { _ in
                 guard !document.fileName.isEmpty else { return }
                 let desc = document.getCurrentLine()
@@ -85,8 +97,10 @@ private struct NotificationsModifier: ViewModifier {
                     document.gotoLine(bookmark.line + 1)
                 }
             }
+    }
 
-        let step4 = step3
+    private func addOverlayHandlers(to view: some View) -> some View {
+        view
             .onReceive(NotificationCenter.default.publisher(for: .showAboutOverlay)) { _ in
                 overlayManager.addOverlay(.about)
             }
@@ -99,8 +113,10 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .removeHelpOverlay)) { _ in
                 overlayManager.removeHelpOverlay()
             }
+    }
 
-        return step4
+    private func addNavigationHandlers(to view: some View) -> some View {
+        view
             .onReceive(NotificationCenter.default.publisher(for: .scrollUpCommand)) { _ in document.lineUp() }
             .onReceive(NotificationCenter.default.publisher(for: .scrollDownCommand)) { _ in document.lineDown() }
             .onReceive(NotificationCenter.default.publisher(for: .pageUpCommand)) { _ in document.pageUp() }
