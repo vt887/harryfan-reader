@@ -102,15 +102,7 @@ struct MenuBar: Commands {
             Divider()
 
             Menu("Bookmarks") {
-                if bookmarkManager.bookmarks.isEmpty {
-                    Text("No Bookmarks").disabled(true)
-                } else {
-                    ForEach(bookmarkManager.bookmarks.indices, id: \.self) { idx in
-                        Button("\(bookmarkManager.bookmarks[idx].fileName): Line \(bookmarkManager.bookmarks[idx].line + 1)") {
-                            NotificationCenter.default.post(name: .openBookmarkCommand, object: nil, userInfo: ["bookmark": bookmarkManager.bookmarks[idx]])
-                        }
-                    }
-                }
+                BookmarkMenuItems(bookmarkManager: bookmarkManager)
             }
         }
         // Library menu (separate from File)
@@ -150,6 +142,24 @@ struct MenuBar: Commands {
                 NotificationCenter.default.post(name: .gotoEndCommand, object: nil)
             }
             .keyboardShortcut(.downArrow, modifiers: [.command, .control])
+        }
+    }
+}
+
+// Small helper view to provide bookmarks menu items without deeply nesting closures inside the Commands body.
+private struct BookmarkMenuItems: View {
+    @ObservedObject var bookmarkManager: BookmarkManager
+
+    var body: some View {
+        if bookmarkManager.bookmarks.isEmpty {
+            Text("No Bookmarks").disabled(true)
+        } else {
+            ForEach(bookmarkManager.bookmarks.indices, id: \.self) { idx in
+                let bm = bookmarkManager.bookmarks[idx]
+                Button("\(bm.fileName): Line \(bm.line + 1)") {
+                    NotificationCenter.default.post(name: .openBookmarkCommand, object: nil, userInfo: ["bookmark": bm])
+                }
+            }
         }
     }
 }

@@ -28,6 +28,7 @@ $files
 EOF
 
   printf '%s %s %s\n' "$lines" "$count" "$comment_lines"
+  return 0
 }
 
 # Helper: assign_counts DIR PREFIX -> sets ${PREFIX}_files and ${PREFIX}_lines

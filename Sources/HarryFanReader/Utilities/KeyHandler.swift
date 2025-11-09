@@ -45,24 +45,6 @@ class KeyHandler {
         self.recentFilesManager = recentFilesManager
     }
 
-    // Convenience initializer retained for compatibility with older call sites/tests.
-    convenience init(document: TextDocument,
-                     overlayLayers: [ScreenLayer],
-                     overlayOpacities: [UUID: Double],
-                     showingFilePicker: Bool,
-                     addOverlay: @escaping (OverlayKind, Double) -> UUID,
-                     removeOverlay: @escaping (UUID, Double) -> Void,
-                     overlayManager: OverlayManager,
-                     recentFilesManager: RecentFilesManager)
-    {
-        let ctx = OverlayContext(overlayLayers: overlayLayers,
-                                 overlayOpacities: overlayOpacities,
-                                 showingFilePicker: showingFilePicker,
-                                 addOverlay: addOverlay,
-                                 removeOverlay: removeOverlay)
-        self.init(document: document, overlayContext: ctx, overlayManager: overlayManager, recentFilesManager: recentFilesManager)
-    }
-
     // Cancel and remove any active quit/welcome/help overlays
     private func cancelQuitOverlay(_ reason: String? = nil) {
         guard let doc = document else { return }

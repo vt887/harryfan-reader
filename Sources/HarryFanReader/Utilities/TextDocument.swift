@@ -55,7 +55,7 @@ class TextDocument: ObservableObject {
     /// This centralizes counting logic so other code (overlays, status, tests) can reuse it.
     func statistics() -> Statistics {
         let linesArray = content
-        let totalLines = linesArray.count
+        let lineCount = linesArray.count
         let totalChars = linesArray.joined(separator: "\n").count
         let totalWords = linesArray.reduce(0) { acc, line in
             acc + line.split { $0.isWhitespace }.count
@@ -63,8 +63,8 @@ class TextDocument: ObservableObject {
         let lengths = linesArray.map(\.count)
         let longest = lengths.max() ?? 0
         let shortest = lengths.min() ?? 0
-        let avg = totalLines > 0 ? Int(round(Double(lengths.reduce(0, +)) / Double(totalLines))) : 0
-        return Statistics(totalLines: totalLines,
+        let avg = lineCount > 0 ? Int(round(Double(lengths.reduce(0, +)) / Double(lineCount))) : 0
+        return Statistics(totalLines: lineCount,
                           totalWords: totalWords,
                           totalCharacters: totalChars,
                           averageLineLength: avg,
@@ -144,27 +144,27 @@ class TextDocument: ObservableObject {
                 wrappedLines.append(line)
             } else {
                 // Split long lines
-                var currentLine = ""
+                var currentWrappedLine = ""
 
                 let words = line.components(separatedBy: " ")
 
                 for word in words {
-                    if currentLine.isEmpty {
-                        currentLine = word
-                    } else if currentLine.count + word.count + 1 <= wrapWidth {
-                        currentLine += " " + word
+                    if currentWrappedLine.isEmpty {
+                        currentWrappedLine = word
+                    } else if currentWrappedLine.count + word.count + 1 <= wrapWidth {
+                        currentWrappedLine += " " + word
                     } else {
                         // Current line is full, start a new one
-                        if !currentLine.isEmpty {
-                            wrappedLines.append(currentLine)
+                        if !currentWrappedLine.isEmpty {
+                            wrappedLines.append(currentWrappedLine)
                         }
-                        currentLine = word
+                        currentWrappedLine = word
                     }
                 }
 
                 // Add the last line
-                if !currentLine.isEmpty {
-                    wrappedLines.append(currentLine)
+                if !currentWrappedLine.isEmpty {
+                    wrappedLines.append(currentWrappedLine)
                 }
             }
         }
@@ -258,7 +258,8 @@ class TextDocument: ObservableObject {
 
     // Navigates to the start of the document
     func gotoStart() {
-        topLine = 0; currentLine = 0
+        topLine = 0
+        currentLine = 0
     }
 
     // Navigates to the end of the document

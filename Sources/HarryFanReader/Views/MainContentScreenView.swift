@@ -75,16 +75,23 @@ struct MainContentScreenView: View {
         if let kind = layer.overlayKind {
             keyHandler?.setActiveOverlay(kind.activeOverlay)
             switch kind {
-            case .statistics: statsOverlayId = id; keyHandler?.setStatsOverlayId(id)
-            case .library: libraryOverlayId = id; keyHandler?.setLibraryOverlayId(id)
-            default: break
+            case .statistics:
+                statsOverlayId = id
+                keyHandler?.setStatsOverlayId(id)
+            case .library:
+                libraryOverlayId = id
+                keyHandler?.setLibraryOverlayId(id)
+            default:
+                break
             }
         }
         return id
     }
 
     private func removeOverlay(id: UUID, fadeDuration: Double = 0.25) {
-        guard overlayLayers.contains(where: { $0.id == id }) else { return }
+        guard overlayLayers.contains(where: { $0.id == id }) else {
+            return
+        }
         // Animate opacity to zero then remove layer
         withAnimation(.easeInOut(duration: fadeDuration)) {
             overlayOpacities[id] = 0.0
@@ -112,17 +119,10 @@ struct MainContentScreenView: View {
             clearIfMatching(&libraryOverlayId) { keyHandler?.setLibraryOverlayId($0) }
 
             // Reset activeOverlay if no overlays left
-            if overlayLayers.isEmpty { keyHandler?.setActiveOverlay(.none) }
+            if overlayLayers.isEmpty {
+                keyHandler?.setActiveOverlay(.none)
+            }
         }
-    }
-
-    // Unified quit handling for F10 / Esc
-    private func handleQuitKey() {
-        if Settings.shouldShowQuitMessage, !document.shouldShowQuitMessage {
-            document.shouldShowQuitMessage = true
-            return
-        }
-        NSApp.terminate(nil)
     }
 
     // File Import Handler (now here)
@@ -149,7 +149,9 @@ struct MainContentScreenView: View {
 
     // Refactored monitor installer
     private func installQuitMonitor() {
-        guard quitKeysMonitor == nil else { return }
+        guard quitKeysMonitor == nil else {
+            return
+        }
         quitKeysMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: handleKeyEvent)
     }
 
@@ -219,10 +221,12 @@ struct MainContentScreenView: View {
             keyHandler?.setStatsOverlayId(sId)
             keyHandler?.setActiveOverlay(.statistics)
         }
-        if welcomeOverlayId != nil { keyHandler?.setActiveOverlay(.welcome) }
-        // Mirror any .about overlay present in OverlayManager
-        ensureAboutOverlayIfNeeded()
-    }
+        if welcomeOverlayId != nil {
+            keyHandler?.setActiveOverlay(.welcome)
+        }
+         // Mirror any .about overlay present in OverlayManager
+         ensureAboutOverlayIfNeeded()
+     }
 
     // MARK: - Refactored helpers for onAppearAction
 
@@ -237,7 +241,9 @@ struct MainContentScreenView: View {
     }
 
     private func ensureAboutOverlayIfNeeded() {
-        guard overlayManager.overlays.contains(.about) else { return }
+        guard overlayManager.overlays.contains(.about) else {
+            return
+        }
         DebugLogger.log("MainContentScreenView.onAppear: overlayManager already contains .about — ensuring about overlay is shown")
         let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
         if !isOverlayAlreadyShowing(firstLine: aboutFirstLine) {
@@ -246,7 +252,9 @@ struct MainContentScreenView: View {
     }
 
     private func isOverlayAlreadyShowing(firstLine: String) -> Bool {
-        guard !firstLine.isEmpty else { return false }
+        guard !firstLine.isEmpty else {
+            return false
+        }
         return overlayLayers.contains { layer in
             let rows = layer.grid.count
             let cols = layer.grid.first?.count ?? 0
@@ -289,30 +297,38 @@ struct MainContentScreenView: View {
             }
             return false
         }
-        if !alreadyShowing { _ = addOverlay(kind: .about) }
+        if !alreadyShowing {
+            _ = addOverlay(kind: .about)
+        }
     }
 
     private func handleToggleHelpNotification(_: Notification) {
         DebugLogger.log("MainContentScreenView: received toggleHelpOverlay notification")
-        if let hid = helpOverlayId { DebugLogger.log("MainContentScreenView: hiding tracked help overlay id=\(hid)"); removeOverlay(id: hid); return }
+        if let hid = helpOverlayId {
+            DebugLogger.log("MainContentScreenView: hiding tracked help overlay id=\(hid)")
+            removeOverlay(id: hid)
+            return
+        }
         let helpFirstLine = Messages.helpMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-        if !helpFirstLine.isEmpty {
-            if let existing = overlayLayers.first(where: { layer in
-                let rows = layer.grid.count
-                let cols = layer.grid.first?.count ?? 0
-                for r in 0 ..< rows {
-                    var rowStr = ""
-                    for c in 0 ..< cols {
-                        rowStr.append(layer[r, c].char)
-                    }
-                    if rowStr.trimmingCharacters(in: .whitespaces).contains(helpFirstLine) { return true }
+        if let existing = overlayLayers.first(where: { layer in
+            // If we don't have a help first line, the overlay cannot match.
+            guard !helpFirstLine.isEmpty else { return false }
+            let rows = layer.grid.count
+            let cols = layer.grid.first?.count ?? 0
+            for r in 0 ..< rows {
+                var rowStr = ""
+                for c in 0 ..< cols {
+                    rowStr.append(layer[r, c].char)
                 }
-                return false
-            }) {
-                DebugLogger.log("MainContentScreenView: hiding existing help overlay id=\(existing.id)")
-                removeOverlay(id: existing.id)
-                return
+                if rowStr.trimmingCharacters(in: .whitespaces).contains(helpFirstLine) {
+                    return true
+                }
             }
+            return false
+        }) {
+            DebugLogger.log("MainContentScreenView: hiding existing help overlay id=\(existing.id)")
+            removeOverlay(id: existing.id)
+            return
         }
         let hid = addOverlay(kind: .help)
         helpOverlayId = hid
@@ -403,7 +419,10 @@ struct MainContentScreenView: View {
                 DebugLogger.log("Quit overlay shown (id=\(qid))")
             }
         } else {
-            if let qId = quitOverlayId { removeOverlay(id: qId); quitOverlayId = nil }
+            if let qId = quitOverlayId {
+                removeOverlay(id: qId)
+                quitOverlayId = nil
+            }
         }
     }
 }

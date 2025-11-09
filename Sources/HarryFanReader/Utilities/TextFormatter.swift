@@ -16,7 +16,9 @@ class TextFormatter {
         // Avoid division by zero for empty documents
         guard totalLines > 0 else { return 0 }
         // Special case: if document fits entirely on screen, show 100%
-        if totalLines <= (Settings.rows - 2) { return 100 }
+        if totalLines <= (Settings.rows - 2) {
+            return 100
+        }
         // Calculate the bottom visible line (1-indexed for percentage calculation)
         let bottomLine = topLine + visibleLines
         // Calculate percentage based on how much of the file is visible up to the bottom line

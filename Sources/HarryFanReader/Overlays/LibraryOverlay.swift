@@ -38,19 +38,19 @@ struct LibraryOverlay: View {
                     List {
                         ForEach(recentFilesManager.recentFiles.indices, id: \.self) { idx in
                             let item = recentFilesManager.recentFiles[idx]
-                            Button(action: {
+                            // Use a tappable row instead of nesting Button label closures inside the ForEach.
+                            HStack {
+                                Text(item.displayName)
+                                Spacer()
+                                Text(item.url.lastPathComponent)
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
                                 NotificationCenter.default.post(name: .openRecentFileCommand, object: nil, userInfo: ["url": item.url])
                                 overlayManager.removeOverlay(.library)
-                            }) {
-                                HStack {
-                                    Text(item.displayName)
-                                    Spacer()
-                                    Text(item.url.lastPathComponent)
-                                        .foregroundColor(.secondary)
-                                        .font(.caption)
-                                }
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
                     }
                     .listStyle(.plain)

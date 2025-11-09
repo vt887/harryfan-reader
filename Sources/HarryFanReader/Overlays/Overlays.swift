@@ -186,11 +186,10 @@ private struct BracketedButtonContext {
     let line: String
     var idx: String.Index
     var charIndex: Int
-    let row: Int
-    let startCol: Int
+    // Group position (row + start column) and grid size (rows + cols)
+    let position: (row: Int, startCol: Int)
     let fgColor: Color
-    let rows: Int
-    let cols: Int
+    let gridSize: (rows: Int, cols: Int)
 }
 
 // Helper: process a bracketed button if present, else return false
@@ -200,13 +199,19 @@ private func tryProcessBracketedButton(_ ctx: inout BracketedButtonContext) -> (
     let innerStart = ctx.line.index(after: ctx.idx)
     let inner = String(ctx.line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
     let length = ctx.line.distance(from: ctx.idx, to: closeIdx) + 1 // inclusive
-    let col = ctx.startCol + ctx.charIndex
-    let button = OverlayButton(label: inner, row: ctx.row, col: col, length: length, action: .init(fromLabel: inner))
+    let col = ctx.position.startCol + ctx.charIndex
+    let button = OverlayButton(label: inner, row: ctx.position.row, col: col, length: length, action: .init(fromLabel: inner))
     ctx.layer.pointee.buttons.append(button)
     var kIdx = ctx.idx
     var kCharIndex = ctx.charIndex
     while kIdx <= closeIdx {
-        placeChar(&ctx.layer.pointee, char: ctx.line[kIdx], row: ctx.row, col: ctx.startCol + kCharIndex, fgColor: ctx.fgColor, rows: ctx.rows, cols: ctx.cols)
+        placeChar(&ctx.layer.pointee,
+                  char: ctx.line[kIdx],
+                  row: ctx.position.row,
+                  col: ctx.position.startCol + kCharIndex,
+                  fgColor: ctx.fgColor,
+                  rows: ctx.gridSize.rows,
+                  cols: ctx.gridSize.cols)
         kCharIndex += 1
         kIdx = ctx.line.index(after: kIdx)
     }
@@ -222,7 +227,13 @@ private func processLine(_ layer: inout ScreenLayer, line: String, row: Int, sta
         var idx = line.startIndex
         var charIndex = 0
         while idx < line.endIndex {
-            var ctx = BracketedButtonContext(layer: layerPtr, line: line, idx: idx, charIndex: charIndex, row: row, startCol: startCol, fgColor: fgColor, rows: rows, cols: cols)
+            var ctx = BracketedButtonContext(layer: layerPtr,
+                                            line: line,
+                                            idx: idx,
+                                            charIndex: charIndex,
+                                            position: (row: row, startCol: startCol),
+                                            fgColor: fgColor,
+                                            gridSize: (rows: rows, cols: cols))
             let (matched, newIdx, newCharIndex) = tryProcessBracketedButton(&ctx)
             if matched {
                 idx = newIdx

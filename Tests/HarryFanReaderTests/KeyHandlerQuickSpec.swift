@@ -58,12 +58,13 @@ final class KeyHandlerQuickSpec: QuickSpec {
                 let removeClosure: (UUID, Double) -> Void = { id, delay in
                     removed.append((id, delay))
                 }
+                let ctx = OverlayContext(overlayLayers: [],
+                                         overlayOpacities: [:],
+                                         showingFilePicker: false,
+                                         addOverlay: addClosure,
+                                         removeOverlay: removeClosure)
                 return KeyHandler(document: doc,
-                                  overlayLayers: [],
-                                  overlayOpacities: [:],
-                                  showingFilePicker: false,
-                                  addOverlay: addClosure,
-                                  removeOverlay: removeClosure,
+                                  overlayContext: ctx,
                                   overlayManager: overlayManager,
                                   recentFilesManager: recentFilesManager)
             }
