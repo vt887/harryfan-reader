@@ -173,49 +173,70 @@ private func fillBackground(_ layer: inout ScreenLayer, top: Int, bottom: Int, l
     }
 }
 
+// Helper: place bracketed button and its characters
+private func placeBracketedButton(_ layer: inout ScreenLayer, line: String, idx: inout String.Index, charIndex: inout Int, row: Int, startCol: Int, fgColor: Color, rows: Int, cols: Int) -> Bool {
+    let ch = line[idx]
+    guard ch == "[", let closeIdx = line[idx...].firstIndex(of: "]") else { return false }
+    let innerStart = line.index(after: idx)
+    let inner = String(line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
+    let length = line.distance(from: idx, to: closeIdx) + 1 // inclusive
+    let col = startCol + charIndex
+    let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
+    layer.buttons.append(button)
+    var kIdx = idx
+    var kCharIndex = charIndex
+    while kIdx <= closeIdx {
+        let writeRow = row
+        let writeCol = startCol + kCharIndex
+        if writeRow < rows, writeCol < cols {
+            layer[writeRow, writeCol] = ScreenCell(char: line[kIdx], fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
+        }
+        kCharIndex += 1
+        kIdx = line.index(after: kIdx)
+    }
+    idx = line.index(after: closeIdx)
+    charIndex += length
+    return true
+}
+
+// Helper: place a single character in the layer grid
+private func placeChar(_ layer: inout ScreenLayer, char: Character, row: Int, col: Int, fgColor: Color, rows: Int, cols: Int) {
+    if row < rows, col < cols {
+        layer[row, col] = ScreenCell(char: char, fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
+    }
+}
+
+// Helper: process a bracketed button if present, else return false
+private func tryProcessBracketedButton(_ layer: inout ScreenLayer, line: String, idx: inout String.Index, charIndex: inout Int, row: Int, startCol: Int, fgColor: Color, rows: Int, cols: Int) -> Bool {
+    let ch = line[idx]
+    guard ch == "[", let closeIdx = line[idx...].firstIndex(of: "]") else { return false }
+    let innerStart = line.index(after: idx)
+    let inner = String(line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
+    let length = line.distance(from: idx, to: closeIdx) + 1 // inclusive
+    let col = startCol + charIndex
+    let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
+    layer.buttons.append(button)
+    var kIdx = idx
+    var kCharIndex = charIndex
+    while kIdx <= closeIdx {
+        placeChar(&layer, char: line[kIdx], row: row, col: startCol + kCharIndex, fgColor: fgColor, rows: rows, cols: cols)
+        kCharIndex += 1
+        kIdx = line.index(after: kIdx)
+    }
+    idx = line.index(after: closeIdx)
+    charIndex += length
+    return true
+}
+
 // Helper: place characters for a single line and register bracketed buttons
 private func processLine(_ layer: inout ScreenLayer, line: String, row: Int, startCol: Int, fgColor: Color, rows: Int, cols: Int) {
     var idx = line.startIndex
     var charIndex = 0
     while idx < line.endIndex {
-        let ch = line[idx]
-        // If we find an opening bracket, attempt to find a matching closing bracket
-        if ch == "[" {
-            if let closeIdx = line[idx...].firstIndex(of: "]") {
-                // Extract inside label
-                let innerStart = line.index(after: idx)
-                let inner = String(line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
-                let length = line.distance(from: idx, to: closeIdx) + 1 // inclusive
-                let col = startCol + charIndex
-                let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
-                layer.buttons.append(button)
-
-                // Place all characters from idx..closeIdx into grid
-                var kIdx = idx
-                var kCharIndex = charIndex
-                while kIdx <= closeIdx {
-                    let writeRow = row
-                    let writeCol = startCol + kCharIndex
-                    if writeRow < rows, writeCol < cols {
-                        layer[writeRow, writeCol] = ScreenCell(char: line[kIdx], fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
-                    }
-                    kCharIndex += 1
-                    kIdx = line.index(after: kIdx)
-                }
-
-                // Advance idx and charIndex past the bracketed token
-                idx = line.index(after: closeIdx)
-                charIndex += length
-                continue
-            }
+        if tryProcessBracketedButton(&layer, line: line, idx: &idx, charIndex: &charIndex, row: row, startCol: startCol, fgColor: fgColor, rows: rows, cols: cols) {
+            continue
         }
-
-        // Normal character placement
-        let writeRow = row
-        let writeCol = startCol + charIndex
-        if writeRow < rows, writeCol < cols {
-            layer[writeRow, writeCol] = ScreenCell(char: ch, fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
-        }
+        placeChar(&layer, char: line[idx], row: row, col: startCol + charIndex, fgColor: fgColor, rows: rows, cols: cols)
         idx = line.index(after: idx)
         charIndex += 1
     }

@@ -319,50 +319,56 @@ class TextDocument: ObservableObject {
         // If already at bottom, do nothing
     }
 
+    // Helper to build search indices for forward direction
+    private func searchIndicesForward(from current: Int, count: Int) -> [Int] {
+        let start1 = min(current + 1, count)
+        let first = start1 < count ? Array(start1 ..< count) : []
+        let second = Array(0 ..< min(current + 1, count))
+        return first + second
+    }
+
+    // Helper to build search indices for backward direction
+    private func searchIndicesBackward(from current: Int, count: Int) -> [Int] {
+        let first: [Int] = {
+            guard current > 0 else { return [] }
+            return Array(stride(from: current - 1, through: 0, by: -1))
+        }()
+        let second: [Int] = {
+            guard count - 1 >= current else { return [] }
+            return Array(stride(from: count - 1, through: current, by: -1))
+        }()
+        return first + second
+    }
+
+    // Helper to get lines for search with case sensitivity
+    private func linesForSearch(caseSensitive: Bool) -> [String] {
+        caseSensitive ? content : content.map { $0.lowercased() }
+    }
+
+    // Helper to get query for search with case sensitivity
+    private func queryForSearch(_ query: String, caseSensitive: Bool) -> String {
+        caseSensitive ? query : query.lowercased()
+    }
+
     // Searches for a query string in the document
     func search(_ query: String, direction: SearchDirection = .forward, caseSensitive: Bool = false) -> Int? {
         guard !query.isEmpty else { return nil }
-
-        let searchQuery = caseSensitive ? query : query.lowercased()
-        let lines = caseSensitive ? content : content.map { $0.lowercased() }
-
-        // Build a single ordered list of indices to check depending on direction.
-        let indices: [Int] = {
-            if lines.isEmpty { return [] }
-            switch direction {
-            case .forward:
-                // Start after currentLine to end, then from 0..currentLine (inclusive)
-                let start1 = min(currentLine + 1, lines.count)
-                let first = start1 < lines.count ? Array(start1 ..< lines.count) : []
-                let second = Array(0 ..< min(currentLine + 1, lines.count))
-                return first + second
-            case .backward:
-                // Start before currentLine down to 0, then from end down to currentLine (inclusive)
-                let first: [Int] = {
-                    guard currentLine > 0 else { return [] }
-                    return Array(stride(from: currentLine - 1, through: 0, by: -1))
-                }()
-                let second: [Int] = {
-                    guard lines.count - 1 >= currentLine else { return [] }
-                    return Array(stride(from: lines.count - 1, through: currentLine, by: -1))
-                }()
-                return first + second
-            }
-        }()
-
-        var found: Int? = nil
-        for index in indices {
-            if lines[index].contains(searchQuery) {
-                found = index
-                break
-            }
+        let searchQuery = queryForSearch(query, caseSensitive: caseSensitive)
+        let lines = linesForSearch(caseSensitive: caseSensitive)
+        let indices: [Int]
+        switch direction {
+        case .forward:
+            indices = searchIndicesForward(from: currentLine, count: lines.count)
+        case .backward:
+            indices = searchIndicesBackward(from: currentLine, count: lines.count)
         }
-
-        if let idx = found {
-            topLine = idx
-            currentLine = idx
+        guard !indices.isEmpty else { return nil }
+        if let found = indices.first(where: { lines[$0].contains(searchQuery) }) {
+            topLine = found
+            currentLine = found
+            return found
         }
-        return found
+        return nil
     }
 
     // Returns the content of the current line
