@@ -211,15 +211,8 @@ struct MainContentScreenView: View {
                                 removeOverlay: removeOverlay,
                                 overlayManager: overlayManager,
                                 recentFilesManager: recentFilesManager)
-        // Ensure keyHandler knows about any existing library overlay id
-        keyHandler?.setLibraryOverlayId(libraryOverlayId)
-        // set handler's known overlay ids
-        keyHandler?.setWelcomeOverlayId(welcomeOverlayId)
-        keyHandler?.setHelpOverlayId(helpOverlayId)
-        keyHandler?.setSearchOverlayId(searchOverlayId)
-        keyHandler?.setMenuOverlayId(menuOverlayId)
-        keyHandler?.setGotoOverlayId(gotoOverlayId)
-        keyHandler?.setQuitOverlayId(quitOverlayId)
+        // Set overlay IDs in keyHandler
+        setOverlayIdsInKeyHandler()
         // Inform keyHandler about statistics overlay if it already exists
         if let sId = statsOverlayId {
             keyHandler?.setStatsOverlayId(sId)
@@ -227,25 +220,45 @@ struct MainContentScreenView: View {
         }
         if welcomeOverlayId != nil { keyHandler?.setActiveOverlay(.welcome) }
         // Mirror any .about overlay present in OverlayManager
-        if overlayManager.overlays.contains(.about) {
-            DebugLogger.log("MainContentScreenView.onAppear: overlayManager already contains .about — ensuring about overlay is shown")
-            let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-            let alreadyShowing = overlayLayers.contains { layer in
-                guard !aboutFirstLine.isEmpty else { return false }
-                let rows = layer.grid.count
-                let cols = layer.grid.first?.count ?? 0
-                for r in 0 ..< rows {
-                    var rowStr = ""
-                    for c in 0 ..< cols {
-                        rowStr.append(layer[r, c].char)
-                    }
-                    if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) {
-                        return true
-                    }
+        ensureAboutOverlayIfNeeded()
+    }
+
+    // MARK: - Refactored helpers for onAppearAction
+
+    private func setOverlayIdsInKeyHandler() {
+        keyHandler?.setLibraryOverlayId(libraryOverlayId)
+        keyHandler?.setWelcomeOverlayId(welcomeOverlayId)
+        keyHandler?.setHelpOverlayId(helpOverlayId)
+        keyHandler?.setSearchOverlayId(searchOverlayId)
+        keyHandler?.setMenuOverlayId(menuOverlayId)
+        keyHandler?.setGotoOverlayId(gotoOverlayId)
+        keyHandler?.setQuitOverlayId(quitOverlayId)
+    }
+
+    private func ensureAboutOverlayIfNeeded() {
+        guard overlayManager.overlays.contains(.about) else { return }
+        DebugLogger.log("MainContentScreenView.onAppear: overlayManager already contains .about — ensuring about overlay is shown")
+        let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
+        if !isOverlayAlreadyShowing(firstLine: aboutFirstLine) {
+            _ = addOverlay(kind: .about)
+        }
+    }
+
+    private func isOverlayAlreadyShowing(firstLine: String) -> Bool {
+        guard !firstLine.isEmpty else { return false }
+        return overlayLayers.contains { layer in
+            let rows = layer.grid.count
+            let cols = layer.grid.first?.count ?? 0
+            for r in 0 ..< rows {
+                var rowStr = ""
+                for c in 0 ..< cols {
+                    rowStr.append(layer[r, c].char)
                 }
-                return false
+                if rowStr.trimmingCharacters(in: .whitespaces).contains(firstLine) {
+                    return true
+                }
             }
-            if !alreadyShowing { _ = addOverlay(kind: .about) }
+            return false
         }
     }
 
@@ -311,46 +324,53 @@ struct MainContentScreenView: View {
         let added = newKinds.filter { !observedOverlayKinds.contains($0) }
         observedOverlayKinds = newKinds
         if added.contains(.about) {
-            DebugLogger.log("MainContentScreenView: detected .about added to OverlayManager — adding about overlay")
-            let aboutFirstLine = Messages.aboutMessage.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
-            let alreadyShowing = overlayLayers.contains { layer in
-                guard !aboutFirstLine.isEmpty else { return false }
-                let rows = layer.grid.count
-                let cols = layer.grid.first?.count ?? 0
-                for r in 0 ..< rows {
-                    var rowStr = ""
-                    for c in 0 ..< cols {
-                        rowStr.append(layer[r, c].char)
-                    }
-                    if rowStr.trimmingCharacters(in: .whitespaces).contains(aboutFirstLine) { return true }
-                }
-                return false
-            }
-            if !alreadyShowing { _ = addOverlay(kind: .about) }
+            handleAboutOverlayAddition()
         }
         if added.contains(.statistics) {
-            DebugLogger.log("MainContentScreenView: detected .statistics added to OverlayManager — adding statistics overlay (live)")
-            let alreadyShowing = overlayLayers.contains { $0.overlayKind == .statistics }
-            if !alreadyShowing {
-                var statsLayer = OverlayFactory.makeStatisticsOverlay(document: document, rows: Settings.rows - 2, cols: Settings.cols)
-                statsLayer.overlayKind = .statistics
-                let id = addCustomOverlay(statsLayer)
-                statsOverlayId = id
-                DebugLogger.log("Statistics overlay shown (id=\(id))")
-            }
+            handleStatisticsOverlayAddition()
         }
         if added.contains(.library) {
-            DebugLogger.log("MainContentScreenView: detected .library added to OverlayManager — adding library overlay")
-            let alreadyShowing = overlayLayers.contains { $0.overlayKind == .library }
-            if !alreadyShowing {
-                let libLayer = OverlayFactory.makeLibraryOverlay(rows: Settings.rows - 2, cols: Settings.cols)
-                var layer = libLayer
-                layer.overlayKind = .library
-                let id = addCustomOverlay(layer)
-                libraryOverlayId = id
-                DebugLogger.log("Library overlay shown (id=\(id))")
-            }
+            handleLibraryOverlayAddition()
         }
+    }
+
+    // MARK: - Helpers for handleOverlayManagerChange
+
+    private func handleAboutOverlayAddition() {
+        DebugLogger.log("MainContentScreenView: detected .about added to OverlayManager — adding about overlay")
+        let aboutFirstLine = firstLineTrimmed(from: Messages.aboutMessage)
+        if !isOverlayAlreadyShowing(firstLine: aboutFirstLine) {
+            _ = addOverlay(kind: .about)
+        }
+    }
+
+    private func handleStatisticsOverlayAddition() {
+        DebugLogger.log("MainContentScreenView: detected .statistics added to OverlayManager — adding statistics overlay (live)")
+        let alreadyShowing = overlayLayers.contains { $0.overlayKind == .statistics }
+        if !alreadyShowing {
+            var statsLayer = OverlayFactory.makeStatisticsOverlay(document: document, rows: Settings.rows - 2, cols: Settings.cols)
+            statsLayer.overlayKind = .statistics
+            let id = addCustomOverlay(statsLayer)
+            statsOverlayId = id
+            DebugLogger.log("Statistics overlay shown (id=\(id))")
+        }
+    }
+
+    private func handleLibraryOverlayAddition() {
+        DebugLogger.log("MainContentScreenView: detected .library added to OverlayManager — adding library overlay")
+        let alreadyShowing = overlayLayers.contains { $0.overlayKind == .library }
+        if !alreadyShowing {
+            let libLayer = OverlayFactory.makeLibraryOverlay(rows: Settings.rows - 2, cols: Settings.cols)
+            var layer = libLayer
+            layer.overlayKind = .library
+            let id = addCustomOverlay(layer)
+            libraryOverlayId = id
+            DebugLogger.log("Library overlay shown (id=\(id))")
+        }
+    }
+
+    private func firstLineTrimmed(from message: String) -> String {
+        message.split(separator: "\n", omittingEmptySubsequences: true).first.map { String($0).trimmingCharacters(in: .whitespaces) } ?? ""
     }
 
     private func handleShowQuitOverlay(_: Notification) {

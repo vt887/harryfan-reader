@@ -355,12 +355,11 @@ class TextDocument: ObservableObject {
         guard !query.isEmpty else { return nil }
         let searchQuery = queryForSearch(query, caseSensitive: caseSensitive)
         let lines = linesForSearch(caseSensitive: caseSensitive)
-        let indices: [Int]
-        switch direction {
+        let indices: [Int] = switch direction {
         case .forward:
-            indices = searchIndicesForward(from: currentLine, count: lines.count)
+            searchIndicesForward(from: currentLine, count: lines.count)
         case .backward:
-            indices = searchIndicesBackward(from: currentLine, count: lines.count)
+            searchIndicesBackward(from: currentLine, count: lines.count)
         }
         guard !indices.isEmpty else { return nil }
         if let found = indices.first(where: { lines[$0].contains(searchQuery) }) {

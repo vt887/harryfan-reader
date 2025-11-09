@@ -18,7 +18,7 @@ run:
 	swift run
 
 test:
-	swift test $(SWIFT_FLAGS) 2>&1 | xcbeautify
+	swift test | xcbeautify
 
 stat:
 	@sh scripts/count-swift-lines.sh
