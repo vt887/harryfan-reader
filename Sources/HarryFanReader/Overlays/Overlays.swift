@@ -228,12 +228,12 @@ private func processLine(_ layer: inout ScreenLayer, line: String, row: Int, sta
         var charIndex = 0
         while idx < line.endIndex {
             var ctx = BracketedButtonContext(layer: layerPtr,
-                                            line: line,
-                                            idx: idx,
-                                            charIndex: charIndex,
-                                            position: (row: row, startCol: startCol),
-                                            fgColor: fgColor,
-                                            gridSize: (rows: rows, cols: cols))
+                                             line: line,
+                                             idx: idx,
+                                             charIndex: charIndex,
+                                             position: (row: row, startCol: startCol),
+                                             fgColor: fgColor,
+                                             gridSize: (rows: rows, cols: cols))
             let (matched, newIdx, newCharIndex) = tryProcessBracketedButton(&ctx)
             if matched {
                 idx = newIdx
@@ -313,15 +313,15 @@ enum OverlayFactory {
     // Action-bar items: per-overlay action bar labels and a dispatcher used by the UI/tests.
     static func actionBarItems(for kind: OverlayKind) -> [String] {
         switch kind {
-        case .help: return helpActionBarItems()
-        case .welcome: return welcomeActionBarItems()
-        case .quit: return quitActionBarItems()
-        case .about: return aboutActionBarItems()
-        case .search: return searchActionBarItems()
-        case .goto: return gotoActionBarItems()
-        case .menu: return menuActionBarItems()
-        case .statistics: return statisticsActionBarItems()
-        case .library: return libraryActionBarItems()
+        case .help: helpActionBarItems()
+        case .welcome: welcomeActionBarItems()
+        case .quit: quitActionBarItems()
+        case .about: aboutActionBarItems()
+        case .search: searchActionBarItems()
+        case .goto: gotoActionBarItems()
+        case .menu: menuActionBarItems()
+        case .statistics: statisticsActionBarItems()
+        case .library: libraryActionBarItems()
         }
     }
 

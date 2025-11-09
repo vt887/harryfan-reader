@@ -25,18 +25,18 @@ final class OverlayManager: ObservableObject {
 
     init() {
         /*
-         Intentionally left empty.
+          Intentionally left empty.
 
-         Rationale:
-         - The `OverlayManager` requires no runtime setup beyond the property defaults provided
-           above (an empty overlay list and an initial opacity value). Keeping an explicit
-           initializer makes the API self-documenting and allows tests or callers to rely on
-           a stable, publicly-visible initializer if needed.
-         - If future initialization logic is required (dependency injection, persisted state
-           restoration, configuration), this initializer is the natural place to add it.
-         - Leaving the initializer present (even empty) avoids implicit memberwise/init changes
-           if more stored properties are added later and keeps call sites explicit.
-        */
+          Rationale:
+          - The `OverlayManager` requires no runtime setup beyond the property defaults provided
+            above (an empty overlay list and an initial opacity value). Keeping an explicit
+            initializer makes the API self-documenting and allows tests or callers to rely on
+            a stable, publicly-visible initializer if needed.
+          - If future initialization logic is required (dependency injection, persisted state
+            restoration, configuration), this initializer is the natural place to add it.
+          - Leaving the initializer present (even empty) avoids implicit memberwise/init changes
+            if more stored properties are added later and keeps call sites explicit.
+         */
     }
 
     // MARK: - Overlay management

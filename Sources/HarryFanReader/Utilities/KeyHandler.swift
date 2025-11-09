@@ -199,13 +199,12 @@ class KeyHandler {
         let isDismissKey = policy.dismissKeyCodes.contains(event.keyCode)
         let isNKey = event.charactersIgnoringModifiers?.lowercased() == "n"
         if policy.allowAnyKeyToDismiss || isDismissKey || isNKey {
-            let reason: String
-            if isNKey {
-                reason = "'n' pressed"
+            let reason = if isNKey {
+                "'n' pressed"
             } else if isDismissKey {
-                reason = "dismiss key pressed"
+                "dismiss key pressed"
             } else {
-                reason = "any key"
+                "any key"
             }
             cancelQuitOverlay(reason)
             return true
@@ -365,34 +364,42 @@ class KeyHandler {
     func setWelcomeOverlayId(_ id: UUID?) {
         welcomeOverlayId = id
     }
+
     // Update help overlay id
     func setHelpOverlayId(_ id: UUID?) {
         helpOverlayId = id
     }
+
     // Update search overlay id
     func setSearchOverlayId(_ id: UUID?) {
         searchOverlayId = id
     }
+
     // Update goto overlay id
     func setGotoOverlayId(_ id: UUID?) {
         gotoOverlayId = id
     }
+
     // Update menu overlay id
     func setMenuOverlayId(_ id: UUID?) {
         menuOverlayId = id
     }
+
     // Update quit overlay id
     func setQuitOverlayId(_ id: UUID?) {
         quitOverlayId = id
     }
+
     // Update stats overlay id
     func setStatsOverlayId(_ id: UUID?) {
         statsOverlayId = id
     }
+
     // Update library overlay id
     func setLibraryOverlayId(_ id: UUID?) {
         libraryOverlayId = id
     }
+
     // Update active overlay enum
     func setActiveOverlay(_ overlay: ActiveOverlay) {
         activeOverlay = overlay

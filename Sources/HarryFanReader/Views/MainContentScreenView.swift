@@ -208,8 +208,8 @@ struct MainContentScreenView: View {
         let overlayContext = OverlayContext(overlayLayers: overlayLayers,
                                             overlayOpacities: overlayOpacities,
                                             showingFilePicker: showingFilePicker,
-                                            addOverlay: { kind, duration in self.addOverlay(kind: kind, fadeDuration: duration) },
-                                            removeOverlay: { id, duration in self.removeOverlay(id: id, fadeDuration: duration) })
+                                            addOverlay: { kind, duration in addOverlay(kind: kind, fadeDuration: duration) },
+                                            removeOverlay: { id, duration in removeOverlay(id: id, fadeDuration: duration) })
         keyHandler = KeyHandler(document: document,
                                 overlayContext: overlayContext,
                                 overlayManager: overlayManager,
@@ -224,9 +224,9 @@ struct MainContentScreenView: View {
         if welcomeOverlayId != nil {
             keyHandler?.setActiveOverlay(.welcome)
         }
-         // Mirror any .about overlay present in OverlayManager
-         ensureAboutOverlayIfNeeded()
-     }
+        // Mirror any .about overlay present in OverlayManager
+        ensureAboutOverlayIfNeeded()
+    }
 
     // MARK: - Refactored helpers for onAppearAction
 
