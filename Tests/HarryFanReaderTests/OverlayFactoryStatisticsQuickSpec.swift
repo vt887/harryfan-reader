@@ -9,6 +9,21 @@
 import Nimble
 import Quick
 
+// Helper: convert a ScreenLayer row (array of ScreenCell) into a String
+private func rowToString(_ row: [ScreenCell]) -> String {
+    var chars: [Character] = []
+    chars.reserveCapacity(row.count)
+    for cell in row {
+        chars.append(cell.char)
+    }
+    return String(chars)
+}
+
+// Helper: count words in a line using the same split logic but keep it out of nested closures
+private func countWords(in line: String) -> Int {
+    line.split { $0.isWhitespace }.count
+}
+
 final class OverlayFactoryStatisticsQuickSpec: QuickSpec {
     override class func spec() {
         describe("OverlayFactory statistics overlay") {
@@ -20,14 +35,14 @@ final class OverlayFactoryStatisticsQuickSpec: QuickSpec {
                 let layer = OverlayFactory.makeStatisticsOverlay(document: doc, rows: Settings.rows - 2, cols: Settings.cols)
 
                 // Convert layer rows into strings to search for values
-                let lines = layer.grid.map { row in
-                    String(row.map(\.char))
-                }
+                let lines = layer.grid.map { rowToString($0) }
 
                 // Expected values
                 let expectedLines = doc.content.count
                 let expectedChars = doc.content.joined(separator: "\n").count
-                let expectedWords = doc.content.reduce(0) { $0 + $1.split { $0.isWhitespace }.count }
+                let expectedWords = doc.content.reduce(0) { acc, line in
+                    acc + countWords(in: line)
+                }
 
                 // Check presence of values in overlay text
                 expect(lines.joined(separator: "\n")).to(contain("\(expectedLines)"))

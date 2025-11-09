@@ -9,6 +9,15 @@
 import Nimble
 import Quick
 
+// Helper: count occurrences of the given overlay kind without using inline closures inside tests
+private func countOccurrences(of kind: OverlayKind, in overlays: [OverlayKind]) -> Int {
+    var c = 0
+    for o in overlays {
+        if o == kind { c += 1 }
+    }
+    return c
+}
+
 final class OverlayManagerQuickSpec: QuickSpec {
     override class func spec() {
         describe("OverlayManager stack behavior") {
@@ -18,7 +27,7 @@ final class OverlayManagerQuickSpec: QuickSpec {
                 expect(manager.overlays).to(contain(.help))
                 // adding again should not duplicate
                 manager.addOverlay(.help)
-                expect(manager.overlays.count(where: { $0 == .help })).to(equal(1))
+                expect(countOccurrences(of: .help, in: manager.overlays)).to(equal(1))
             }
 
             it("removes overlays correctly") {

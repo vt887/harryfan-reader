@@ -22,7 +22,10 @@ final class PrintManager: ObservableObject {
             let text = document.content.joined(separator: "\n")
 
             // Prepare printInfo and default margins
-            let printInfo = NSPrintInfo.shared.copy() as! NSPrintInfo
+            guard let printInfo = NSPrintInfo.shared.copy() as? NSPrintInfo else {
+                DebugLogger.log("PrintManager.printDocument: failed to copy NSPrintInfo")
+                return
+            }
             printInfo.topMargin = 36.0
             printInfo.leftMargin = 36.0
             printInfo.rightMargin = 36.0
