@@ -173,32 +173,6 @@ private func fillBackground(_ layer: inout ScreenLayer, top: Int, bottom: Int, l
     }
 }
 
-// Helper: place bracketed button and its characters
-private func placeBracketedButton(_ layer: inout ScreenLayer, line: String, idx: inout String.Index, charIndex: inout Int, row: Int, startCol: Int, fgColor: Color, rows: Int, cols: Int) -> Bool {
-    let ch = line[idx]
-    guard ch == "[", let closeIdx = line[idx...].firstIndex(of: "]") else { return false }
-    let innerStart = line.index(after: idx)
-    let inner = String(line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
-    let length = line.distance(from: idx, to: closeIdx) + 1 // inclusive
-    let col = startCol + charIndex
-    let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
-    layer.buttons.append(button)
-    var kIdx = idx
-    var kCharIndex = charIndex
-    while kIdx <= closeIdx {
-        let writeRow = row
-        let writeCol = startCol + kCharIndex
-        if writeRow < rows, writeCol < cols {
-            layer[writeRow, writeCol] = ScreenCell(char: line[kIdx], fgColor: fgColor, bgColor: Colors.theme.overlayBackground)
-        }
-        kCharIndex += 1
-        kIdx = line.index(after: kIdx)
-    }
-    idx = line.index(after: closeIdx)
-    charIndex += length
-    return true
-}
-
 // Helper: place a single character in the layer grid
 private func placeChar(_ layer: inout ScreenLayer, char: Character, row: Int, col: Int, fgColor: Color, rows: Int, cols: Int) {
     if row < rows, col < cols {
@@ -206,39 +180,60 @@ private func placeChar(_ layer: inout ScreenLayer, char: Character, row: Int, co
     }
 }
 
+// Helper struct to group parameters for bracketed button placement
+private struct BracketedButtonContext {
+    var layer: UnsafeMutablePointer<ScreenLayer>
+    let line: String
+    var idx: String.Index
+    var charIndex: Int
+    let row: Int
+    let startCol: Int
+    let fgColor: Color
+    let rows: Int
+    let cols: Int
+}
+
 // Helper: process a bracketed button if present, else return false
-private func tryProcessBracketedButton(_ layer: inout ScreenLayer, line: String, idx: inout String.Index, charIndex: inout Int, row: Int, startCol: Int, fgColor: Color, rows: Int, cols: Int) -> Bool {
-    let ch = line[idx]
-    guard ch == "[", let closeIdx = line[idx...].firstIndex(of: "]") else { return false }
-    let innerStart = line.index(after: idx)
-    let inner = String(line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
-    let length = line.distance(from: idx, to: closeIdx) + 1 // inclusive
-    let col = startCol + charIndex
-    let button = OverlayButton(label: inner, row: row, col: col, length: length, action: .init(fromLabel: inner))
-    layer.buttons.append(button)
-    var kIdx = idx
-    var kCharIndex = charIndex
+private func tryProcessBracketedButton(_ ctx: inout BracketedButtonContext) -> (matched: Bool, idx: String.Index, charIndex: Int) {
+    let ch = ctx.line[ctx.idx]
+    guard ch == "[", let closeIdx = ctx.line[ctx.idx...].firstIndex(of: "]") else { return (false, ctx.idx, ctx.charIndex) }
+    let innerStart = ctx.line.index(after: ctx.idx)
+    let inner = String(ctx.line[innerStart ..< closeIdx]).trimmingCharacters(in: .whitespaces)
+    let length = ctx.line.distance(from: ctx.idx, to: closeIdx) + 1 // inclusive
+    let col = ctx.startCol + ctx.charIndex
+    let button = OverlayButton(label: inner, row: ctx.row, col: col, length: length, action: .init(fromLabel: inner))
+    ctx.layer.pointee.buttons.append(button)
+    var kIdx = ctx.idx
+    var kCharIndex = ctx.charIndex
     while kIdx <= closeIdx {
-        placeChar(&layer, char: line[kIdx], row: row, col: startCol + kCharIndex, fgColor: fgColor, rows: rows, cols: cols)
+        placeChar(&ctx.layer.pointee, char: ctx.line[kIdx], row: ctx.row, col: ctx.startCol + kCharIndex, fgColor: ctx.fgColor, rows: ctx.rows, cols: ctx.cols)
         kCharIndex += 1
-        kIdx = line.index(after: kIdx)
+        kIdx = ctx.line.index(after: kIdx)
     }
-    idx = line.index(after: closeIdx)
-    charIndex += length
-    return true
+    let newIdx = ctx.line.index(after: closeIdx)
+    let newCharIndex = ctx.charIndex + length
+    return (true, newIdx, newCharIndex)
 }
 
 // Helper: place characters for a single line and register bracketed buttons
 private func processLine(_ layer: inout ScreenLayer, line: String, row: Int, startCol: Int, fgColor: Color, rows: Int, cols: Int) {
-    var idx = line.startIndex
-    var charIndex = 0
-    while idx < line.endIndex {
-        if tryProcessBracketedButton(&layer, line: line, idx: &idx, charIndex: &charIndex, row: row, startCol: startCol, fgColor: fgColor, rows: rows, cols: cols) {
-            continue
+    // Obtain a single stable pointer for the duration of processing this line.
+    withUnsafeMutablePointer(to: &layer) { layerPtr in
+        var idx = line.startIndex
+        var charIndex = 0
+        while idx < line.endIndex {
+            var ctx = BracketedButtonContext(layer: layerPtr, line: line, idx: idx, charIndex: charIndex, row: row, startCol: startCol, fgColor: fgColor, rows: rows, cols: cols)
+            let (matched, newIdx, newCharIndex) = tryProcessBracketedButton(&ctx)
+            if matched {
+                idx = newIdx
+                charIndex = newCharIndex
+                continue
+            }
+            // Use the pointee inside the pointer scope to place a single char.
+            placeChar(&layerPtr.pointee, char: line[idx], row: row, col: startCol + charIndex, fgColor: fgColor, rows: rows, cols: cols)
+            idx = line.index(after: idx)
+            charIndex += 1
         }
-        placeChar(&layer, char: line[idx], row: row, col: startCol + charIndex, fgColor: fgColor, rows: rows, cols: cols)
-        idx = line.index(after: idx)
-        charIndex += 1
     }
 }
 
@@ -289,26 +284,76 @@ enum OverlayFactory {
         makeCenteredOverlay(from: Messages.menuMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
+    // Add missing library overlay factory
+    static func makeLibraryOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
+        makeCenteredOverlay(from: Messages.libraryMessage, rows: rows, cols: cols, fgColor: fgColor)
+    }
+
     static func makeStatisticsOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         // Statistics overlay contains ASCII box art: preserve whitespace so borders align
         makeCenteredOverlay(from: Messages.statisticsMessage, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    static func makeLibraryOverlay(rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        makeCenteredOverlay(from: Messages.libraryMessage, rows: rows, cols: cols, fgColor: fgColor)
+    // Unified helper: create a ScreenLayer from a message string (placeholders should be applied by caller).
+    static func makeCenteredOverlay(from message: String, rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
+        centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    // Unified helper: create a ScreenLayer from a message string (placeholders should be applied by caller).
-    // If `preserveWhitespace` is true, the message is placed exactly as-is (useful for ASCII boxes).
-    static func makeCenteredOverlay(from message: String, rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
-        // Canonical centered overlay builder (preserves each line exactly).
-        centeredOverlayLayer(from: message, rows: rows, cols: cols, fgColor: fgColor)
+    // Action-bar items: per-overlay action bar labels and a dispatcher used by the UI/tests.
+    static func actionBarItems(for kind: OverlayKind) -> [String] {
+        switch kind {
+        case .help: return helpActionBarItems()
+        case .welcome: return welcomeActionBarItems()
+        case .quit: return quitActionBarItems()
+        case .about: return aboutActionBarItems()
+        case .search: return searchActionBarItems()
+        case .goto: return gotoActionBarItems()
+        case .menu: return menuActionBarItems()
+        case .statistics: return statisticsActionBarItems()
+        case .library: return libraryActionBarItems()
+        }
+    }
+
+    static func helpActionBarItems() -> [String] {
+        ["Help", Settings.wordWrapLabel, "Open", "Search", "Goto", "Bookm", "Start", "End", "Menu", "Quit"]
+    }
+
+    static func welcomeActionBarItems() -> [String] {
+        // For welcome overlay keep the default menu layout
+        ActionBar.defaultMenuItems
+    }
+
+    static func quitActionBarItems() -> [String] {
+        ["Yes", "No", "Cancel"]
+    }
+
+    static func aboutActionBarItems() -> [String] {
+        ["OK", "Menu"]
+    }
+
+    static func searchActionBarItems() -> [String] {
+        ["Find", "Next", "Prev", "Close"]
+    }
+
+    static func gotoActionBarItems() -> [String] {
+        ["Goto", "Close"]
+    }
+
+    static func menuActionBarItems() -> [String] {
+        ActionBar.defaultMenuItems
+    }
+
+    static func statisticsActionBarItems() -> [String] {
+        ["Close"]
+    }
+
+    static func libraryActionBarItems() -> [String] {
+        ActionBar.defaultMenuItems
     }
 
     // Create a statistics overlay using live document data (fills placeholders)
     static func makeStatisticsOverlay(document: TextDocument, rows: Int = Settings.rows - 2, cols: Int = Settings.cols, fgColor: Color = Colors.theme.overlayForeground) -> ScreenLayer {
         let stats = document.statistics()
-        // Format numbers with thousands separators using NumberFormatter
         let formatter: NumberFormatter = {
             let f = NumberFormatter()
             f.numberStyle = .decimal
@@ -317,11 +362,7 @@ enum OverlayFactory {
             f.locale = Locale.current
             return f
         }()
-
         func fmt(_ n: Int) -> String { formatter.string(from: NSNumber(value: n)) ?? "\(n)" }
-
-        // Prepare formatted values (with grouping separators) and substitute them into the
-        // statistics template using fixed-width substitution so box borders do not shift.
         let replacements: [String: String] = [
             "%totalLines%": fmt(stats.totalLines),
             "%totalWords%": fmt(stats.totalWords),
@@ -331,116 +372,7 @@ enum OverlayFactory {
             "%longestLineLength%": fmt(stats.longestLineLength),
             "%shortestLineLength%": fmt(stats.shortestLineLength),
         ]
-
         let text = Messages.substituteFixedWidthPlaceholders(Messages.statisticsMessage, replacements: replacements)
-        let layer = makeCenteredOverlay(from: text, rows: rows, cols: cols, fgColor: fgColor)
-        return layer
-    }
-
-    // Per-overlay action bar item helpers
-    static func actionBarItems(for kind: OverlayKind) -> [String] {
-        switch kind {
-        case .welcome:
-            [
-                "Continue",
-                "Quit",
-            ]
-        case .help:
-            [
-                "Search",
-                "Continue",
-                "Quit",
-            ]
-        case .quit:
-            [
-                "Quit",
-            ]
-        case .about:
-            [
-                "Continue",
-                "Quit",
-            ]
-        case .search:
-            [
-                "Search",
-                "Continue",
-                "Quit",
-            ]
-        case .goto:
-            [
-                "Goto",
-                "Continue",
-                "Quit",
-            ]
-        case .menu:
-            [
-                "Continue",
-                "Quit",
-            ]
-        case .library:
-            [
-                "Open",
-                "Close",
-            ]
-        case .statistics:
-            [
-                "Continue",
-                "Quit",
-            ]
-        }
-    }
-
-    static func libraryActionBarItems() -> [String] { actionBarItems(for: .library) }
-
-    // Convenience wrappers used by unit tests and call sites that expect per-kind helpers.
-    static func helpActionBarItems() -> [String] { actionBarItems(for: .help) }
-    static func welcomeActionBarItems() -> [String] { actionBarItems(for: .welcome) }
-    static func quitActionBarItems() -> [String] { actionBarItems(for: .quit) }
-    static func aboutActionBarItems() -> [String] { actionBarItems(for: .about) }
-    static func searchActionBarItems() -> [String] { actionBarItems(for: .search) }
-    static func gotoActionBarItems() -> [String] { actionBarItems(for: .goto) }
-    static func menuActionBarItems() -> [String] { actionBarItems(for: .menu) }
-    static func statisticsActionBarItems() -> [String] { actionBarItems(for: .statistics) }
-}
-
-// OverlayManager manages the stack of overlays currently displayed.
-// It allows adding, removing, and clearing overlays, as well as
-// controlling the opacity of the overlay layer.
-final class OverlayManager: ObservableObject {
-    @Published private(set) var overlays: [OverlayKind] = []
-    @Published private(set) var opacity: Double = 1.0
-
-    // Adds a new overlay if it is not already present.
-    func addOverlay(_ kind: OverlayKind) {
-        if !overlays.contains(kind) {
-            overlays.append(kind)
-        }
-    }
-
-    // Labeled overload to match call sites that use `kind:` label.
-    func addOverlay(kind: OverlayKind) { addOverlay(kind) }
-
-    // Removes the specified overlay kind from the stack.
-    func removeOverlay(_ kind: OverlayKind) {
-        overlays.removeAll { $0 == kind }
-    }
-
-    // Labeled overload to match call sites that use `kind:` label.
-    func removeOverlay(kind: OverlayKind) { removeOverlay(kind) }
-
-    // Removes all overlays from the stack.
-    func removeAll() { overlays.removeAll() }
-
-    // Sets the opacity for the overlay layer. The value is clamped between 0.0 and 1.0.
-    func setOpacity(_ value: Double) {
-        opacity = min(max(value, 0.0), 1.0)
-    }
-
-    // Returns the current opacity value for overlays.
-    func getOpacity() -> Double { opacity }
-
-    /// Removes all overlays of type .help from the stack.
-    func removeHelpOverlay() {
-        overlays.removeAll { $0 == .help }
+        return makeCenteredOverlay(from: text, rows: rows, cols: cols, fgColor: fgColor)
     }
 }

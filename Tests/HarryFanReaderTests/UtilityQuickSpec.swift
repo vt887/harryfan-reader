@@ -10,6 +10,13 @@ import AppKit
 import Nimble
 import Quick
 
+// Constant for app name to avoid duplication
+private let kAppName = "HarryFan Reader"
+// Constant for home directory
+private let kHomeDir = "~/.harryfan"
+// Constant for default font file name
+private let kDefaultFontFileName = "vdu.8x16"
+
 // Unit tests for utility types, constants, and helpers
 final class UtilityQuickSpec: QuickSpec {
     // Main entry point for all utility-related tests
@@ -75,9 +82,9 @@ final class UtilityQuickSpec: QuickSpec {
 
             // Checks that Settings constants have expected values (app name, home dir, font, etc).
             it("has correct constants") {
-                expect(Settings.appName).to(equal("HarryFan Reader"))
-                expect(Settings.homeDir).to(equal("~/.harryfan"))
-                expect(Settings.defaultFontFileName).to(equal("vdu.8x16"))
+                expect(Settings.appName).to(equal(kAppName))
+                expect(Settings.homeDir).to(equal(kHomeDir))
+                expect(Settings.defaultFontFileName).to(equal(kDefaultFontFileName))
                 expect(Settings.appearance).to(equal(.blue))
                 expect(Settings.cols).to(equal(80))
                 expect(Settings.rows).to(equal(24))
@@ -131,7 +138,7 @@ final class UtilityQuickSpec: QuickSpec {
             it("has a welcome message") {
                 let welcomeMessage = Messages.welcomeMessage
                 expect(welcomeMessage.isEmpty).to(beFalse())
-                expect(welcomeMessage).to(contain("HarryFan Reader"))
+                expect(welcomeMessage).to(contain(kAppName))
                 expect(welcomeMessage).to(contain("╔"))
                 expect(welcomeMessage).to(contain("╗"))
                 expect(welcomeMessage).to(contain("╚"))
@@ -154,7 +161,7 @@ final class UtilityQuickSpec: QuickSpec {
                 let quitMessage = Messages.quitMessage
                 expect(quitMessage.isEmpty).to(beFalse())
                 expect(quitMessage).to(contain("Thank you"))
-                expect(quitMessage).to(contain("HarryFan Reader"))
+                expect(quitMessage).to(contain(kAppName))
                 // Accept either 'Y/N' or a '[Yes]'/'No' layout; be tolerant to different message formats
                 let hasYN = quitMessage.contains("Y/N")
                 let hasYesNo = quitMessage.contains("[Yes]") || (quitMessage.contains("Yes") && quitMessage.contains("No"))

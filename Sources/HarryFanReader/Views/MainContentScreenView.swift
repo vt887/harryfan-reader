@@ -203,12 +203,13 @@ struct MainContentScreenView: View {
         }
         installQuitMonitor()
         // Initialize key handler
+        let overlayContext = OverlayContext(overlayLayers: overlayLayers,
+                                            overlayOpacities: overlayOpacities,
+                                            showingFilePicker: showingFilePicker,
+                                            addOverlay: { kind, duration in self.addOverlay(kind: kind, fadeDuration: duration) },
+                                            removeOverlay: { id, duration in self.removeOverlay(id: id, fadeDuration: duration) })
         keyHandler = KeyHandler(document: document,
-                                overlayLayers: overlayLayers,
-                                overlayOpacities: overlayOpacities,
-                                showingFilePicker: showingFilePicker,
-                                addOverlay: addOverlay,
-                                removeOverlay: removeOverlay,
+                                overlayContext: overlayContext,
                                 overlayManager: overlayManager,
                                 recentFilesManager: recentFilesManager)
         // Set overlay IDs in keyHandler

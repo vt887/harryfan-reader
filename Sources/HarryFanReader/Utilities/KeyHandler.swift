@@ -8,6 +8,15 @@
 import AppKit
 import Foundation
 
+// Struct to group overlay-related context for KeyHandler
+struct OverlayContext {
+    var overlayLayers: [ScreenLayer]
+    var overlayOpacities: [UUID: Double]
+    var showingFilePicker: Bool
+    let addOverlay: (OverlayKind, Double) -> UUID
+    let removeOverlay: (UUID, Double) -> Void
+}
+
 // Class to handle key events for the main content screen
 class KeyHandler {
     private weak var document: TextDocument?
@@ -20,42 +29,38 @@ class KeyHandler {
     private var quitOverlayId: UUID?
     private var statsOverlayId: UUID?
     private var libraryOverlayId: UUID?
-    private var overlayLayers: [ScreenLayer]
-    private var overlayOpacities: [UUID: Double]
-    private var showingFilePicker: Bool
-    private let addOverlay: (OverlayKind, Double) -> UUID
-    private let removeOverlay: (UUID, Double) -> Void
+    private var overlayContext: OverlayContext
     private let overlayManager: OverlayManager
     private let recentFilesManager: RecentFilesManager
 
     // Initialize KeyHandler with provided dependencies
     init(document: TextDocument,
-         overlayLayers: [ScreenLayer],
-         overlayOpacities: [UUID: Double],
-         showingFilePicker: Bool,
-         addOverlay: @escaping (OverlayKind, Double) -> UUID,
-         removeOverlay: @escaping (UUID, Double) -> Void,
+         overlayContext: OverlayContext,
          overlayManager: OverlayManager,
          recentFilesManager: RecentFilesManager)
     {
         self.document = document
-        self.overlayLayers = overlayLayers
-        self.overlayOpacities = overlayOpacities
-        self.showingFilePicker = showingFilePicker
-        self.addOverlay = addOverlay
-        self.removeOverlay = removeOverlay
+        self.overlayContext = overlayContext
         self.overlayManager = overlayManager
         self.recentFilesManager = recentFilesManager
     }
 
-    // Handle F10 / Esc quit key behaviour (shows quit dialog or exits)
-    private func handleQuitKey() {
-        guard let document else { return }
-        if Settings.shouldShowQuitMessage, !document.shouldShowQuitMessage {
-            document.shouldShowQuitMessage = true
-            return
-        }
-        NSApp.terminate(nil)
+    // Convenience initializer retained for compatibility with older call sites/tests.
+    convenience init(document: TextDocument,
+                     overlayLayers: [ScreenLayer],
+                     overlayOpacities: [UUID: Double],
+                     showingFilePicker: Bool,
+                     addOverlay: @escaping (OverlayKind, Double) -> UUID,
+                     removeOverlay: @escaping (UUID, Double) -> Void,
+                     overlayManager: OverlayManager,
+                     recentFilesManager: RecentFilesManager)
+    {
+        let ctx = OverlayContext(overlayLayers: overlayLayers,
+                                 overlayOpacities: overlayOpacities,
+                                 showingFilePicker: showingFilePicker,
+                                 addOverlay: addOverlay,
+                                 removeOverlay: removeOverlay)
+        self.init(document: document, overlayContext: ctx, overlayManager: overlayManager, recentFilesManager: recentFilesManager)
     }
 
     // Cancel and remove any active quit/welcome/help overlays
@@ -65,15 +70,15 @@ class KeyHandler {
         doc.shouldShowQuitMessage = false
         activeOverlay = .none
         if let qId = quitOverlayId {
-            removeOverlay(qId, 0.25)
+            overlayContext.removeOverlay(qId, Settings.overlayAnimationDuration)
             quitOverlayId = nil
         }
         if let wId = welcomeOverlayId {
-            removeOverlay(wId, 0.25)
+            overlayContext.removeOverlay(wId, Settings.overlayAnimationDuration)
             welcomeOverlayId = nil
         }
         if let hId = helpOverlayId {
-            removeOverlay(hId, 0.25)
+            overlayContext.removeOverlay(hId, Settings.overlayAnimationDuration)
             helpOverlayId = nil
         }
     }
@@ -100,13 +105,11 @@ class KeyHandler {
         DebugLogger.log("Key pressed: keyCode=\(event.keyCode), characters='\(event.charactersIgnoringModifiers ?? "")', activeOverlay=\(activeOverlay)")
 
         // If there's an active overlay, consult OverlayPolicies for dismissal or special handling
-        if activeOverlay != .none, let kind = overlayKind(from: activeOverlay) {
-            if handleActiveOverlayKey(kind: kind, event: event) {
-                // consumed by overlay handling
-                return nil
-            }
-            // not consumed -> fall through to global handlers
+        if activeOverlay != .none, let kind = overlayKind(from: activeOverlay), handleActiveOverlayKey(kind: kind, event: event) {
+            // consumed by overlay handling
+            return nil
         }
+        // not consumed -> fall through to global handlers
 
         // Global/application-level keys
         if event.keyCode == KeyCode.f2 {
@@ -139,7 +142,7 @@ class KeyHandler {
         case KeyCode.f10:
             DebugLogger.log("F10 key pressed")
             document.shouldShowQuitMessage = true
-            let quitId = addOverlay(.quit, 0.25)
+            let quitId = overlayContext.addOverlay(.quit, Settings.overlayAnimationDuration)
             quitOverlayId = quitId
             activeOverlay = .quit
             DebugLogger.log("Quit overlay shown (id=\(quitId))")
@@ -147,7 +150,7 @@ class KeyHandler {
 
         case KeyCode.f3:
             DebugLogger.log("F3 key pressed - opening file picker")
-            showingFilePicker = true
+            overlayContext.showingFilePicker = true
             return nil
 
         case KeyCode.f7:
@@ -186,7 +189,10 @@ class KeyHandler {
         case .statistics:
             // statistics explicitly dismisses on any key
             DebugLogger.log("Statistics overlay: key pressed keyCode=\(event.keyCode) — dismissing overlay on any key")
-            if let sId = statsOverlayId { removeOverlay(sId, 0.25); statsOverlayId = nil }
+            if let sId = statsOverlayId {
+                overlayContext.removeOverlay(sId, Settings.overlayAnimationDuration)
+                statsOverlayId = nil
+            }
             overlayManager.removeOverlay(.statistics)
             activeOverlay = .none
             return true
@@ -211,7 +217,14 @@ class KeyHandler {
         let isDismissKey = policy.dismissKeyCodes.contains(event.keyCode)
         let isNKey = event.charactersIgnoringModifiers?.lowercased() == "n"
         if policy.allowAnyKeyToDismiss || isDismissKey || isNKey {
-            let reason = isNKey ? "'n' pressed" : (isDismissKey ? "dismiss key pressed" : "any key")
+            let reason: String
+            if isNKey {
+                reason = "'n' pressed"
+            } else if isDismissKey {
+                reason = "dismiss key pressed"
+            } else {
+                reason = "any key"
+            }
             cancelQuitOverlay(reason)
             return true
         }
@@ -225,7 +238,7 @@ class KeyHandler {
         if policy.allowAnyKeyToDismiss || isDismissKey {
             if let id = overlayId {
                 DebugLogger.log("\(logPrefix): dismissing per policy.")
-                removeOverlay(id, 0.25)
+                overlayContext.removeOverlay(id, Settings.overlayAnimationDuration)
                 overlayId = nil
             }
             activeOverlay = .none
@@ -241,9 +254,18 @@ class KeyHandler {
         let isDismissKey = policy.dismissKeyCodes.contains(event.keyCode)
         if policy.allowAnyKeyToDismiss || isDismissKey {
             DebugLogger.log("About overlay: dismissing per policy.")
-            if let hId = helpOverlayId { removeOverlay(hId, 0.25); helpOverlayId = nil }
-            if let wId = welcomeOverlayId { removeOverlay(wId, 0.25); welcomeOverlayId = nil }
-            if let qId = quitOverlayId { removeOverlay(qId, 0.25); quitOverlayId = nil }
+            if let hId = helpOverlayId {
+                overlayContext.removeOverlay(hId, Settings.overlayAnimationDuration)
+                helpOverlayId = nil
+            }
+            if let wId = welcomeOverlayId {
+                overlayContext.removeOverlay(wId, Settings.overlayAnimationDuration)
+                welcomeOverlayId = nil
+            }
+            if let qId = quitOverlayId {
+                overlayContext.removeOverlay(qId, Settings.overlayAnimationDuration)
+                quitOverlayId = nil
+            }
             overlayManager.removeAll()
             activeOverlay = .none
             return true
@@ -257,7 +279,10 @@ class KeyHandler {
         let isDismissKey = policy.dismissKeyCodes.contains(event.keyCode)
         if policy.allowAnyKeyToDismiss || isDismissKey {
             DebugLogger.log("\(kind) overlay: dismissing per policy.")
-            if let id = overlayId { removeOverlay(id, 0.25); overlayId = nil }
+            if let id = overlayId {
+                overlayContext.removeOverlay(id, Settings.overlayAnimationDuration)
+                overlayId = nil
+            }
             overlayManager.removeOverlay(kind)
             activeOverlay = .none
             return true
@@ -269,12 +294,16 @@ class KeyHandler {
     // Toggle the Help overlay on/off
     private func toggleHelpOverlay() {
         if let hId = helpOverlayId {
-            removeOverlay(hId, 0.25)
+            overlayContext.removeOverlay(hId, Settings.overlayAnimationDuration)
             helpOverlayId = nil
             DebugLogger.log("Help overlay hidden")
         } else {
-            if let wId = welcomeOverlayId { removeOverlay(wId, 0.25); welcomeOverlayId = nil; DebugLogger.log("Welcome overlay removed before showing help") }
-            let newId = addOverlay(.help, 0.25)
+            if let wId = welcomeOverlayId {
+                overlayContext.removeOverlay(wId, Settings.overlayAnimationDuration)
+                welcomeOverlayId = nil
+                DebugLogger.log("Welcome overlay removed before showing help")
+            }
+            let newId = overlayContext.addOverlay(.help, Settings.overlayAnimationDuration)
             helpOverlayId = newId
             activeOverlay = .help
             DebugLogger.log("Help overlay shown (id=\(newId))")
@@ -284,13 +313,20 @@ class KeyHandler {
     // Toggle the Search overlay on/off
     private func toggleSearchOverlay() {
         if let sId = searchOverlayId {
-            removeOverlay(sId, 0.25)
+            overlayContext.removeOverlay(sId, Settings.overlayAnimationDuration)
             searchOverlayId = nil
             DebugLogger.log("Search overlay hidden (key)")
         } else {
-            if let wId = welcomeOverlayId { removeOverlay(wId, 0.25); welcomeOverlayId = nil; DebugLogger.log("Welcome overlay removed before showing search") }
-            if let qId = quitOverlayId { removeOverlay(qId, 0.25); quitOverlayId = nil }
-            let newId = addOverlay(.search, 0.25)
+            if let wId = welcomeOverlayId {
+                overlayContext.removeOverlay(wId, Settings.overlayAnimationDuration)
+                welcomeOverlayId = nil
+                DebugLogger.log("Welcome overlay removed before showing search")
+            }
+            if let qId = quitOverlayId {
+                overlayContext.removeOverlay(qId, Settings.overlayAnimationDuration)
+                quitOverlayId = nil
+            }
+            let newId = overlayContext.addOverlay(.search, Settings.overlayAnimationDuration)
             searchOverlayId = newId
             activeOverlay = .search
             DebugLogger.log("Search overlay shown (id=\(newId))")
@@ -300,13 +336,20 @@ class KeyHandler {
     // Toggle the Goto overlay on/off
     private func toggleGotoOverlay() {
         if let gId = gotoOverlayId {
-            removeOverlay(gId, 0.25)
+            overlayContext.removeOverlay(gId, Settings.overlayAnimationDuration)
             gotoOverlayId = nil
             DebugLogger.log("Goto overlay hidden")
         } else {
-            if let wId = welcomeOverlayId { removeOverlay(wId, 0.25); welcomeOverlayId = nil; DebugLogger.log("Welcome overlay removed before showing goto") }
-            if let qId = quitOverlayId { removeOverlay(qId, 0.25); quitOverlayId = nil }
-            let newId = addOverlay(.goto, 0.25)
+            if let wId = welcomeOverlayId {
+                overlayContext.removeOverlay(wId, Settings.overlayAnimationDuration)
+                welcomeOverlayId = nil
+                DebugLogger.log("Welcome overlay removed before showing goto")
+            }
+            if let qId = quitOverlayId {
+                overlayContext.removeOverlay(qId, Settings.overlayAnimationDuration)
+                quitOverlayId = nil
+            }
+            let newId = overlayContext.addOverlay(.goto, Settings.overlayAnimationDuration)
             gotoOverlayId = newId
             activeOverlay = .goto
             DebugLogger.log("Goto overlay shown (id=\(newId))")
@@ -316,13 +359,20 @@ class KeyHandler {
     // Toggle the Menu overlay on/off
     private func toggleMenuOverlay() {
         if let mId = menuOverlayId {
-            removeOverlay(mId, 0.25)
+            overlayContext.removeOverlay(mId, Settings.overlayAnimationDuration)
             menuOverlayId = nil
             DebugLogger.log("Menu overlay hidden (key)")
         } else {
-            if let wId = welcomeOverlayId { removeOverlay(wId, 0.25); welcomeOverlayId = nil; DebugLogger.log("Welcome overlay removed before showing menu") }
-            if let qId = quitOverlayId { removeOverlay(qId, 0.25); quitOverlayId = nil }
-            let newId = addOverlay(.menu, 0.25)
+            if let wId = welcomeOverlayId {
+                overlayContext.removeOverlay(wId, Settings.overlayAnimationDuration)
+                welcomeOverlayId = nil
+                DebugLogger.log("Welcome overlay removed before showing menu")
+            }
+            if let qId = quitOverlayId {
+                overlayContext.removeOverlay(qId, Settings.overlayAnimationDuration)
+                quitOverlayId = nil
+            }
+            let newId = overlayContext.addOverlay(.menu, Settings.overlayAnimationDuration)
             menuOverlayId = newId
             activeOverlay = .menu
             DebugLogger.log("Menu overlay shown (id=\(newId))")
@@ -330,21 +380,39 @@ class KeyHandler {
     }
 
     // Update welcome overlay id
-    func setWelcomeOverlayId(_ id: UUID?) { welcomeOverlayId = id }
+    func setWelcomeOverlayId(_ id: UUID?) {
+        welcomeOverlayId = id
+    }
     // Update help overlay id
-    func setHelpOverlayId(_ id: UUID?) { helpOverlayId = id }
+    func setHelpOverlayId(_ id: UUID?) {
+        helpOverlayId = id
+    }
     // Update search overlay id
-    func setSearchOverlayId(_ id: UUID?) { searchOverlayId = id }
+    func setSearchOverlayId(_ id: UUID?) {
+        searchOverlayId = id
+    }
     // Update goto overlay id
-    func setGotoOverlayId(_ id: UUID?) { gotoOverlayId = id }
+    func setGotoOverlayId(_ id: UUID?) {
+        gotoOverlayId = id
+    }
     // Update menu overlay id
-    func setMenuOverlayId(_ id: UUID?) { menuOverlayId = id }
+    func setMenuOverlayId(_ id: UUID?) {
+        menuOverlayId = id
+    }
     // Update quit overlay id
-    func setQuitOverlayId(_ id: UUID?) { quitOverlayId = id }
+    func setQuitOverlayId(_ id: UUID?) {
+        quitOverlayId = id
+    }
     // Update stats overlay id
-    func setStatsOverlayId(_ id: UUID?) { statsOverlayId = id }
+    func setStatsOverlayId(_ id: UUID?) {
+        statsOverlayId = id
+    }
     // Update library overlay id
-    func setLibraryOverlayId(_ id: UUID?) { libraryOverlayId = id }
+    func setLibraryOverlayId(_ id: UUID?) {
+        libraryOverlayId = id
+    }
     // Update active overlay enum
-    func setActiveOverlay(_ overlay: ActiveOverlay) { activeOverlay = overlay }
+    func setActiveOverlay(_ overlay: ActiveOverlay) {
+        activeOverlay = overlay
+    }
 }

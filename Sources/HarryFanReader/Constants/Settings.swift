@@ -24,6 +24,7 @@ class Settings {
     static let fontFileName: String = "ddd.8x16"
     static let defaultFontFileName: String = "vdu.8x16"
     static let appearance: AppAppearance = .blue
+    static let overlayAnimationDuration: Double = 0.25
     // 80x24 text mode with 8x16 font
     static let cols = 80
     static let rows = 24
