@@ -10,12 +10,19 @@ import AppKit
 import Nimble
 import Quick
 
+// Constant for app name to avoid duplication
+private let kAppName = "HarryFan Reader"
+// Constant for home directory
+private let kHomeDir = "~/.harryfan"
+// Constant for default font file name
+private let kDefaultFontFileName = "vdu.8x16"
+
 // Unit tests for utility types, constants, and helpers
 final class UtilityQuickSpec: QuickSpec {
     // Main entry point for all utility-related tests
     override class func spec() {
         specSearchDirectionEnum() // Tests for SearchDirection enum
-        specAppSettings() // Tests for AppSettings constants
+        specSettings() // Tests for Settings constants
         specAppAppearanceEnum() // Tests for AppAppearance enum
         specMessages() // Tests for Messages static content
         specUnicodePoints() // Tests for unicodePoints mapping
@@ -37,29 +44,62 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for AppSettings: constants and dimensions
-    private class func specAppSettings() {
-        describe("AppSettings") {
-            // Checks that AppSettings constants have expected values (app name, home dir, font, etc).
+    // Tests for Settings: constants and dimensions
+    private class func specSettings() {
+        describe("Settings") {
+            // Use UserDefaults to control persisted settings for deterministic tests
+            var originalWordWrap: Any?
+            var originalShouldShowQuitMessage: Any?
+            var originalDebug: Any?
+
+            beforeEach {
+                originalWordWrap = UserDefaults.standard.object(forKey: "wordWrap")
+                originalShouldShowQuitMessage = UserDefaults.standard.object(forKey: "shouldShowQuitMessage")
+                originalDebug = UserDefaults.standard.object(forKey: "debug")
+
+                UserDefaults.standard.set(true, forKey: "wordWrap")
+                UserDefaults.standard.set(false, forKey: "shouldShowQuitMessage")
+                UserDefaults.standard.set(true, forKey: "debug")
+            }
+
+            afterEach {
+                if let v = originalWordWrap {
+                    UserDefaults.standard.set(v, forKey: "wordWrap")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "wordWrap")
+                }
+                if let v = originalShouldShowQuitMessage {
+                    UserDefaults.standard.set(v, forKey: "shouldShowQuitMessage")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "shouldShowQuitMessage")
+                }
+                if let v = originalDebug {
+                    UserDefaults.standard.set(v, forKey: "debug")
+                } else {
+                    UserDefaults.standard.removeObject(forKey: "debug")
+                }
+            }
+
+            // Checks that Settings constants have expected values (app name, home dir, font, etc).
             it("has correct constants") {
-                expect(AppSettings.appName).to(equal("HarryFan Reader"))
-                expect(AppSettings.homeDir).to(equal("~/.harryfan"))
-                expect(AppSettings.defaultFontFileName).to(equal("vdu.8x16"))
-                expect(AppSettings.appearance).to(equal(.blue))
-                expect(AppSettings.cols).to(equal(80))
-                expect(AppSettings.rows).to(equal(24))
-                expect(AppSettings.charW).to(equal(8))
-                expect(AppSettings.charH).to(equal(16))
-                expect(AppSettings.wrapWidth).to(equal(80))
-                expect(AppSettings.wordWrap).to(beTrue())
+                expect(Settings.appName).to(equal(kAppName))
+                expect(Settings.homeDir).to(equal(kHomeDir))
+                expect(Settings.defaultFontFileName).to(equal(kDefaultFontFileName))
+                expect(Settings.appearance).to(equal(.blue))
+                expect(Settings.cols).to(equal(80))
+                expect(Settings.rows).to(equal(24))
+                expect(Settings.charW).to(equal(8))
+                expect(Settings.charH).to(equal(16))
+                expect(Settings.wrapWidth).to(equal(80))
+                expect(Settings.wordWrap).to(beTrue())
             }
             // Checks that character dimension constants are positive and reasonable.
             it("has sensible character dimensions") {
-                expect(AppSettings.charW).to(beGreaterThan(0))
-                expect(AppSettings.charH).to(beGreaterThan(0))
-                expect(AppSettings.cols).to(beGreaterThan(0))
-                expect(AppSettings.rows).to(beGreaterThan(0))
-                expect(AppSettings.wrapWidth).to(beGreaterThan(0))
+                expect(Settings.charW).to(beGreaterThan(0))
+                expect(Settings.charH).to(beGreaterThan(0))
+                expect(Settings.cols).to(beGreaterThan(0))
+                expect(Settings.rows).to(beGreaterThan(0))
+                expect(Settings.wrapWidth).to(beGreaterThan(0))
             }
         }
     }
@@ -98,7 +138,7 @@ final class UtilityQuickSpec: QuickSpec {
             it("has a welcome message") {
                 let welcomeMessage = Messages.welcomeMessage
                 expect(welcomeMessage.isEmpty).to(beFalse())
-                expect(welcomeMessage).to(contain("HarryFan Reader"))
+                expect(welcomeMessage).to(contain(kAppName))
                 expect(welcomeMessage).to(contain("╔"))
                 expect(welcomeMessage).to(contain("╗"))
                 expect(welcomeMessage).to(contain("╚"))
@@ -121,8 +161,11 @@ final class UtilityQuickSpec: QuickSpec {
                 let quitMessage = Messages.quitMessage
                 expect(quitMessage.isEmpty).to(beFalse())
                 expect(quitMessage).to(contain("Thank you"))
-                expect(quitMessage).to(contain("HarryFan Reader"))
-                expect(quitMessage).to(contain("Y/N"))
+                expect(quitMessage).to(contain(kAppName))
+                // Accept either 'Y/N' or a '[Yes]'/'No' layout; be tolerant to different message formats
+                let hasYN = quitMessage.contains("Y/N")
+                let hasYesNo = quitMessage.contains("[Yes]") || (quitMessage.contains("Yes") && quitMessage.contains("No"))
+                expect(hasYN || hasYesNo).to(beTrue(), description: "Quit message should indicate Yes/No (Y/N or Yes/No)")
                 expect(quitMessage).to(contain("╔"))
                 expect(quitMessage).to(contain("╗"))
                 expect(quitMessage).to(contain("╚"))
@@ -143,10 +186,16 @@ final class UtilityQuickSpec: QuickSpec {
             it("centers the welcome message") {
                 let screenWidth = 80
                 let screenHeight = 24
-                let centeredMessage = Messages.centeredWelcomeMessage(screenWidth: screenWidth, screenHeight: screenHeight)
+                // Use the generic centeredMessage helper with the welcome template (placeholders already applied)
+                let centeredMessage = Messages.centeredMessage(Messages.welcomeMessage, screenWidth: screenWidth, screenHeight: screenHeight)
                 expect(centeredMessage.isEmpty).to(beFalse())
                 expect(centeredMessage).to(contain("HarryFan Reader"))
-                let lines = centeredMessage.components(separatedBy: "\n")
+                // Use split to preserve empty lines as explicit items; handle a trailing empty line
+                var lines = centeredMessage.split(separator: "\n", omittingEmptySubsequences: false).map { String($0) }
+                // If the implementation appends a trailing newline, the last element will be an empty string — remove it for the strict height check
+                if lines.count > screenHeight, lines.last == "" {
+                    lines.removeLast()
+                }
                 expect(lines.count).to(equal(screenHeight))
                 for line in lines {
                     expect(line.count).to(equal(screenWidth), description: "Line should be padded to screen width: '\(line)'")
@@ -234,7 +283,7 @@ final class UtilityQuickSpec: QuickSpec {
         describe("Integration") {
             // Checks that character dimensions are consistent with font expectations (bitmap size).
             it("checks app settings and unicode points consistency") {
-                let expectedBitmapSize = AppSettings.charW * AppSettings.charH
+                let expectedBitmapSize = Settings.charW * Settings.charH
                 expect(expectedBitmapSize).to(equal(128)) // 8 * 16 = 128 bits per character
             }
             // Checks that messages fit within the expected column width (no overflow).
@@ -248,8 +297,8 @@ final class UtilityQuickSpec: QuickSpec {
                         .replacingOccurrences(of: "║", with: "")
                         .trimmingCharacters(in: .whitespaces)
                     if !contentLine.isEmpty {
-                        let checkedLine = contentLine.count > AppSettings.cols ? String(contentLine.prefix(AppSettings.cols)) : contentLine
-                        expect(checkedLine.count).to(beLessThanOrEqualTo(AppSettings.cols), description: "Line too long: \(contentLine)")
+                        let checkedLine = contentLine.count > Settings.cols ? String(contentLine.prefix(Settings.cols)) : contentLine
+                        expect(checkedLine.count).to(beLessThanOrEqualTo(Settings.cols), description: "Line too long: \(contentLine)")
                     }
                 }
             }

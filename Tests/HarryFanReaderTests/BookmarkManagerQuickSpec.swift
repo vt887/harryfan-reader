@@ -13,7 +13,7 @@ import Quick
 final class BookmarkManagerQuickSpec: QuickSpec {
     override class func spec() {
         var bookmarkManager: BookmarkManager!
-        let key = "\(AppSettings.appName)Bookmarks"
+        let key = "\(Settings.appName)Bookmarks"
         let testFileName = "test.txt"
         let otherFileName = "other.txt"
         let keptDescription = "To be kept"
@@ -181,7 +181,7 @@ final class BookmarkManagerQuickSpec: QuickSpec {
                 // Checks that bookmarks persist across sessions.
                 it("persists bookmarks across sessions") {
                     // Clean UserDefaults before test
-                    let key = "\(AppSettings.appName)Bookmarks"
+                    let key = "\(Settings.appName)Bookmarks"
                     UserDefaults.standard.removeObject(forKey: key)
 
                     // Add bookmarks

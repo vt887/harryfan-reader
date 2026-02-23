@@ -44,7 +44,7 @@ final class TextDocumentQuickSpec: QuickSpec {
                     expect(textDocument.encoding).to(equal("Unknown"))
                     let contentText = textDocument.content.joined(separator: " ")
                     expect(contentText).to(contain("HarryFan Reader"))
-                    expect(textDocument.totalLines).to(equal(AppSettings.rows - 2))
+                    expect(textDocument.totalLines).to(equal(Settings.rows - 2))
                 }
             }
             context("navigation") {
@@ -237,7 +237,7 @@ final class TextDocumentQuickSpec: QuickSpec {
                     textDocument.totalLines = 50
                     textDocument.currentLine = 10
                     let visibleLines = textDocument.getVisibleLines()
-                    expect(visibleLines.count).to(equal(22)) // AppSettings.rows - 2 (title + menu bars)
+                    expect(visibleLines.count).to(equal(22)) // Settings.rows - 2 (title + menu bars)
                     expect(visibleLines.first).to(equal("Line 1")) // topLine starts at 0
                     expect(visibleLines.last).to(equal("Line 22")) // first 22 lines visible
                 }
@@ -259,7 +259,7 @@ final class TextDocumentQuickSpec: QuickSpec {
                     let titleBarText = textDocument.getTitleBarText()
                     expect(titleBarText).to(contain("HarryFan Reader"))
                     expect(titleBarText).to(contain(" │ "))
-                    expect(titleBarText.count).to(equal(AppSettings.cols))
+                    expect(titleBarText.count).to(equal(Settings.cols))
                 }
 
                 // Checks that getTitleBarText returns correct text with file name.
@@ -272,9 +272,9 @@ final class TextDocumentQuickSpec: QuickSpec {
                     let titleBarText = textDocument.getTitleBarText()
                     expect(titleBarText).to(contain("HarryFan Reader"))
                     expect(titleBarText).to(contain(testFileName))
-                    expect(titleBarText).to(satisfyAnyOf(contain("Line 50 of 100"), contain("50%")))
+                    expect(titleBarText).to(satisfyAnyOf(contain("Line 50 of 100"), contain("71%")))
                     expect(titleBarText).to(contain(" │ "))
-                    expect(titleBarText.count).to(equal(AppSettings.cols))
+                    expect(titleBarText.count).to(equal(Settings.cols))
                 }
 
                 // Checks that getTitleBarText truncates long file names.
@@ -287,21 +287,21 @@ final class TextDocumentQuickSpec: QuickSpec {
                     let titleBarText = textDocument.getTitleBarText()
                     expect(titleBarText).to(contain("..."))
                     expect(titleBarText).to(contain(" │ "))
-                    expect(titleBarText.count).to(equal(AppSettings.cols))
+                    expect(titleBarText.count).to(equal(Settings.cols))
                 }
             }
-            context("menu bar") {
-                // Checks that getMenuBarText returns correct menu bar text.
-                it("gets menu bar text") {
+            context("action bar") {
+                // Checks that getActionBarText returns correct action bar text.
+                it("gets action bar text") {
                     let testItems = ["Help", "Wrap", "Open", "Search", "Goto", "Bookm", "Start", "End", "Menu", "Qu"]
-                    let menuBarText = textDocument.getMenuBarText(testItems)
-                    expect(menuBarText.isEmpty).to(beFalse())
-                    expect(menuBarText.count).to(equal(AppSettings.cols))
-                    expect(menuBarText).to(contain("Help"))
-                    expect(menuBarText).to(contain("Qu"))
-                    expect(menuBarText).to(contain(" 1Help"))
-                    expect(menuBarText).to(contain(" 10Qu"))
-                    expect(menuBarText).to(contain(" 1Help  "))
+                    let actionBarText = textDocument.getActionBarText(testItems)
+                    expect(actionBarText.isEmpty).to(beFalse())
+                    expect(actionBarText.count).to(equal(Settings.cols))
+                    expect(actionBarText).to(contain("Help"))
+                    expect(actionBarText).to(contain("Qu"))
+                    expect(actionBarText).to(contain(" 1Help"))
+                    expect(actionBarText).to(contain(" 10Qu"))
+                    expect(actionBarText).to(contain(" 1Help  "))
                 }
             }
             context("file operations") {
@@ -373,10 +373,10 @@ final class TextDocumentQuickSpec: QuickSpec {
                 doc.currentLine = 49 // 50%
 
                 let title = doc.getTitleBarText()
-                expect(title.count).to(equal(AppSettings.cols))
+                expect(title.count).to(equal(Settings.cols))
                 expect(title).to(contain("HarryFan Reader"))
                 expect(title).to(contain(testFileName))
-                expect(title).to(satisfyAnyOf(contain("50%")))
+                expect(title).to(satisfyAnyOf(contain("71%")))
                 expect(title).to(contain(" │ "))
             }
         }

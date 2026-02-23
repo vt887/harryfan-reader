@@ -27,7 +27,7 @@ The tests are organized into several test files:
   - System font creation
 
 - **UtilityTests.swift** - Tests for utility functions and data structures including:
-  - AppSettings constants and configuration
+  - Settings constants and configuration
   - Messages and UI text
   - Unicode point mappings
   - Enums and data structures

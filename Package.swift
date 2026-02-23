@@ -18,11 +18,14 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/Quick/Nimble.git", from: "12.0.0"),
         .package(url: "https://github.com/Quick/Quick.git", from: "7.5.0"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", from: "0.9.0"),
     ],
     targets: [
         .executableTarget(
             name: baseName, // HarryFanReader
-            dependencies: [],
+            dependencies: [
+                "ZIPFoundation",
+            ],
             path: "Sources/HarryFanReader",
             exclude: [
                 "HarryFanReader.entitlements",

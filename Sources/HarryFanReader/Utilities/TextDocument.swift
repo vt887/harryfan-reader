@@ -1,0 +1,404 @@
+//
+//  TextDocument.swift
+//  harryfan-reader
+//
+//  Created by @vt887 on 9/1/25.
+//
+
+import Foundation
+import SwiftUI
+
+// Observable object representing a text document
+class TextDocument: ObservableObject {
+    @Published var content: [String] = []
+    @Published var currentLine: Int = 0
+    @Published var totalLines: Int = 0
+    @Published var encoding: String = "Unknown"
+    @Published var fileName: String = ""
+    @Published var fileURL: URL?
+    @Published var removeEmptyLines: Bool = true
+    @Published var wordWrap: Bool = Settings.wordWrap
+    @Published var wrapWidth: Int = Settings.wrapWidth
+    @Published var shouldShowQuitMessage: Bool = Settings.shouldShowQuitMessage
+    @Published var rows: Int = Settings.rows
+    // Top visible line of viewport
+    @Published var topLine: Int = 0
+    // Fixed cursor row (highlight). For now we keep it at 0 (top of viewport)
+    let fixedCursorRow: Int = 0
+
+    private var originalData: Data?
+
+    // Returns the quit message string
+    var quitMessage: String { Messages.quitMessage }
+
+    // Number of bytes in the original file (fallback to UTF-8 bytes of current content)
+    var byteSize: Int {
+        if let data = originalData {
+            return data.count
+        }
+        let joined = content.joined(separator: "\n")
+        return joined.data(using: .utf8)?.count ?? 0
+    }
+
+    // Simple statistics struct returned by `statistics()`.
+    struct Statistics {
+        let totalLines: Int
+        let totalWords: Int
+        let totalCharacters: Int
+        let averageLineLength: Int
+        let longestLineLength: Int
+        let shortestLineLength: Int
+        let byteSize: Int
+    }
+
+    /// Compute and return document statistics derived from `content` and `originalData`.
+    /// This centralizes counting logic so other code (overlays, status, tests) can reuse it.
+    func statistics() -> Statistics {
+        let linesArray = content
+        let lineCount = linesArray.count
+        let totalChars = linesArray.joined(separator: "\n").count
+        let totalWords = linesArray.reduce(0) { acc, line in
+            acc + line.split { $0.isWhitespace }.count
+        }
+        let lengths = linesArray.map(\.count)
+        let longest = lengths.max() ?? 0
+        let shortest = lengths.min() ?? 0
+        let avg = lineCount > 0 ? Int(round(Double(lengths.reduce(0, +)) / Double(lineCount))) : 0
+        return Statistics(totalLines: lineCount,
+                          totalWords: totalWords,
+                          totalCharacters: totalChars,
+                          averageLineLength: avg,
+                          longestLineLength: longest,
+                          shortestLineLength: shortest,
+                          byteSize: byteSize)
+    }
+
+    // Loads the welcome text into the document
+    func loadWelcomeText() {
+        // Use Messages.welcomeMessage (placeholders applied) and center it with centeredMessage
+        let centered = Messages.centeredMessage(Messages.welcomeMessage, screenWidth: Settings.cols, screenHeight: Settings.rows - 2)
+        content = splitLines(centered)
+        totalLines = content.count
+        topLine = 0
+        currentLine = 0
+    }
+
+    // Opens a file and loads its content
+    func openFile(at url: URL) {
+        do {
+            DebugLogger.log("Opening file: \(url.path)")
+            fileName = url.lastPathComponent
+            fileURL = url
+            originalData = try Data(contentsOf: url)
+            guard let data = originalData else {
+                return
+            }
+
+            let decodedString = decodeCP866(from: data)
+            let rawLines = cleanLines(splitLines(decodedString))
+            content = wrapLines(rawLines)
+            totalLines = content.count
+            DebugLogger.log("Opened file '\(fileName)' size=\(data.count) bytes lines=\(totalLines) encoding=CP866")
+            // Initialize viewport at top
+            topLine = 0
+            currentLine = 0
+        } catch {
+            DebugLogger.log("Error opening file: \(error)")
+        }
+    }
+
+    // Returns the formatted title bar text
+    func getTitleBarText() -> String {
+        TextFormatter.getTitleBarText(appName: Settings.appName, fileName: fileName, totalLines: totalLines, currentLine: currentLine, totalCols: Settings.cols)
+    }
+
+    // Returns the formatted menu bar text
+    func getActionBarText(_ items: [String]) -> String {
+        let menuBarString = items.enumerated().map { index, item in
+            let itemText = " \(index + 1)\(item)" // Add leading space before number
+            return itemText.padding(toLength: 8, withPad: " ", startingAt: 0)
+        }.joined(separator: "")
+        let result = menuBarString.padding(toLength: Settings.cols, withPad: " ", startingAt: 0)
+        DebugLogger.log("ActionBar result: '\(result)'")
+        return result
+    }
+
+    // Decodes CP866 encoded data to a string
+    private func decodeCP866(from data: Data) -> String {
+        var result = String.UnicodeScalarView()
+        for byte in data {
+            let scalar = UnicodeScalar(unicodePoints[Int(byte)])!
+            result.append(scalar)
+        }
+        return String(result)
+    }
+
+    // Wraps lines according to the wrap width
+    private func wrapLines(_ lines: [String]) -> [String] {
+        guard wordWrap else { return lines }
+
+        var wrappedLines: [String] = []
+
+        for line in lines {
+            if line.count <= wrapWidth {
+                wrappedLines.append(line)
+            } else {
+                // Split long lines
+                var currentWrappedLine = ""
+
+                let words = line.components(separatedBy: " ")
+
+                for word in words {
+                    if currentWrappedLine.isEmpty {
+                        currentWrappedLine = word
+                    } else if currentWrappedLine.count + word.count + 1 <= wrapWidth {
+                        currentWrappedLine += " " + word
+                    } else {
+                        // Current line is full, start a new one
+                        if !currentWrappedLine.isEmpty {
+                            wrappedLines.append(currentWrappedLine)
+                        }
+                        currentWrappedLine = word
+                    }
+                }
+
+                // Add the last line
+                if !currentWrappedLine.isEmpty {
+                    wrappedLines.append(currentWrappedLine)
+                }
+            }
+        }
+
+        return wrappedLines
+    }
+
+    // Splits text into lines, handling line endings
+    private func splitLines(_ text: String) -> [String] {
+        // Handle different line ending formats properly
+        // Replace \r\n with \n first, then split by \n
+        let normalizedText = text.replacingOccurrences(of: "\r\n", with: "\n")
+        return normalizedText.components(separatedBy: "\n")
+    }
+
+    // Cleans lines by removing excessive empty lines
+    private func cleanLines(_ lines: [String]) -> [String] {
+        if !removeEmptyLines {
+            return lines
+        }
+
+        var result: [String] = []
+        var consecutiveEmptyLines = 0
+
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if trimmedLine.isEmpty {
+                consecutiveEmptyLines += 1
+                // Keep only one empty line for every 2 consecutive empty lines
+                if consecutiveEmptyLines <= 1 {
+                    result.append("")
+                }
+            } else {
+                consecutiveEmptyLines = 0
+                result.append(line)
+            }
+        }
+
+        // Remove trailing empty lines
+        while result.last?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true {
+            result.removeLast()
+        }
+
+        return result
+    }
+
+    // Closes the currently open file
+    func closeFile() {
+        content = []
+        currentLine = 0
+        totalLines = 0
+        encoding = "Unknown"
+        fileName = ""
+        fileURL = nil
+        originalData = nil
+    }
+
+    // Reloads the document with new settings
+    func reloadWithNewSettings() {
+        guard let data = originalData else {
+            return
+        }
+
+        let decodedString = decodeCP866(from: data)
+        let rawLines = cleanLines(splitLines(decodedString))
+        content = wrapLines(rawLines)
+        totalLines = content.count
+        topLine = min(topLine, max(0, totalLines - 1))
+        currentLine = topLine + fixedCursorRow
+    }
+
+    // Toggles word wrap and reloads content
+    func toggleWordWrap() {
+        wordWrap.toggle()
+        Settings.wordWrap = wordWrap // sync Settings
+        DebugLogger.log("Word wrap toggled to: \(wordWrap)")
+        reloadWithNewSettings()
+    }
+
+    // Navigates to a specific line in the document
+    func gotoLine(_ line: Int) {
+        guard totalLines > 0 else {
+            return
+        }
+        let target = max(0, min(line - 1, totalLines - 1))
+        // Show target line at top (cursor line)
+        topLine = target
+        currentLine = target
+    }
+
+    // Navigates to the start of the document
+    func gotoStart() {
+        topLine = 0
+        currentLine = 0
+    }
+
+    // Navigates to the end of the document
+    func gotoEnd() {
+        guard totalLines > 0 else {
+            return
+        }
+        let displayRows = Settings.rows - 2
+        // Move cursor to the very last line
+        currentLine = totalLines - 1
+        // Show the last page (so that the last line is visible at bottom)
+        topLine = max(0, totalLines - displayRows)
+    }
+
+    // Scrolls up one page in the document
+    func pageUp() {
+        guard totalLines > 0 else {
+            return
+        }
+        let pageStep = max(1, (Settings.rows - 2) - 2) // leave 2-line overlap
+        currentLine = max(0, currentLine - pageStep)
+        topLine = currentLine
+    }
+
+    // Scrolls down one page in the document
+    func pageDown() {
+        guard totalLines > 0 else {
+            return
+        }
+        let pageStep = max(1, (Settings.rows - 2) - 2) // leave 2-line overlap
+        currentLine = min(totalLines - 1, currentLine + pageStep)
+        topLine = currentLine
+    }
+
+    // Scrolls up one line in the document
+    func lineUp() {
+        guard totalLines > 0 else {
+            return
+        }
+        if topLine > 0 {
+            topLine -= 1
+            currentLine = topLine
+        }
+        // If already at top, do nothing
+    }
+
+    // Scrolls down one line in the document
+    func lineDown() {
+        guard totalLines > 0 else {
+            return
+        }
+        let displayRows = Settings.rows - 2
+        let bottomLine = min(totalLines - 1, topLine + displayRows - 1)
+        if bottomLine < totalLines - 1 {
+            topLine += 1
+            currentLine = topLine
+        }
+        // If already at bottom, do nothing
+    }
+
+    // Helper to build search indices for forward direction
+    private func searchIndicesForward(from current: Int, count: Int) -> [Int] {
+        let start1 = min(current + 1, count)
+        let first = start1 < count ? Array(start1 ..< count) : []
+        let second = Array(0 ..< min(current + 1, count))
+        return first + second
+    }
+
+    // Helper to build search indices for backward direction
+    private func searchIndicesBackward(from current: Int, count: Int) -> [Int] {
+        let first: [Int] = {
+            guard current > 0 else { return [] }
+            return Array(stride(from: current - 1, through: 0, by: -1))
+        }()
+        let second: [Int] = {
+            guard count - 1 >= current else { return [] }
+            return Array(stride(from: count - 1, through: current, by: -1))
+        }()
+        return first + second
+    }
+
+    // Helper to get lines for search with case sensitivity
+    private func linesForSearch(caseSensitive: Bool) -> [String] {
+        caseSensitive ? content : content.map { $0.lowercased() }
+    }
+
+    // Helper to get query for search with case sensitivity
+    private func queryForSearch(_ query: String, caseSensitive: Bool) -> String {
+        caseSensitive ? query : query.lowercased()
+    }
+
+    // Searches for a query string in the document
+    func search(_ query: String, direction: SearchDirection = .forward, caseSensitive: Bool = false) -> Int? {
+        guard !query.isEmpty else { return nil }
+        let searchQuery = queryForSearch(query, caseSensitive: caseSensitive)
+        let lines = linesForSearch(caseSensitive: caseSensitive)
+        let indices: [Int] = switch direction {
+        case .forward:
+            searchIndicesForward(from: currentLine, count: lines.count)
+        case .backward:
+            searchIndicesBackward(from: currentLine, count: lines.count)
+        }
+        guard !indices.isEmpty else { return nil }
+        if let found = indices.first(where: { lines[$0].contains(searchQuery) }) {
+            topLine = found
+            currentLine = found
+            return found
+        }
+        return nil
+    }
+
+    // Returns the content of the current line
+    func getCurrentLine() -> String {
+        guard currentLine >= 0, currentLine < content.count else {
+            return ""
+        }
+        return content[currentLine]
+    }
+
+    // Visible lines based on topLine (viewport)
+    func getVisibleLines(displayRows: Int) -> [String] {
+        guard totalLines > 0 else {
+            return []
+        }
+        let top = min(max(0, topLine), max(0, totalLines - 1))
+        if totalLines <= displayRows {
+            return content
+        }
+        let end = min(totalLines, top + displayRows)
+        return Array(content[top ..< end])
+    }
+
+    func getVisibleLines() -> [String] {
+        getVisibleLines(displayRows: Settings.rows - 2)
+    }
+}
+
+// Enum for search direction in text document
+enum SearchDirection {
+    case forward
+    case backward
+}
