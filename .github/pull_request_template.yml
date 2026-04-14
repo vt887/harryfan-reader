@@ -1,0 +1,77 @@
+name: "Pull Request Template"
+description: "Structured template for pull requests to ensure all information is provided"
+title: "[PR] "
+labels: ["needs review"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Pull Request
+
+        Thank you for contributing! Please fill out the sections below to help reviewers understand your changes.
+        
+        **Tips:**
+        - Run `make lint` and `make test` before submitting
+        - Run `make pre-commit` to auto-format code
+        - Follow [Swift 6.2 conventions](https://swift.org/documentation/)
+
+  - type: input
+    id: description
+    attributes:
+      label: Description of the change
+      description: Summarize what this PR does and why.
+      placeholder: e.g., Fixes bug in text navigation, adds support for CP866 files
+
+  - type: input
+    id: related_issue
+    attributes:
+      label: Related Issue
+      description: Reference any related GitHub issues (optional)
+      placeholder: e.g., Fixes #123
+
+  - type: checkboxes
+    id: type_of_change
+    attributes:
+      label: Type of change
+      options:
+        - Bug fix
+        - New feature
+        - Performance improvement
+        - Documentation update
+        - Refactor
+        - Other
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - I have followed Swift 6.2 style guidelines
+        - I have run `make lint` and `make test` locally
+        - I have added or updated tests if necessary
+        - I have added or updated documentation if necessary
+        - I have added relevant screenshots or examples (if applicable)
+        - This PR does not introduce breaking changes
+
+  - type: textarea
+    id: breaking_changes
+    attributes:
+      label: Breaking Changes (if applicable)
+      description: Describe any breaking changes this PR introduces.
+      placeholder: e.g., Changes to TextDocument API, removal of deprecated methods
+
+  - type: textarea
+    id: performance
+    attributes:
+      label: Performance Impact (optional)
+      description: Any performance improvements or considerations?
+      placeholder: e.g., Reduces memory usage for large files, O(n log n) algorithm improvement
+
+  - type: textarea
+    id: additional_notes
+    attributes:
+      label: Additional Notes (optional)
+      description: Any extra context or information for reviewers.
+      placeholder: e.g., Known limitations, alternative approaches considered, visual changes

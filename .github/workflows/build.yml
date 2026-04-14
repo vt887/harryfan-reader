@@ -8,9 +8,25 @@ on:
       - '**'
 
 jobs:
+  count:
+    name: Count Swift lines
+    runs-on: ["self-hosted"]
+    outputs:
+      sources_total: ${{ steps.count.outputs.sources_total }}
+      tests_total: ${{ steps.count.outputs.tests_total }}
+      all_total: ${{ steps.count.outputs.all_total }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Compute Swift line totals
+        id: count
+        run: sh scripts/count-swift-lines.sh
+
   build:
     name: Build on ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
+    needs: [count]
     strategy:
       matrix:
         include:
@@ -20,20 +36,32 @@ jobs:
             runner: [ "self-hosted", "ARM64" ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Get swift version in macOS
-        run: xcrun --toolchain ${{ env.TOOLCHAINS }} swift --version
+      - name: Diagnose Xcode & Swift on runner
+        run: |
+          echo "---- xcode-select ----"
+          xcode-select -p || echo "(no xcode selected)"
+          echo "---- xcodebuild version ----"
+          xcodebuild -version || true
+          echo "---- swift version ----"
+          swift --version || true
+          echo "---- SDK path (xcrun) ----"
+          xcrun --sdk macosx --show-sdk-path || echo "(xcrun failed to locate SDK)"
+          echo "---- list /Applications/ for Xcode ----"
+          ls -la /Applications | grep Xcode || true
 
       - name: Build with SwiftPM
         run: |
-          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
+          SDKROOT=$(xcrun --sdk macosx --show-sdk-path 2>/dev/null || true)
+          echo "Using SDKROOT: $SDKROOT"
+          SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
           swift build --build-tests $SWIFT_FLAGS
 
   test:
     name: Test on ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
+    needs: [build]
     strategy:
       matrix:
         include:
@@ -41,10 +69,13 @@ jobs:
             runner: [ "self-hosted", "X64" ]
           - arch: arm64
             runner: [ "self-hosted", "ARM64" ]
-    needs: build
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Test with SwiftPM
         run: |
-          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          export SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
+          SDKROOT=$(xcrun --sdk macosx --show-sdk-path 2>/dev/null || true)
+          echo "Using SDKROOT: $SDKROOT"
+          SWIFT_FLAGS="-Xswiftc -sdk -Xswiftc $SDKROOT -Xswiftc -no-verify-emitted-module-interface"
           swift test $SWIFT_FLAGS || true
