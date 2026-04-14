@@ -9,29 +9,31 @@ import AppKit
 import Foundation
 import SwiftUI
 
-// Manages font loading, parsing, and bitmap lookup
+/// Manages font loading, parsing, and bitmap lookup
 final class FontManager: ObservableObject {
-    // Currently selected font
+    /// Currently selected font
     @Published var currentFont: MSDOSFont
-    // Current font size
+    /// Current font size
     @Published var fontSize: CGFloat = 16.0
-    // List of available font names
+    /// List of available font names
     @Published var availableFonts: [String] = []
 
-    // Raw font data
+    /// Raw font data
     private var fontData: Data?
-    // Cache of character bitmaps
+    /// Cache of character bitmaps
     private var fontCache: [UInt8: [Bool]] = [:]
 
-    // Supported MS-DOS font types
+    /// Supported MS-DOS font types
     enum MSDOSFont: String, CaseIterable {
         case vdu8x16 = "vdu.8x16" // Legacy reference
 
-        // Display name for UI
-        var displayName: String { rawValue }
+        /// Display name for UI
+        var displayName: String {
+            rawValue
+        }
     }
 
-    // Initializes FontManager and loads initial font
+    /// Initializes FontManager and loads initial font
     init() {
         let initialFont = MSDOSFont(rawValue: AppSettings.fontFileName)
             ?? MSDOSFont(rawValue: AppSettings.defaultFontFileName)
@@ -42,14 +44,14 @@ final class FontManager: ObservableObject {
         loadFont()
     }
 
-    // Returns URL to user's fonts directory
+    /// Returns URL to user's fonts directory
     private func getUserFontsURL() -> URL {
         let expandedHome = (AppSettings.homeDir as NSString).expandingTildeInPath
         let homeDirURL = URL(fileURLWithPath: expandedHome)
         return homeDirURL.appendingPathComponent("fonts")
     }
 
-    // Scans for available font files
+    /// Scans for available font files
     private func scanForFonts() {
         let fm = FileManager.default
         let userFontsURL = getUserFontsURL()
@@ -57,7 +59,7 @@ final class FontManager: ObservableObject {
         if let fontFiles = try? fm.contentsOfDirectory(
             at: userFontsURL,
             includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles,
+            options: .skipsHiddenFiles
         ) {
             let rawFonts = fontFiles
                 .filter { $0.pathExtension == "raw" }
@@ -71,7 +73,7 @@ final class FontManager: ObservableObject {
         }
     }
 
-    // Loads font data from file
+    /// Loads font data from file
     private func loadFont() {
         var effectiveFont = AppSettings.fontFileName
         var fontURL = findFontURL(for: effectiveFont)
@@ -102,7 +104,7 @@ final class FontManager: ObservableObject {
         }
     }
 
-    // Finds font file URL for given font name
+    /// Finds font file URL for given font name
     private func findFontURL(for fontName: String) -> URL? {
         let fm = FileManager.default
         let userFontsURL = getUserFontsURL()
@@ -119,14 +121,15 @@ final class FontManager: ObservableObject {
             if let url = Bundle.module.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
                 return url
             }
+        #else
+            if let url = Bundle.main.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
+                return url
+            }
         #endif
-        if let url = Bundle.module.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts") {
-            return url
-        }
-        return Bundle.main.url(forResource: AppSettings.defaultFontFileName, withExtension: "raw", subdirectory: "Fonts")
+        return nil
     }
 
-    // Parses raw font data into bitmaps
+    /// Parses raw font data into bitmaps
     private func parseFontData() {
         guard let data = fontData else {
             return
@@ -157,7 +160,7 @@ final class FontManager: ObservableObject {
         }
     }
 
-    // Returns bitmap for given character
+    /// Returns bitmap for given character
     func getCharacterBitmap(for char: Character) -> [Bool]? {
         guard let scalar = char.unicodeScalars.first else {
             return fontCache[0x20] // space
@@ -176,7 +179,7 @@ final class FontManager: ObservableObject {
         return fontCache[0x3F]
     }
 
-    // Generates fallback glyph bitmap
+    /// Generates fallback glyph bitmap
     private static func makeFallbackGlyph() -> [Bool] {
         let width = AppSettings.charW, height = AppSettings.charH
         var bitmap: [Bool] = []
@@ -189,7 +192,7 @@ final class FontManager: ObservableObject {
         return bitmap
     }
 
-    // Converts Unicode scalar to CP866 byte
+    /// Converts Unicode scalar to CP866 byte
     private func convertToCP866(_ unicodeScalar: UnicodeScalar) -> UInt8 {
         let value = Int(unicodeScalar.value)
         if value <= 0x7F { return UInt8(value) }
@@ -200,7 +203,7 @@ final class FontManager: ObservableObject {
         return 0x3F // fallback to '?'
     }
 
-    // Creates and returns a custom NSFont using the current font name and size
+    /// Creates and returns a custom NSFont using the current font name and size
     func createCustomFont() -> NSFont? {
         let fontName = currentFont.rawValue.replacingOccurrences(of: ".raw", with: "")
         // Try to create the custom font first

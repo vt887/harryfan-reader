@@ -8,9 +8,9 @@
 import Foundation
 import SwiftUI
 
-// OverlayKind defines the different types of overlays
-// that can be displayed in the application, such as
-// welcome, help, custom messages, or file text previews.
+/// OverlayKind defines the different types of overlays
+/// that can be displayed in the application, such as
+/// welcome, help, custom messages, or file text previews.
 enum OverlayKind: Equatable {
     case welcome
     case help
@@ -18,8 +18,8 @@ enum OverlayKind: Equatable {
     case custom(String)
     case fileText(String)
 
-    // Returns the message string associated with each overlay kind.
-    // This is used to display the appropriate content in the overlay.
+    /// Returns the message string associated with each overlay kind.
+    /// This is used to display the appropriate content in the overlay.
     var message: String {
         switch self {
         case .welcome: Messages.welcomeMessage
@@ -31,7 +31,7 @@ enum OverlayKind: Equatable {
     }
 }
 
-// Utility to create a centered overlay layer from a string
+/// Utility to create a centered overlay layer from a string
 private func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fgColor: Color) -> ScreenLayer {
     var layer = ScreenLayer(rows: rows, cols: cols)
     let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
@@ -52,9 +52,9 @@ private func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fg
     return layer
 }
 
-// OverlayFactory is responsible for creating overlays.
-// It provides a method to generate a centered text layer
-// for any given overlay kind, with customizable appearance.
+/// OverlayFactory is responsible for creating overlays.
+/// It provides a method to generate a centered text layer
+/// for any given overlay kind, with customizable appearance.
 enum OverlayFactory {
     static func make(kind: OverlayKind,
                      rows: Int = AppSettings.rows - 2,
@@ -62,15 +62,23 @@ enum OverlayFactory {
                      fgColor: Color = Colors.theme.foreground) -> ScreenLayer
     {
         let text = kind.message
-        if text == Messages.welcomeMessage || text == Messages.helpMessage || text == Messages.quitMessage {
+        
+        // Help overlay has special background color
+        if text == Messages.helpMessage {
+            var layer = centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
+            layer.backgroundColor = Colors.theme.helpMenuBackground
+            return layer
+        }
+        
+        if text == Messages.welcomeMessage || text == Messages.quitMessage {
             return centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
         }
         // Fallback to existing centering for custom overlays
         return centeredLayer(message: text, rows: rows, cols: cols, fgColor: fgColor)
     }
 
-    // Creates a ScreenLayer with the message centered both vertically and horizontally.
-    // Each character is placed in the correct position, and the foreground color is applied.
+    /// Creates a ScreenLayer with the message centered both vertically and horizontally.
+    /// Each character is placed in the correct position, and the foreground color is applied.
     private static func centeredLayer(message: String,
                                       rows: Int,
                                       cols: Int,
@@ -95,45 +103,53 @@ enum OverlayFactory {
     }
 }
 
-// OverlayManager manages the stack of overlays currently displayed.
-// It allows adding, removing, and clearing overlays, as well as
-// controlling the opacity of the overlay layer.
+/// OverlayManager manages the stack of overlays currently displayed.
+/// It allows adding, removing, and clearing overlays, as well as
+/// controlling the opacity of the overlay layer.
 final class OverlayManager: ObservableObject {
     // Published properties so SwiftUI views observing this manager
     // will update when overlays or opacity change.
     @Published private(set) var overlays: [OverlayKind] = []
     @Published private(set) var opacity: Double = 1.0
 
-    // Adds a new overlay if it is not already present. Use either
-    // `addOverlay(.custom("..."))` or `addOverlay(kind: .fileText(...))`.
+    /// Adds a new overlay if it is not already present. Use either
+    /// `addOverlay(.custom("..."))` or `addOverlay(kind: .fileText(...))`.
     func addOverlay(_ kind: OverlayKind) {
         if !overlays.contains(kind) {
             overlays.append(kind)
         }
     }
 
-    // Labeled overload to match call sites that use `kind:` label.
-    func addOverlay(kind: OverlayKind) { addOverlay(kind) }
+    /// Labeled overload to match call sites that use `kind:` label.
+    func addOverlay(kind: OverlayKind) {
+        addOverlay(kind)
+    }
 
-    // Removes the specified overlay kind from the stack.
+    /// Removes the specified overlay kind from the stack.
     func removeOverlay(_ kind: OverlayKind) {
         overlays.removeAll { $0 == kind }
     }
 
-    // Labeled overload to match call sites that use `kind:` label.
-    func removeOverlay(kind: OverlayKind) { removeOverlay(kind) }
+    /// Labeled overload to match call sites that use `kind:` label.
+    func removeOverlay(kind: OverlayKind) {
+        removeOverlay(kind)
+    }
 
-    // Removes all overlays from the stack.
-    func removeAll() { overlays.removeAll() }
+    /// Removes all overlays from the stack.
+    func removeAll() {
+        overlays.removeAll()
+    }
 
-    // Sets the opacity for the overlay layer. The value is clamped
-    // between 0.0 and 1.0.
+    /// Sets the opacity for the overlay layer. The value is clamped
+    /// between 0.0 and 1.0.
     func setOpacity(_ value: Double) {
         opacity = min(max(value, 0.0), 1.0)
     }
 
-    // Returns the current opacity value for overlays.
-    func getOpacity() -> Double { opacity }
+    /// Returns the current opacity value for overlays.
+    func getOpacity() -> Double {
+        opacity
+    }
 
     /// Removes all overlays of type .help from the stack.
     func removeHelpOverlay() {

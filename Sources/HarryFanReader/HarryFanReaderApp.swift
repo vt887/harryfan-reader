@@ -8,7 +8,7 @@
 import AppKit
 import SwiftUI
 
-// Application delegate for macOS app lifecycle
+/// Application delegate for macOS app lifecycle
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_: Notification) {
         // Ensure the app has a regular activation policy so the Menu Bar is visible
@@ -51,9 +51,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let response = alert.runModal()
         return response == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
     }
+
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows _: Bool) -> Bool {
+        // Create a new window when clicking the dock icon if no windows are visible
+        NSApplication.shared.sendAction(#selector(NSWindow.makeKeyAndOrderFront(_:)), to: nil, from: nil)
+        return true
+    }
 }
 
-// Main app entry point and scene configuration
+/// Main app entry point and scene configuration
 @main
 struct HarryFanReaderApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
@@ -63,9 +69,17 @@ struct HarryFanReaderApp: App {
     @StateObject private var document = TextDocument()
     @StateObject private var statusBarManager = StatusBarManager()
     @StateObject private var overlayManager = OverlayManager()
+    @State private var scaleUpdateTrigger = UUID()
 
-    var windowWidth: CGFloat { CGFloat(AppSettings.cols * AppSettings.charW) }
-    var windowHeight: CGFloat { CGFloat(AppSettings.rows * AppSettings.charH) } // Match ScreenView size exactly
+    var windowWidth: CGFloat {
+        _ = scaleUpdateTrigger
+        return CGFloat(AppSettings.cols) * AppSettings.charWRendering
+    }
+
+    var windowHeight: CGFloat {
+        _ = scaleUpdateTrigger
+        return CGFloat(AppSettings.rows) * AppSettings.charHRendering
+    } // Match ScreenView size exactly
 
     var body: some Scene {
         WindowGroup {
@@ -75,6 +89,7 @@ struct HarryFanReaderApp: App {
                 .environmentObject(recentFilesManager)
                 .environmentObject(statusBarManager)
                 .environmentObject(overlayManager)
+                .environmentObject(document)
                 .frame(minWidth: windowWidth, minHeight: windowHeight)
                 .colorScheme(AppSettings.appearance == .dark ? .dark : .light) // Apply the color scheme here based on AppSettings
         }

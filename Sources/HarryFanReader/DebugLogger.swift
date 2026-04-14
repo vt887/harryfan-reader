@@ -7,7 +7,7 @@
 
 import Foundation
 
-// Debug logging utility
+/// Debug logging utility
 enum DebugLogger {
     static func log(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
         guard AppSettings.debug else { return }

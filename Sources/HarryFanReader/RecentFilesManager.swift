@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-// Model for a recent file entry
+/// Model for a recent file entry
 struct RecentFile: Identifiable, Codable, Equatable {
     let id: UUID
     let url: URL
@@ -23,7 +23,7 @@ struct RecentFile: Identifiable, Codable, Equatable {
     }
 }
 
-// Manager class for handling recent files
+/// Manager class for handling recent files
 class RecentFilesManager: ObservableObject {
     @Published var recentFiles: [RecentFile] = []
 
@@ -34,7 +34,7 @@ class RecentFilesManager: ObservableObject {
         loadRecentFiles()
     }
 
-    // Adds a file to the recent files list
+    /// Adds a file to the recent files list
     func addRecentFile(url: URL) {
         // Remove existing entry if file was already opened
         recentFiles.removeAll { $0.url == url }
@@ -51,13 +51,13 @@ class RecentFilesManager: ObservableObject {
         saveRecentFiles()
     }
 
-    // Clears all recent files
+    /// Clears all recent files
     func clearRecentFiles() {
         recentFiles = []
         saveRecentFiles()
     }
 
-    // Saves recent files to UserDefaults
+    /// Saves recent files to UserDefaults
     private func saveRecentFiles() {
         do {
             let encoder = JSONEncoder()
@@ -68,7 +68,7 @@ class RecentFilesManager: ObservableObject {
         }
     }
 
-    // Loads recent files from UserDefaults
+    /// Loads recent files from UserDefaults
     private func loadRecentFiles() {
         guard let data = UserDefaults.standard.data(forKey: userDefaultsKey) else {
             return

@@ -10,7 +10,7 @@ import AppKit
 import Nimble
 import Quick
 
-// Unit tests for FontManager
+/// Unit tests for FontManager
 final class FontManagerQuickSpec: QuickSpec {
     override class func spec() {
         specInitialState()
@@ -22,7 +22,7 @@ final class FontManagerQuickSpec: QuickSpec {
         specCP866Conversion()
     }
 
-    // Tests for initial state: verifies default font, font size, and font list are valid and initialized as expected.
+    /// Tests for initial state: verifies default font, font size, and font list are valid and initialized as expected.
     private class func specInitialState() {
         var fontManager: FontManager!
         beforeEach { fontManager = FontManager() }
@@ -41,7 +41,7 @@ final class FontManagerQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for MSDOSFont enum: ensures correct raw values, display names, and presence of all expected cases.
+    /// Tests for MSDOSFont enum: ensures correct raw values, display names, and presence of all expected cases.
     private class func specMSDOSFontEnum() {
         describe("FontManager") {
             context("MSDOSFont enum") {
@@ -59,7 +59,7 @@ final class FontManagerQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for character bitmap generation: covers ASCII, special, Unicode, empty, and consistency/difference cases.
+    /// Tests for character bitmap generation: covers ASCII, special, Unicode, empty, and consistency/difference cases.
     private class func specCharacterBitmaps() {
         var fontManager: FontManager!
         beforeEach { fontManager = FontManager() }
@@ -113,7 +113,7 @@ final class FontManagerQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for custom font creation: verifies default and custom size, and monospaced property.
+    /// Tests for custom font creation: verifies default and custom size, and monospaced property.
     private class func specCustomFontCreation() {
         var fontManager: FontManager!
         beforeEach { fontManager = FontManager() }
@@ -140,7 +140,7 @@ final class FontManagerQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for font size property: verifies default and updated values.
+    /// Tests for font size property: verifies default and updated values.
     private class func specFontSizeProperty() {
         var fontManager: FontManager!
         beforeEach { fontManager = FontManager() }
@@ -160,7 +160,7 @@ final class FontManagerQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for available fonts: ensures the list is not empty and all names are valid.
+    /// Tests for available fonts: ensures the list is not empty and all names are valid.
     private class func specAvailableFonts() {
         var fontManager: FontManager!
         beforeEach { fontManager = FontManager() }
@@ -178,7 +178,7 @@ final class FontManagerQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for CP866 conversion: covers ASCII and Cyrillic characters.
+    /// Tests for CP866 conversion: covers ASCII and Cyrillic characters.
     private class func specCP866Conversion() {
         var fontManager: FontManager!
         beforeEach { fontManager = FontManager() }

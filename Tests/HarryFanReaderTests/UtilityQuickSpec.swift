@@ -10,9 +10,9 @@ import AppKit
 import Nimble
 import Quick
 
-// Unit tests for utility types, constants, and helpers
+/// Unit tests for utility types, constants, and helpers
 final class UtilityQuickSpec: QuickSpec {
-    // Main entry point for all utility-related tests
+    /// Main entry point for all utility-related tests
     override class func spec() {
         specSearchDirectionEnum() // Tests for SearchDirection enum
         specAppSettings() // Tests for AppSettings constants
@@ -25,7 +25,7 @@ final class UtilityQuickSpec: QuickSpec {
         specPerformance() // Tests for performance placeholders
     }
 
-    // Tests for SearchDirection enum: equality and difference
+    /// Tests for SearchDirection enum: equality and difference
     private class func specSearchDirectionEnum() {
         describe("SearchDirection enum") {
             // Checks that SearchDirection enum values compare as expected (equality and difference).
@@ -37,7 +37,7 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for AppSettings: constants and dimensions
+    /// Tests for AppSettings: constants and dimensions
     private class func specAppSettings() {
         describe("AppSettings") {
             // Checks that AppSettings constants have expected values (app name, home dir, font, etc).
@@ -64,7 +64,7 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for AppAppearance enum: cases, raw values, and initialization
+    /// Tests for AppAppearance enum: cases, raw values, and initialization
     private class func specAppAppearanceEnum() {
         describe("AppAppearance enum") {
             // Checks that all AppAppearance cases are present (light, dark, blue).
@@ -91,7 +91,7 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for Messages: welcome, help, quit, formatting, centering
+    /// Tests for Messages: welcome, help, quit, formatting, centering
     private class func specMessages() {
         describe("Messages") {
             // Checks that the welcome message is present and contains expected content and box drawing characters.
@@ -159,7 +159,7 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for unicodePoints: mapping for ASCII, Cyrillic, box drawing, and special chars
+    /// Tests for unicodePoints: mapping for ASCII, Cyrillic, box drawing, and special chars
     private class func specUnicodePoints() {
         describe("Unicode points") {
             // Checks that unicodePoints array has correct mappings for known values (space, A, a, 0).
@@ -202,7 +202,7 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for DebugLogger: logging does not crash when debug is disabled
+    /// Tests for DebugLogger: logging does not crash when debug is disabled
     private class func specDebugLogger() {
         describe("DebugLogger") {
             // Checks that DebugLogger methods do not crash when debug is disabled (output suppressed).
@@ -229,7 +229,7 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for integration/consistency: app settings and message formatting
+    /// Tests for integration/consistency: app settings and message formatting
     private class func specIntegration() {
         describe("Integration") {
             // Checks that character dimensions are consistent with font expectations (bitmap size).
@@ -256,7 +256,7 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for edge cases and error handling: unicodePoints boundaries, empty strings
+    /// Tests for edge cases and error handling: unicodePoints boundaries, empty strings
     private class func specEdgeCasesAndErrorHandling() {
         describe("Edge Cases and Error Handling") {
             // Checks that unicodePoints handles boundary values and all are valid Unicode scalars.
@@ -278,7 +278,7 @@ final class UtilityQuickSpec: QuickSpec {
         }
     }
 
-    // Tests for performance: repeated access to unicodePoints and messages
+    /// Tests for performance: repeated access to unicodePoints and messages
     private class func specPerformance() {
         describe("Performance") {
             // Checks that accessing unicodePoints in a loop does not crash (performance placeholder).

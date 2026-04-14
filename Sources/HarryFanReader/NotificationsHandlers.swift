@@ -8,7 +8,7 @@
 import AppKit
 import SwiftUI
 
-// ViewModifier for handling app-wide notifications
+/// ViewModifier for handling app-wide notifications
 private struct NotificationsModifier: ViewModifier {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
@@ -21,18 +21,7 @@ private struct NotificationsModifier: ViewModifier {
     @Binding var lastSearchTerm: String
 
     func body(content: Content) -> some View {
-        let contentWithWindow = content
-            .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { notification in
-                if let window = notification.object as? NSWindow {
-                    DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification for window: \(window.title)")
-                    // Show a new overlay layer instead of opening a new window
-                    overlayManager.addOverlay(.custom("Window became key: \(window.title)"))
-                } else {
-                    DebugLogger.log("NotificationsModifier: NSWindow didBecomeKeyNotification received")
-                }
-            }
-
-        let contentWithFile = contentWithWindow
+        let contentWithFile = content
             .onReceive(NotificationCenter.default.publisher(for: .openFileCommand)) { _ in showingFilePicker = true }
             .onReceive(NotificationCenter.default.publisher(for: .openRecentFileCommand)) { notification in
                 if let userInfo = notification.userInfo, let url = userInfo["url"] as? URL {
@@ -99,10 +88,46 @@ private struct NotificationsModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .pageDownCommand)) { _ in document.pageDown() }
             .onReceive(NotificationCenter.default.publisher(for: .gotoStartCommand)) { _ in document.gotoStart() }
             .onReceive(NotificationCenter.default.publisher(for: .gotoEndCommand)) { _ in document.gotoEnd() }
+            .onReceive(NotificationCenter.default.publisher(for: .scaleInCommand)) { _ in
+                AppSettings.charWScale *= 1.05
+                AppSettings.charHScale *= 1.05
+                NSApp.windows.first?.invalidateRestorableState()
+                if let window = NSApp.windows.first {
+                    let newWidth = CGFloat(AppSettings.cols) * AppSettings.charWRendering
+                    let newHeight = CGFloat(AppSettings.rows) * AppSettings.charHRendering
+                    var frame = window.frame
+                    frame.size = NSSize(width: newWidth, height: newHeight + window.frame.height - (window.contentView?.frame.height ?? 0))
+                    window.setFrame(frame, display: true, animate: false)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .scaleOutCommand)) { _ in
+                AppSettings.charWScale /= 1.05
+                AppSettings.charHScale /= 1.05
+                NSApp.windows.first?.invalidateRestorableState()
+                if let window = NSApp.windows.first {
+                    let newWidth = CGFloat(AppSettings.cols) * AppSettings.charWRendering
+                    let newHeight = CGFloat(AppSettings.rows) * AppSettings.charHRendering
+                    var frame = window.frame
+                    frame.size = NSSize(width: newWidth, height: newHeight + window.frame.height - (window.contentView?.frame.height ?? 0))
+                    window.setFrame(frame, display: true, animate: false)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .resetSizeCommand)) { _ in
+                AppSettings.charWScale = 1.0
+                AppSettings.charHScale = 1.0
+                NSApp.windows.first?.invalidateRestorableState()
+                if let window = NSApp.windows.first {
+                    let newWidth = CGFloat(AppSettings.cols) * AppSettings.charWRendering
+                    let newHeight = CGFloat(AppSettings.rows) * AppSettings.charHRendering
+                    var frame = window.frame
+                    frame.size = NSSize(width: newWidth, height: newHeight + window.frame.height - (window.contentView?.frame.height ?? 0))
+                    window.setFrame(frame, display: true, animate: false)
+                }
+            }
     }
 }
 
-// Extension to apply notification handling to any view
+/// Extension to apply notification handling to any view
 extension View {
     func applyNotifications(document: TextDocument, showingSearch: Binding<Bool>, showingBookmarks: Binding<Bool>, showingFilePicker: Binding<Bool>, lastSearchTerm: Binding<String>) -> some View {
         modifier(NotificationsModifier(document: document, showingSearch: showingSearch, showingBookmarks: showingBookmarks, showingFilePicker: showingFilePicker, lastSearchTerm: lastSearchTerm))

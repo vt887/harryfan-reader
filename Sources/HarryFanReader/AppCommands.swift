@@ -8,7 +8,7 @@
 import AppKit
 import SwiftUI
 
-// Extension for custom notification names
+/// Extension for custom notification names
 extension Notification.Name {
     static let openFileCommand = Notification.Name("AppCommand.openFile")
     static let openSearchCommand = Notification.Name("AppCommand.openSearch")
@@ -28,14 +28,17 @@ extension Notification.Name {
     static let openBookmarkCommand = Notification.Name("AppCommand.openBookmark")
     static let clearRecentFilesCommand = Notification.Name("clearRecentFilesCommand")
     static let toggleWordWrapCommand = Notification.Name("AppCommand.toggleWordWrap")
+    static let scaleInCommand = Notification.Name("AppCommand.scaleIn")
+    static let scaleOutCommand = Notification.Name("AppCommand.scaleOut")
+    static let resetSizeCommand = Notification.Name("AppCommand.resetSize")
 }
 
-// Main app commands for menu and shortcuts
+/// Main app commands for menu and shortcuts
 struct AppCommands: Commands {
     @ObservedObject var recentFilesManager: RecentFilesManager
     @ObservedObject var bookmarkManager: BookmarkManager
 
-    // Helper for Bookmarks menu items
+    /// Helper for Bookmarks menu items
     @ViewBuilder
     private func bookmarkMenuItems() -> some View {
         let allBookmarks = bookmarkManager.bookmarks
@@ -47,14 +50,14 @@ struct AppCommands: Commands {
                     NotificationCenter.default.post(
                         name: .openBookmarkCommand,
                         object: nil,
-                        userInfo: ["bookmark": bookmark],
+                        userInfo: ["bookmark": bookmark]
                     )
                 }
             }
         }
     }
 
-    // Helper for Recent Files menu items
+    /// Helper for Recent Files menu items
     @ViewBuilder
     private func recentFilesMenuItems() -> some View {
         if recentFilesManager.recentFiles.isEmpty {
@@ -65,7 +68,7 @@ struct AppCommands: Commands {
                     NotificationCenter.default.post(
                         name: .openRecentFileCommand,
                         object: nil,
-                        userInfo: ["url": file.url],
+                        userInfo: ["url": file.url]
                     )
                 }
             }
@@ -79,6 +82,11 @@ struct AppCommands: Commands {
     var body: some Commands {
         Group {
             CommandGroup(replacing: .newItem) {
+                Button("New Window") {
+                    NSApplication.shared.sendAction(#selector(NSWindow.makeKeyAndOrderFront(_:)), to: nil, from: nil)
+                }
+                .keyboardShortcut("n", modifiers: .command)
+
                 Button("Open...") {
                     NotificationCenter.default.post(name: .openFileCommand, object: nil)
                 }
@@ -146,6 +154,17 @@ struct AppCommands: Commands {
                     NotificationCenter.default.post(name: .gotoEndCommand, object: nil)
                 }
                 .keyboardShortcut(.downArrow, modifiers: [.command, .control])
+                Divider()
+                Button("Scale In") {
+                    NotificationCenter.default.post(name: .scaleInCommand, object: nil)
+                }
+                .keyboardShortcut("+", modifiers: [.command, .option])
+                Button("Scale Out") {
+                    NotificationCenter.default.post(name: .scaleOutCommand, object: nil)
+                }
+                Button("Size Reset") {
+                    NotificationCenter.default.post(name: .resetSizeCommand, object: nil)
+                }
             }
         }
     }

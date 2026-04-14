@@ -7,25 +7,27 @@
 
 import SwiftUI
 
-// Represents a single cell in the screen grid
+/// Represents a single cell in the screen grid
 struct ScreenCell {
     var char: Character
     var fgColor: Color?
     var bgColor: Color?
 }
 
-// Represents a layer (window) of the screen
+/// Represents a layer (window) of the screen
 struct ScreenLayer: Identifiable {
     let id = UUID()
     var grid: [[ScreenCell]] // [row][col], 24x80
+    var backgroundColor: Color? = nil // Optional background color for the entire layer
 
-    init(rows: Int = AppSettings.rows, cols: Int = AppSettings.cols) {
+    init(rows: Int = AppSettings.rows, cols: Int = AppSettings.cols, backgroundColor: Color? = nil) {
+        self.backgroundColor = backgroundColor
         grid = Array(
             repeating: Array(
                 repeating: ScreenCell(char: " ", fgColor: nil, bgColor: nil),
-                count: cols,
+                count: cols
             ),
-            count: rows,
+            count: rows
         )
     }
 
@@ -35,47 +37,51 @@ struct ScreenLayer: Identifiable {
     }
 }
 
-// View for rendering the main text screen in the app
+/// View for rendering the main text screen in the app
 struct ScreenView: View {
-    // Observed document model for the screen
+    /// Observed document model for the screen
     @ObservedObject var document: TextDocument
-    // Font manager environment object
+    /// Font manager environment object
     @EnvironmentObject var fontManager: FontManager
 
-    // Optional custom content to display
+    /// Optional custom content to display
     var contentToDisplay: String?
-    // Number of rows to display
+    /// Number of rows to display
     var displayRows: Int
-    // Row offset for line numbering
+    /// Row offset for line numbering
     var rowOffset: Int = 0
-    // Background color for the screen
+    /// Background color for the screen
     var backgroundColor: Color = Colors.theme.background
-    // Font color for the screen
+    /// Font color for the screen
     var fontColor: Color = Colors.theme.foreground
-    // New flag to highlight the cursor (current) line (top visible line)
+    /// New flag to highlight the cursor (current) line (top visible line)
     var highlightCursorLine: Bool = false
 
-    // Number of columns in the screen (from AppSettings)
-    static let cols = AppSettings.cols
-    // Character width in pixels (from AppSettings)
-    static let charW = AppSettings.charW
-    // Character height in pixels (from AppSettings)
-    static let charH = AppSettings.charH
+    /// Number of columns in the screen (from AppSettings)
+    static var cols: Int { AppSettings.cols }
+    /// Character width in pixels (from AppSettings)
+    static var charW: Int { AppSettings.charW }
+    /// Character height in pixels (from AppSettings)
+    static var charH: Int { AppSettings.charH }
+    /// Character width for rendering (scaled, from AppSettings)
+    static var charWRendering: CGFloat { AppSettings.charWRendering }
+    /// Character height for rendering (scaled, from AppSettings)
+    static var charHRendering: CGFloat { AppSettings.charHRendering }
 
     // Only overlay layers are stored in @State, now passed as a Binding
     @Binding var overlayLayers: [ScreenLayer]
     @Binding var overlayOpacities: [UUID: Double]
 
-    // Helper function to create inverted screen cell
+    /// Helper function to create inverted screen cell
     private func createInvertedCell(_ char: Character) -> ScreenCell {
         ScreenCell(
             char: char,
             fgColor: Colors.theme.titleBarBackground,
-            bgColor: Colors.theme.menuBarForeground,
+            bgColor: Colors.theme.menuBarForeground
         )
     }
 
-    // Helper function to detect and handle digit patterns
+    /// Helper function to detect and handle digit patterns
     private func detectDigitPattern(_ lineChars: [Character], _ col: Int) -> (pattern: String, length: Int)? {
         let char = lineChars[col]
 
@@ -94,7 +100,7 @@ struct ScreenView: View {
         return nil
     }
 
-    // Helper function to handle menu bar digit inversion
+    /// Helper function to handle menu bar digit inversion
     private func handleMenuBarDigitInversion(_ base: inout ScreenLayer, row: Int, lineChars: [Character], col: inout Int) -> Bool {
         // Check if we have a leading space and a valid digit pattern
         guard col > 0, lineChars[col - 1] == " ",
@@ -146,20 +152,34 @@ struct ScreenView: View {
         return base
     }
 
-    // Composite the base layer with overlays
+    /// Composite the base layer with overlays
     func compositeGrid() -> [[ScreenCell]] {
         let gridRows = displayRows
         let gridCols = ScreenView.cols
         var result = makeBaseLayer().grid
         for layer in overlayLayers {
             let alpha = overlayOpacities[layer.id] ?? 1.0
+            
+            // If overlay has a background color, fill entire area with it first
+            if let bgColor = layer.backgroundColor {
+                for row in 0 ..< gridRows {
+                    for col in 0 ..< gridCols {
+                        result[row][col] = ScreenCell(char: " ", fgColor: nil, bgColor: bgColor.opacity(alpha))
+                    }
+                }
+            }
+            
+            // Then overlay the text content
             for row in 0 ..< min(gridRows, layer.grid.count) {
                 for col in 0 ..< min(gridCols, layer.grid[row].count) {
                     let cell = layer.grid[row][col]
-                    if cell.char != " " {
+                    if cell.char != " " || cell.bgColor != nil {
                         var adjusted = cell
                         if let c = cell.fgColor {
                             adjusted.fgColor = c.opacity(alpha)
+                        }
+                        if let bg = cell.bgColor {
+                            adjusted.bgColor = bg.opacity(alpha)
                         }
                         result[row][col] = adjusted
                     }
@@ -169,7 +189,7 @@ struct ScreenView: View {
         return result
     }
 
-    // Main view body rendering the text screen
+    /// Main view body rendering the text screen
     var body: some View {
         Canvas { context, size in
             // Conditionally enable anti-aliasing for smoother text rendering
@@ -185,7 +205,7 @@ struct ScreenView: View {
             context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(backgroundColor))
 
             let grid = compositeGrid()
-            let idealSize = CGSize(width: CGFloat(ScreenView.cols * ScreenView.charW), height: CGFloat(displayRows * ScreenView.charH))
+            let idealSize = CGSize(width: CGFloat(ScreenView.cols) * ScreenView.charWRendering, height: CGFloat(displayRows) * ScreenView.charHRendering)
             let offsetX = (size.width - idealSize.width) / 2.0
 
             // Determine cursor line index within the visible viewport (removed highlight feature)
@@ -201,7 +221,7 @@ struct ScreenView: View {
         .accessibilityHidden(true) // no cursor or focus ring
     }
 
-    // Draws a single character at the given position
+    /// Draws a single character at the given position
     private func drawChar(_ character: Character,
                           at pos: (Int, Int),
                           in context: GraphicsContext,
@@ -213,8 +233,8 @@ struct ScreenView: View {
               bitmap.count == (ScreenView.charW * ScreenView.charH) else { return }
 
         let (column, row) = pos
-        let baseX = origin.x + CGFloat(column * ScreenView.charW)
-        let baseY = origin.y + CGFloat(row * ScreenView.charH)
+        let baseX = origin.x + CGFloat(column) * ScreenView.charWRendering
+        let baseY = origin.y + CGFloat(row) * ScreenView.charHRendering
 
         // Determine foreground and background color to use
         let currentFgColor = customFgColor ?? fontColor
@@ -222,7 +242,7 @@ struct ScreenView: View {
 
         // Draw background color if present
         if let bg = currentBgColor {
-            let rect = CGRect(x: baseX, y: baseY, width: CGFloat(ScreenView.charW), height: CGFloat(ScreenView.charH))
+            let rect = CGRect(x: baseX, y: baseY, width: ScreenView.charWRendering, height: ScreenView.charHRendering)
             context.fill(Path(rect), with: .color(bg))
         }
 
@@ -233,14 +253,17 @@ struct ScreenView: View {
                 cgContext.setAllowsAntialiasing(true)
                 cgContext.setShouldSmoothFonts(true)
 
+                let pixelScaleX = ScreenView.charWRendering / CGFloat(ScreenView.charW)
+                let pixelScaleY = ScreenView.charHRendering / CGFloat(ScreenView.charH)
+
                 for rowIndex in 0 ..< ScreenView.charH {
                     for columnIndex in 0 ..< ScreenView.charW {
                         if bitmap[rowIndex * ScreenView.charW + columnIndex] {
                             let rect = CGRect(
-                                x: baseX + CGFloat(columnIndex),
-                                y: baseY + CGFloat(rowIndex),
-                                width: 1.0,
-                                height: 1.0,
+                                x: baseX + CGFloat(columnIndex) * pixelScaleX,
+                                y: baseY + CGFloat(rowIndex) * pixelScaleY,
+                                width: pixelScaleX,
+                                height: pixelScaleY
                             )
                             cgContext.setFillColor(currentFgColor.cgColor ?? CGColor(red: 1, green: 1, blue: 1, alpha: 1))
                             cgContext.fill(rect)
@@ -250,14 +273,17 @@ struct ScreenView: View {
             }
         } else {
             // Draw without anti-aliasing for sharp, pixel-perfect text
+            let pixelScaleX = ScreenView.charWRendering / CGFloat(ScreenView.charW)
+            let pixelScaleY = ScreenView.charHRendering / CGFloat(ScreenView.charH)
+
             for rowIndex in 0 ..< ScreenView.charH {
                 for columnIndex in 0 ..< ScreenView.charW {
                     if bitmap[rowIndex * ScreenView.charW + columnIndex] {
                         let rect = CGRect(
-                            x: baseX + CGFloat(columnIndex),
-                            y: baseY + CGFloat(rowIndex),
-                            width: 1,
-                            height: 1,
+                            x: baseX + CGFloat(columnIndex) * pixelScaleX,
+                            y: baseY + CGFloat(rowIndex) * pixelScaleY,
+                            width: pixelScaleX,
+                            height: pixelScaleY
                         )
                         context.fill(Path(rect), with: .color(currentFgColor))
                     }

@@ -9,7 +9,7 @@ import AppKit
 import Foundation
 import SwiftUI
 
-// Manager for the macOS status bar (menu bar) icon
+/// Manager for the macOS status bar (menu bar) icon
 class StatusBarManager: ObservableObject {
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
@@ -19,9 +19,7 @@ class StatusBarManager: ObservableObject {
     init() {
         DebugLogger.log("StatusBarManager: Initializing status bar manager")
         createStatusBarItem()
-        // Ensure the status bar item persists even when app is hidden
-        NSApp.setActivationPolicy(.accessory)
-        DebugLogger.log("StatusBarManager: App activation policy set to accessory")
+        DebugLogger.log("StatusBarManager: Status bar item setup complete")
     }
 
     deinit {
@@ -30,7 +28,7 @@ class StatusBarManager: ObservableObject {
         removeStatusBarItem()
     }
 
-    // Create the status bar item
+    /// Create the status bar item
     private func createStatusBarItem() {
         guard statusItem == nil else {
             DebugLogger.log("StatusBarManager: Status bar item already exists, skipping creation")
@@ -60,7 +58,7 @@ class StatusBarManager: ObservableObject {
         DebugLogger.log("StatusBarManager: Status bar item created successfully")
     }
 
-    // Create the status bar menu
+    /// Create the status bar menu
     private func createMenu() {
         DebugLogger.log("StatusBarManager: Building status bar menu")
         let menu = NSMenu()
@@ -104,7 +102,7 @@ class StatusBarManager: ObservableObject {
         DebugLogger.log("StatusBarManager: Status bar menu created with \(menu.items.count) items")
     }
 
-    // Status bar button clicked
+    /// Status bar button clicked
     @objc private func statusBarButtonClicked() {
         DebugLogger.log("StatusBarManager: Status bar button clicked")
         // Always show the app window when status bar icon is clicked
@@ -117,7 +115,7 @@ class StatusBarManager: ObservableObject {
         }
     }
 
-    // Show/Hide the main app window
+    /// Show/Hide the main app window
     @objc private func showHideApp() {
         DebugLogger.log("StatusBarManager: Show/Hide app menu item clicked")
         guard let window = NSApp.windows.first else {
@@ -139,39 +137,41 @@ class StatusBarManager: ObservableObject {
         }
     }
 
-    // Open file action
+    /// Open file action
     @objc private func openFile() {
         DebugLogger.log("StatusBarManager: Open file menu item clicked")
         NotificationCenter.default.post(name: .openFileCommand, object: nil)
         DebugLogger.log("StatusBarManager: Posted openFileCommand notification")
     }
 
-    // Show search
+    /// Show search
     @objc private func showSearch() {
         DebugLogger.log("StatusBarManager: Search menu item clicked")
         NotificationCenter.default.post(name: .showSearchCommand, object: nil)
         DebugLogger.log("StatusBarManager: Posted showSearchCommand notification")
     }
 
-    // Show settings
+    /// Show settings
     @objc private func showSettings() {
         DebugLogger.log("StatusBarManager: Settings menu item clicked")
-        if let menuItem = NSApp.mainMenu?.item(withTitle: "Settings") {
-            NSApp.mainMenu?.performActionForItem(at: menuItem.tag)
+        // Use the standard macOS settings/preferences window selector
+        if #available(macOS 13, *) {
+            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         } else {
-            DebugLogger.log("StatusBarManager: No Settings menu item found. Implement settings window presentation here if needed.")
+            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
         }
-        DebugLogger.log("StatusBarManager: Sent showPreferencesWindow action")
+        NSApp.activate(ignoringOtherApps: true)
+        DebugLogger.log("StatusBarManager: Settings window action sent")
     }
 
-    // Quit application
+    /// Quit application
     @objc private func quitApp() {
         DebugLogger.log("StatusBarManager: Quit menu item clicked")
         NSApp.terminate(nil)
         DebugLogger.log("StatusBarManager: App termination requested")
     }
 
-    // Remove status bar item
+    /// Remove status bar item
     private func removeStatusBarItem() {
         if let statusItem {
             DebugLogger.log("StatusBarManager: Removing status bar item")
@@ -187,7 +187,7 @@ class StatusBarManager: ObservableObject {
     // No toggle functionality - icon persists until app termination
 }
 
-// Extension for notification names
+/// Extension for notification names
 extension Notification.Name {
     static let showSearchCommand = Notification.Name("showSearchCommand")
 }

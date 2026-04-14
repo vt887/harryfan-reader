@@ -7,7 +7,7 @@
 
 import Foundation
 
-// Enum for static app messages
+/// Enum for static app messages
 enum Messages {
     static let welcomeMessage = """
     ╔═══════════════════════════════════════════╗
@@ -40,7 +40,7 @@ enum Messages {
     ╚══════════════════════════════════════════════════╝
     """
 
-    // Returns the welcome message centered horizontally and vertically for the current screen size, with version
+    /// Returns the welcome message centered horizontally and vertically for the current screen size, with version
     static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {
         DebugLogger.log("ReleaseInfo.version: '\(ReleaseInfo.version)'")
         let versionedMessage = welcomeMessage.replacingOccurrences(of: "%version%", with: ReleaseInfo.version)

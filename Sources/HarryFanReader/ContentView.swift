@@ -10,9 +10,9 @@ import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 
-// Main content view for the app
+/// Main content view for the app
 struct ContentView: View {
-    @StateObject private var document = TextDocument()
+    @EnvironmentObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
     @EnvironmentObject var bookmarkManager: BookmarkManager
     @EnvironmentObject var recentFilesManager: RecentFilesManager
@@ -37,8 +37,8 @@ struct ContentView: View {
             BottomBar(document: document)
         }
         .frame(
-            width: CGFloat(AppSettings.cols * AppSettings.charW),
-            height: CGFloat(AppSettings.rows * AppSettings.charH),
+            width: CGFloat(AppSettings.cols) * AppSettings.charWRendering,
+            height: CGFloat(AppSettings.rows) * AppSettings.charHRendering
         )
         .background(Colors.theme.background)
         .sheet(isPresented: $showingSearch) {
@@ -61,7 +61,7 @@ struct ContentView: View {
     }
 }
 
-// Private struct for the main content screen view
+/// Private struct for the main content screen view
 private struct MainContentScreenView: View {
     @ObservedObject var document: TextDocument
     @EnvironmentObject var fontManager: FontManager
@@ -77,7 +77,7 @@ private struct MainContentScreenView: View {
     @State private var helpOverlayId: UUID? = nil // help overlay tracking
     @State private var fileTextOverlayId: UUID? = nil // file text overlay tracking
 
-    // Overlay state for key handling
+    /// Overlay state for key handling
     private enum ActiveOverlay {
         case none
         case welcome
@@ -135,7 +135,7 @@ private struct MainContentScreenView: View {
         }
     }
 
-    // Centralized key codes for clarity / future extension
+    /// Centralized key codes for clarity / future extension
     private enum KeyCode {
         static let f1: UInt16 = 122 // Show/Hide help overlay
         static let f2: UInt16 = 120 // Show file text overlay
@@ -148,7 +148,7 @@ private struct MainContentScreenView: View {
         static let nKey: UInt16 = 45 // N key
     }
 
-    // Unified quit handling for F10 / Esc
+    /// Unified quit handling for F10 / Esc
     private func handleQuitKey() {
         if AppSettings.shouldShowQuitMessage, !document.shouldShowQuitMessage {
             document.shouldShowQuitMessage = true
@@ -157,8 +157,8 @@ private struct MainContentScreenView: View {
         NSApp.terminate(nil)
     }
 
-    // File Import Handler (now here)
-    // Always removes HelpOverlay and WelcomeOverlay before opening a file
+    /// File Import Handler (now here)
+    /// Always removes HelpOverlay and WelcomeOverlay before opening a file
     private func handleFileImport(_ result: Result<[URL], Error>) {
         overlayManager.removeHelpOverlay()
         removeWelcomeOverlayIfPresent()
@@ -173,7 +173,7 @@ private struct MainContentScreenView: View {
         }
     }
 
-    // Event handler separated for readability & testability
+    /// Event handler separated for readability & testability
     private func handleKeyEvent(_ event: NSEvent) -> NSEvent? {
         DebugLogger.log("Key pressed: keyCode=\(event.keyCode), characters='\(event.charactersIgnoringModifiers ?? "")', activeOverlay=\(activeOverlay)")
         switch activeOverlay {
@@ -344,7 +344,7 @@ private struct MainContentScreenView: View {
         }
     }
 
-    // Refactored monitor installer
+    /// Refactored monitor installer
     private func installQuitMonitor() {
         guard quitKeysMonitor == nil else { return }
         quitKeysMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown, handler: handleKeyEvent)
@@ -390,14 +390,6 @@ private struct MainContentScreenView: View {
                     }
             }
         }
-        .onAppear { installQuitMonitor() }
         .onDisappear { removeQuitMonitor() }
     }
-}
-
-#Preview {
-    ContentView()
-        .environmentObject(FontManager())
-        .environmentObject(BookmarkManager())
-        .environmentObject(RecentFilesManager())
 }

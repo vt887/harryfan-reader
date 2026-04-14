@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-// Observable object representing a text document
+/// Observable object representing a text document
 class TextDocument: ObservableObject {
     @Published var content: [String] = []
     @Published var currentLine: Int = 0
@@ -20,17 +20,19 @@ class TextDocument: ObservableObject {
     @Published var wrapWidth: Int = AppSettings.wrapWidth
     @Published var shouldShowQuitMessage: Bool = AppSettings.shouldShowQuitMessage
     @Published var rows: Int = AppSettings.rows
-    // Top visible line of viewport
+    /// Top visible line of viewport
     @Published var topLine: Int = 0
-    // Fixed cursor row (highlight). For now we keep it at 0 (top of viewport)
+    /// Fixed cursor row (highlight). For now we keep it at 0 (top of viewport)
     let fixedCursorRow: Int = 0
 
     private var originalData: Data?
 
-    // Returns the quit message string
-    var quitMessage: String { Messages.quitMessage }
+    /// Returns the quit message string
+    var quitMessage: String {
+        Messages.quitMessage
+    }
 
-    // Loads the welcome text into the document
+    /// Loads the welcome text into the document
     func loadWelcomeText() {
         content = splitLines(Messages.centeredWelcomeMessage(screenWidth: AppSettings.cols, screenHeight: AppSettings.rows - 2))
         totalLines = content.count
@@ -38,7 +40,7 @@ class TextDocument: ObservableObject {
         currentLine = 0
     }
 
-    // Opens a file and loads its content
+    /// Opens a file and loads its content
     func openFile(at url: URL) {
         do {
             DebugLogger.log("Opening file: \(url.path)")
@@ -61,7 +63,7 @@ class TextDocument: ObservableObject {
         }
     }
 
-    // Returns the formatted title bar text
+    /// Returns the formatted title bar text
     func getTitleBarText() -> String {
         let appName = AppSettings.appName
         let totalCols = AppSettings.cols
@@ -100,7 +102,7 @@ class TextDocument: ObservableObject {
         return title
     }
 
-    // Returns the formatted menu bar text
+    /// Returns the formatted menu bar text
     func getMenuBarText(_ items: [String]) -> String {
         let menuBarString = items.enumerated().map { index, item in
             let itemText = " \(index + 1)\(item)" // Add leading space before number
@@ -111,17 +113,19 @@ class TextDocument: ObservableObject {
         return result
     }
 
-    // Decodes CP866 encoded data to a string
+    /// Decodes CP866 encoded data to a string
     private func decodeCP866(from data: Data) -> String {
         var result = String.UnicodeScalarView()
+        let fallback = UnicodeScalar(0x3F)! // '?' — always valid
         for byte in data {
-            let scalar = UnicodeScalar(unicodePoints[Int(byte)])!
+            let codepoint = unicodePoints[Int(byte)]
+            let scalar = UnicodeScalar(codepoint) ?? fallback
             result.append(scalar)
         }
         return String(result)
     }
 
-    // Wraps lines according to the wrap width
+    /// Wraps lines according to the wrap width
     private func wrapLines(_ lines: [String]) -> [String] {
         guard wordWrap else { return lines }
 
@@ -131,22 +135,40 @@ class TextDocument: ObservableObject {
             if line.count <= wrapWidth {
                 wrappedLines.append(line)
             } else {
-                // Split long lines
+                // Split long lines by words
                 var currentLine = ""
-
                 let words = line.components(separatedBy: " ")
 
                 for word in words {
                     if currentLine.isEmpty {
-                        currentLine = word
+                        // Hard-wrap single words that exceed wrapWidth
+                        if word.count > wrapWidth {
+                            var remaining = word
+                            while remaining.count > wrapWidth {
+                                let splitIndex = remaining.index(remaining.startIndex, offsetBy: wrapWidth)
+                                wrappedLines.append(String(remaining[..<splitIndex]))
+                                remaining = String(remaining[splitIndex...])
+                            }
+                            currentLine = remaining
+                        } else {
+                            currentLine = word
+                        }
                     } else if currentLine.count + word.count + 1 <= wrapWidth {
                         currentLine += " " + word
                     } else {
-                        // Current line is full, start a new one
-                        if !currentLine.isEmpty {
-                            wrappedLines.append(currentLine)
+                        wrappedLines.append(currentLine)
+                        // Hard-wrap single words that exceed wrapWidth
+                        if word.count > wrapWidth {
+                            var remaining = word
+                            while remaining.count > wrapWidth {
+                                let splitIndex = remaining.index(remaining.startIndex, offsetBy: wrapWidth)
+                                wrappedLines.append(String(remaining[..<splitIndex]))
+                                remaining = String(remaining[splitIndex...])
+                            }
+                            currentLine = remaining
+                        } else {
+                            currentLine = word
                         }
-                        currentLine = word
                     }
                 }
 
@@ -160,7 +182,7 @@ class TextDocument: ObservableObject {
         return wrappedLines
     }
 
-    // Splits text into lines, handling line endings
+    /// Splits text into lines, handling line endings
     private func splitLines(_ text: String) -> [String] {
         // Handle different line ending formats properly
         // Replace \r\n with \n first, then split by \n
@@ -168,7 +190,7 @@ class TextDocument: ObservableObject {
         return normalizedText.components(separatedBy: "\n")
     }
 
-    // Cleans lines by removing excessive empty lines
+    /// Cleans lines by removing excessive empty lines
     private func cleanLines(_ lines: [String]) -> [String] {
         if !removeEmptyLines {
             return lines
@@ -200,7 +222,7 @@ class TextDocument: ObservableObject {
         return result
     }
 
-    // Closes the currently open file
+    /// Closes the currently open file
     func closeFile() {
         content = []
         currentLine = 0
@@ -210,7 +232,7 @@ class TextDocument: ObservableObject {
         originalData = nil
     }
 
-    // Reloads the document with new settings
+    /// Reloads the document with new settings
     func reloadWithNewSettings() {
         guard let data = originalData else {
             return
@@ -224,14 +246,14 @@ class TextDocument: ObservableObject {
         currentLine = topLine + fixedCursorRow
     }
 
-    // Toggles word wrap and reloads content
+    /// Toggles word wrap and reloads content
     func toggleWordWrap() {
         wordWrap.toggle()
         DebugLogger.log("Word wrap toggled to: \(wordWrap)")
         reloadWithNewSettings()
     }
 
-    // Navigates to a specific line in the document
+    /// Navigates to a specific line in the document
     func gotoLine(_ line: Int) {
         guard totalLines > 0 else {
             return
@@ -242,12 +264,12 @@ class TextDocument: ObservableObject {
         currentLine = target
     }
 
-    // Navigates to the start of the document
+    /// Navigates to the start of the document
     func gotoStart() {
         topLine = 0; currentLine = 0
     }
 
-    // Navigates to the end of the document
+    /// Navigates to the end of the document
     func gotoEnd() {
         guard totalLines > 0 else {
             return
@@ -259,7 +281,7 @@ class TextDocument: ObservableObject {
         topLine = max(0, totalLines - displayRows)
     }
 
-    // Scrolls up one page in the document
+    /// Scrolls up one page in the document
     func pageUp() {
         guard totalLines > 0 else {
             return
@@ -269,7 +291,7 @@ class TextDocument: ObservableObject {
         topLine = currentLine
     }
 
-    // Scrolls down one page in the document
+    /// Scrolls down one page in the document
     func pageDown() {
         guard totalLines > 0 else {
             return
@@ -279,7 +301,7 @@ class TextDocument: ObservableObject {
         topLine = currentLine
     }
 
-    // Scrolls up one line in the document
+    /// Scrolls up one line in the document
     func lineUp() {
         guard totalLines > 0 else {
             return
@@ -291,7 +313,7 @@ class TextDocument: ObservableObject {
         // If already at top, do nothing
     }
 
-    // Scrolls down one line in the document
+    /// Scrolls down one line in the document
     func lineDown() {
         guard totalLines > 0 else {
             return
@@ -305,7 +327,7 @@ class TextDocument: ObservableObject {
         // If already at bottom, do nothing
     }
 
-    // Searches for a query string in the document
+    /// Searches for a query string in the document
     func search(_ query: String, direction: SearchDirection = .forward, caseSensitive: Bool = false) -> Int? {
         guard !query.isEmpty else {
             return nil
@@ -330,7 +352,7 @@ class TextDocument: ObservableObject {
                 }
             }
             if found == nil {
-                for index in stride(from: lines.count - 1, through: currentLine, by: -1) where lines[index].contains(searchQuery) {
+                for index in stride(from: lines.count - 1, through: currentLine + 1, by: -1) where lines[index].contains(searchQuery) {
                     found = index; break
                 }
             }
@@ -342,7 +364,7 @@ class TextDocument: ObservableObject {
         return found
     }
 
-    // Returns the content of the current line
+    /// Returns the content of the current line
     func getCurrentLine() -> String {
         guard currentLine >= 0, currentLine < content.count else {
             return ""
@@ -350,7 +372,7 @@ class TextDocument: ObservableObject {
         return content[currentLine]
     }
 
-    // Visible lines based on topLine (viewport)
+    /// Visible lines based on topLine (viewport)
     func getVisibleLines(displayRows: Int) -> [String] {
         guard totalLines > 0 else {
             return []
@@ -380,7 +402,7 @@ class TextDocument: ObservableObject {
     }
 }
 
-// Enum for search direction in text document
+/// Enum for search direction in text document
 enum SearchDirection {
     case forward
     case backward

@@ -7,41 +7,41 @@
 
 import SwiftUI
 
-// View for displaying and managing application settings
+/// View for displaying and managing application settings
 struct SettingsView: View {
-    // Font manager environment object
+    /// Font manager environment object
     @EnvironmentObject var fontManager: FontManager
-    // Document environment object
+    /// Document environment object
     @EnvironmentObject var document: TextDocument
-    // Dismiss environment value for closing the view
+    /// Dismiss environment value for closing the view
     @Environment(\.dismiss) private var dismiss
 
-    // Currently selected font
+    /// Currently selected font
     @State private var selectedFont: FontManager.MSDOSFont = .vdu8x16
-    // Current font size
+    /// Current font size
     @State private var fontSize: Double = 16.0
-    // Remove excessive empty lines toggle
+    /// Remove excessive empty lines toggle
     @State private var removeEmptyLines: Bool = true
-    // Word wrap toggle
+    /// Word wrap toggle
     @State private var wordWrap: Bool = true
-    // Wrap width value
+    /// Wrap width value
     @State private var wrapWidth: Double = 80.0
-    // Original font for cancel functionality
+    /// Original font for cancel functionality
     @State private var originalFont: FontManager.MSDOSFont = .vdu8x16
-    // Original font size for cancel functionality
+    /// Original font size for cancel functionality
     @State private var originalFontSize: Double = 16.0
-    // Original remove empty lines value for cancel functionality
+    /// Original remove empty lines value for cancel functionality
     @State private var originalRemoveEmptyLines: Bool = true
-    // Original word wrap value for cancel functionality
+    /// Original word wrap value for cancel functionality
     @State private var originalWordWrap: Bool = true
-    // Original wrap width value for cancel functionality
+    /// Original wrap width value for cancel functionality
     @State private var originalWrapWidth: Double = 80.0
-    // Anti-aliasing toggle
+    /// Anti-aliasing toggle
     @State private var enableAntiAliasing: Bool = true
-    // Original anti-aliasing value for cancel functionality
+    /// Original anti-aliasing value for cancel functionality
     @State private var originalEnableAntiAliasing: Bool = true
 
-    // Main view body rendering the settings UI
+    /// Main view body rendering the settings UI
     var body: some View {
         VStack(spacing: 0) {
             // macOS-style title bar with window controls
@@ -53,7 +53,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -68,7 +68,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -83,7 +83,7 @@ struct SettingsView: View {
                         .frame(width: 12, height: 12)
                         .overlay(
                             Circle()
-                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5),
+                                .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
                         )
                         .scaleEffect(1.0)
                         .onTapGesture {
@@ -125,7 +125,7 @@ struct SettingsView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
-                alignment: .bottom,
+                alignment: .bottom
             )
 
             // Settings content
@@ -209,7 +209,8 @@ struct SettingsView: View {
                     document.wordWrap = wordWrap
                     document.wrapWidth = Int(wrapWidth)
 
-                    // Apply anti-aliasing setting
+                    // Persist font selection and anti-aliasing setting
+                    AppSettings.fontFileName = selectedFont.rawValue
                     AppSettings.enableAntiAliasing = enableAntiAliasing
 
                     // Reload file with new settings if a file is open
@@ -228,7 +229,7 @@ struct SettingsView: View {
                 Rectangle()
                     .frame(height: 1)
                     .foregroundColor(Color(NSColor.separatorColor)),
-                alignment: .top,
+                alignment: .top
             )
         }
         .frame(width: 450, height: 400)
@@ -252,11 +253,4 @@ struct SettingsView: View {
             enableAntiAliasing = AppSettings.enableAntiAliasing
         }
     }
-}
-
-// Preview for SettingsView
-#Preview {
-    SettingsView()
-        .environmentObject(FontManager())
-        .environmentObject(TextDocument())
 }

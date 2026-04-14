@@ -11,14 +11,14 @@ let bottomBarItems = [
     "Bookm", "Start", "End", "Menu", "Quit",
 ]
 
-// View for displaying the bottom bar in the app
+/// View for displaying the bottom bar in the app
 struct BottomBar: View {
-    // Observed document model for the bottom bar
+    /// Observed document model for the bottom bar
     @ObservedObject var document: TextDocument
-    // Font manager environment object
+    /// Font manager environment object
     @EnvironmentObject var fontManager: FontManager
 
-    // Main view body rendering the bottom bar
+    /// Main view body rendering the bottom bar
     var body: some View {
         ScreenView(document: document,
                    contentToDisplay: document.getMenuBarText(bottomBarItems),
