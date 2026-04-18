@@ -1,0 +1,21 @@
+repos:
+  - repo: local
+    hooks:
+      - id: swiftformat
+        name: swiftformat
+        entry: bash -c 'if command -v swiftformat >/dev/null 2>&1; then swiftformat . --swift-version 6.2; else echo "swiftformat not installed"; fi'
+        language: system
+        types: [swift]
+
+      - id: swiftlint
+        name: swiftlint-fix
+        entry: bash -c 'if command -v swiftlint >/dev/null 2>&1; then swiftlint --fix --format || true; else echo "swiftlint not installed"; fi'
+        language: system
+        types: [swift]
+
+      - id: legacy-pre-commit-script
+        name: run-scripts-pre-commit
+        entry: bash scripts/pre-commit.sh
+        language: system
+        stages: [commit]
+

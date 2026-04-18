@@ -1,0 +1,22 @@
+# Project-specific SwiftLint configuration tuned for this legacy codebase.
+# Many test files and rendering code intentionally use short variable names
+# and long, dense functions. Disable rules that cause noise in this repo.
+disabled_rules:
+  - line_length
+  - function_body_length
+  - type_body_length
+  - identifier_name
+  - static_over_final_class
+  - implicit_optional_initialization
+  - opening_brace
+  - for_where
+  - todo
+  - file_length
+  - cyclomatic_complexity
+  - trailing_comma
+
+# Exclude generated or external assets
+excluded:
+  - Files/
+  - Sources/HarryFanReader/Fonts/
+
