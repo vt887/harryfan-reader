@@ -1,44 +1,51 @@
-//
-//  Messages.swift
-//  harryfan-reader
-//
-//  Created by @vt887 on 9/1/25.
-//
+// // SPDX-License-Identifier: GPL-3.0-or-later
+// // Copyright (c) 2026 Scythify LLC
+
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2026 Scythify LLC
 
 import Foundation
 
 /// Enum for static app messages
 enum Messages {
     static let welcomeMessage = """
-    ╔═══════════════════════════════════════════╗
-    ║             HarryFan Reader               ║
-    ║                                           ║
-    ║      Retro MS-DOS Style Text Viewer       ║
-    ║                                           ║
-    ║             Press any key...              ║
-    ╚═══════════════════════════════════════════╝
-    """
+        ╔═══════════════════════════════════════════╗
+        ║             HarryFan Reader               ║
+        ║                                           ║
+        ║      Retro MS-DOS Style Text Viewer       ║
+        ║                                           ║
+        ║             Press any key...              ║
+        ╚═══════════════════════════════════════════╝
+        """
 
     static let helpMessage = """
-    ╔═══════════════════════════════════════════════════════╗                                                                             ║
-    ║  F1  - Help        Show/hide this help screen         ║
-    ║  F2  - Word Wrap   Toggle word wrapping on/off        ║
-    ║  F3  - Open File   Open a new text file               ║
-    ║  F7  - Go Start    Jump to the beginning of the file  ║
-    ║  F8  - Go End      Jump to the end of the file        ║
-    ║  F10 - Quit        Exit the application               ║
-    ╚═══════════════════════════════════════════════════════╝
-    """
+        ╔══════════════════════════════════════════════════════════════╗
+        ║                     HarryFan Reader Help                     ║
+        ╠══════════════════════════════════════════════════════════════╣
+        ║  F1       - Help         Show/hide this help screen           ║
+        ║  F2       - Word Wrap    Toggle word wrapping on/off          ║
+        ║  F3       - Open File    Open a new text file                 ║
+        ║  F7       - Go Start     Jump to the beginning of the file    ║
+        ║  F8       - Go End       Jump to the end of the file          ║
+        ║  F10/Esc  - Quit         Exit the application / Close overlay ║
+        ║                                                              ║
+        ║  Up/Down  - Line Up/Dn   Scroll text by one line              ║
+        ║  PgUp/PgDn - Page Up/Dn  Scroll text by one page              ║
+        ║  1...0    - Menu Cmds    Quick access to menu functions       ║
+        ╠══════════════════════════════════════════════════════════════╣
+        ║            HarryFan Reader v0.6-alpha (c) 2026               ║
+        ╚══════════════════════════════════════════════════════════════╝
+        """
 
     static let quitMessage = """
-    ╔══════════════════════════════════════════════════╗
-    ║                                                  ║
-    ║        Thank you for using HarryFan Reader!      ║
-    ║                                                  ║
-    ║           Exiting application - Y/N?             ║
-    ║                                                  ║
-    ╚══════════════════════════════════════════════════╝
-    """
+        ╔══════════════════════════════════════════════════╗
+        ║                                                  ║
+        ║        Thank you for using HarryFan Reader!      ║
+        ║                                                  ║
+        ║           Exiting application - Y/N?             ║
+        ║                                                  ║
+        ╚══════════════════════════════════════════════════╝
+        """
 
     /// Returns the welcome message centered horizontally and vertically for the current screen size, with version
     static func centeredWelcomeMessage(screenWidth: Int, screenHeight: Int) -> String {

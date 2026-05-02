@@ -1,9 +1,8 @@
-//
-//  Overlays.swift
-//  harryfan-reader
-//
-//  Created by @vt887 on 10/01/25.
-//
+// // SPDX-License-Identifier: GPL-3.0-or-later
+// // Copyright (c) 2026 Scythify LLC
+
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2026 Scythify LLC
 
 import Foundation
 import SwiftUI
@@ -12,21 +11,21 @@ import SwiftUI
 /// that can be displayed in the application, such as
 /// welcome, help, custom messages, or file text previews.
 enum OverlayKind: Equatable {
-    case welcome
-    case help
-    case quit
     case custom(String)
     case fileText(String)
+    case help
+    case quit
+    case welcome
 
     /// Returns the message string associated with each overlay kind.
     /// This is used to display the appropriate content in the overlay.
     var message: String {
         switch self {
-        case .welcome: Messages.welcomeMessage
-        case .help: Messages.helpMessage
-        case .quit: Messages.quitMessage
         case let .custom(s): s
         case let .fileText(s): s
+        case .help: Messages.helpMessage
+        case .quit: Messages.quitMessage
+        case .welcome: Messages.welcomeMessage
         }
     }
 }
@@ -36,13 +35,18 @@ private func centeredOverlayLayer(from message: String, rows: Int, cols: Int, fg
     var layer = ScreenLayer(rows: rows, cols: cols)
     let lines = message.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
     let totalLines = lines.count
+    
+    // Calculate block dimensions
+    let maxWidth = lines.map { $0.count }.max() ?? 0
     let verticalPadding = max(0, (rows - totalLines) / 2)
+    let horizontalPadding = max(0, (cols - maxWidth) / 2)
+
     for (i, line) in lines.enumerated() {
-        let trimmed = line.trimmingCharacters(in: .whitespaces)
-        let padding = max(0, (cols - trimmed.count) / 2)
-        let startCol = padding
-        for (j, char) in trimmed.enumerated() {
-            let row = verticalPadding + i
+        let startRow = verticalPadding + i
+        let startCol = horizontalPadding
+        
+        for (j, char) in line.enumerated() {
+            let row = startRow
             let col = startCol + j
             if row < rows, col < cols {
                 layer[row, col] = ScreenCell(char: char, fgColor: fgColor, bgColor: nil)
@@ -62,14 +66,14 @@ enum OverlayFactory {
                      fgColor: Color = Colors.theme.foreground) -> ScreenLayer
     {
         let text = kind.message
-        
+
         // Help overlay has special background color
         if text == Messages.helpMessage {
             var layer = centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
             layer.backgroundColor = Colors.theme.helpMenuBackground
             return layer
         }
-        
+
         if text == Messages.welcomeMessage || text == Messages.quitMessage {
             return centeredOverlayLayer(from: text, rows: rows, cols: cols, fgColor: fgColor)
         }
