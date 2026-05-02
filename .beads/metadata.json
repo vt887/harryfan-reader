@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "harryfan_reader",
+  "project_id": "7ae71730-7269-488c-9768-fa7e949fc006"
+}
